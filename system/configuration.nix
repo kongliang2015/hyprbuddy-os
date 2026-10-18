@@ -95,6 +95,22 @@
     });
   };
 
+  # GTK / Qt 统一暗色主题（应用对话框、文件选择框等）
+  qt = {
+    enable = true;
+    platformTheme = "gnome";     # qgnomeplatform：Qt 跟随 GTK 的 Adwaita-dark
+    style = "adwaita-dark";      # 兜底 Qt 风格
+  };
+  programs.dconf.enable = true;  # 提供 gsettings schema / dconf 服务
+  programs.dconf.profiles.user.databases = [
+    {
+      settings."org/gnome/desktop/interface" = {
+        gtk-theme = "Adwaita-dark";
+        color-scheme = "prefer-dark";
+      };
+    }
+  ];
+
   # 默认会话设为 Hyprland —— 登录界面会预选它（仍可改选 XFCE/Window Maker）。
   # 会话名对应 wayland-sessions/hyprland.desktop 的文件名。
   services.displayManager.defaultSession = "hyprland";
