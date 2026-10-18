@@ -1,11 +1,11 @@
-# mako 通知 — Kanagawa 统一风格
+# mako 通知 — elarun 统一风格
 font=JetBrainsMono Nerd Font 10
-background-color=#1f1f28f2
-text-color=#dcd7ba
-border-color=#7e9cd8
+background-color=#0f2438f2
+text-color=#d7e7f5
+border-color=#0e7fa8
 border-size=2
 border-radius=12
-progress-color=#7e9cd8cc
+progress-color=#1e9bd8cc
 padding=12
 margin=10
 width=380
@@ -28,12 +28,12 @@ format=<b>%s</b>\n%b
 
 # 低优先级：更短、灰边
 [urgency=low]
-border-color=#727169
+border-color=#4a5e72
 default-timeout=3000
 
 # 紧急通知：红色边框，常驻直到手动关闭
 [urgency=critical]
-border-color=#c34043
+border-color=#c04a55
 default-timeout=0
 
 # 勿扰模式：makoctl mode -t dnd 切换
