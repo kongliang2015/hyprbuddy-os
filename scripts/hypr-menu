@@ -1,50 +1,134 @@
 #!/usr/bin/env bash
-# Hyprland 超级菜单（Super+Space），仿 omarchy 的弹出菜单。
-# 用 fuzzel 的 dmenu 模式显示动作列表，选择后执行。
+# Hyprland 超级菜单（Super+Space）
+# 通用多层菜单：每一层（非根）自动注入「← 返回上级菜单」，Esc 返回上一级；
+# 根菜单注入「✕ 退出菜单」。
 set -uo pipefail
 
-menu() {
+fmenu() {
   fuzzel --dmenu --lines 16 --width 36 --prompt "${1:-  }"
 }
 
-choice=$(printf '%s\n' \
-  '  应用启动器' \
-  '  终端 (kitty)' \
-  '  文件管理器' \
-  '  浏览器' \
-  '  系统监视器 (btop)' \
-  '  区域截图' \
-  '  截图标注' \
-  '  剪贴板历史' \
-  '  取色器' \
-  '  夜间模式开关' \
-  '  开始/停止录屏' \
-  '  下一张壁纸' \
-  '  通知勿扰开关' \
-  '  锁屏' \
-  '  重载 Hyprland' \
-  '  注销' \
-  '  重启' \
-  '  关机' | menu) || exit 0
+# ── 菜单项辅助：输出 "标签<TAB>类型<TAB>值" ──────────────
+act() { printf '%s\tact\t%s\n' "$1" "$2"; }
+sub() { printf '%s\tsub\t%s\n' "$1" "$2"; }
 
-case "$choice" in
-  *'应用启动器')     exec fuzzel ;;
-  *'终端 (kitty)')   exec kitty ;;
-  *'文件管理器')     exec thunar ;;
-  *'浏览器')         exec firefox ;;
-  *'系统监视器 (btop)') exec kitty -e btop ;;
-  *'区域截图')       exec hyprshot -m region ;;
-  *'截图标注')       exec /home/leonard/.local/bin/screenshot-annotate ;;
-  *'剪贴板历史')     exec sh -c 'cliphist list | fuzzel --dmenu | cliphist decode | wl-copy' ;;
-  *'取色器')         exec hyprpicker -a ;;
-  *'夜间模式开关')   exec /home/leonard/.local/bin/night-mode ;;
-  *'开始/停止录屏')  exec /home/leonard/.local/bin/record-toggle ;;
-  *'下一张壁纸')     exec /home/leonard/.local/bin/wallpaper-next ;;
-  *'通知勿扰开关')   exec /home/leonard/.local/bin/notif-dnd ;;
-  *'锁屏')           exec hyprlock ;;
-  *'重载 Hyprland')  hyprctl reload ;;
-  *'注销')           hyprctl dispatch exit ;;
-  *'重启')           [ "$(printf 'No\nYes' | menu 'Restart? ')" = Yes ] && systemctl reboot ;;
-  *'关机')           [ "$(printf 'No\nYes' | menu 'Poweroff? ')" = Yes ] && systemctl poweroff ;;
-  *) exit 0 ;;
-esac
+# ── 菜单树 ──────────────────────────────────────────────
+menu_entries() {
+  case "$1" in
+    root)
+      sub '应用'        apps
+      sub '系统工具'    tools
+      sub '外观'        appearance
+      sub '会话'        session
+      act '快捷键参考'  '/home/leonard/.local/bin/show-keybinds'
+      ;;
+    apps)
+      act '应用启动器'        'fuzzel'
+      act '终端 (kitty)'      'kitty'
+      act '文件管理器'        'thunar'
+      act '浏览器'            'firefox'
+      act '系统监视器 (btop)' 'kitty -e btop'
+      ;;
+    tools)
+      sub '截图'              screenshot
+      act '取色器'            'hyprpicker -a'
+      act '剪贴板历史'        'cliphist list | fuzzel --dmenu | cliphist decode | wl-copy'
+      act '开始/停止录屏'     '/home/leonard/.local/bin/record-toggle'
+      ;;
+    screenshot)
+      act '区域截图'          'hyprshot -m region'
+      act '整屏截图'          'hyprshot -m output'
+      act '截图标注'          '/home/leonard/.local/bin/screenshot-annotate'
+      ;;
+    appearance)
+      act '夜间模式开关'      '/home/leonard/.local/bin/night-mode'
+      act '下一张壁纸'        '/home/leonard/.local/bin/wallpaper-next'
+      act '重新加载壁纸'      '__reload_wallpaper__'
+      act '重载 Hyprland'     'hyprctl reload'
+      ;;
+    session)
+      act '锁屏'              'hyprlock'
+      act '通知勿扰开关'      '/home/leonard/.local/bin/notif-dnd'
+      act '注销'              'hyprctl dispatch exit'
+      act '重启'              '__reboot__'
+      act '关机'              '__poweroff__'
+      ;;
+  esac
+}
+
+menu_prompt() {
+  case "$1" in
+    root)       echo '主菜单 > ' ;;
+    apps)       echo '应用 > ' ;;
+    tools)      echo '系统工具 > ' ;;
+    screenshot) echo '截图 > ' ;;
+    appearance) echo '外观 > ' ;;
+    session)    echo '会话 > ' ;;
+    *)          echo '> ' ;;
+  esac
+}
+
+run_action() {
+  case "$1" in
+    __reload_wallpaper__)
+      pkill hyprpaper 2>/dev/null
+      setsid hyprpaper >/dev/null 2>&1 < /dev/null &
+      ;;
+    __reboot__)
+      [ "$(printf 'No\nYes' | fmenu 'Restart? ')" = Yes ] && systemctl reboot
+      ;;
+    __poweroff__)
+      [ "$(printf 'No\nYes' | fmenu 'Poweroff? ')" = Yes ] && systemctl poweroff
+      ;;
+    *)
+      setsid sh -c "$1" >/dev/null 2>&1 < /dev/null &
+      ;;
+  esac
+}
+
+# ── 递归菜单 ────────────────────────────────────────────
+run_menu() {
+  local id="$1" parent="${2:-}"
+  while true; do
+    local -a entries=() labels=()
+    mapfile -t entries < <(menu_entries "$id")
+
+    local e
+    for e in "${entries[@]}"; do
+      labels+=("${e%%$'\t'*}")
+    done
+    if [ -n "$parent" ]; then
+      labels+=('← 返回上级菜单')
+    else
+      labels+=('✕ 退出菜单')
+    fi
+
+    local choice
+    choice=$(printf '%s\n' "${labels[@]}" | fmenu "$(menu_prompt "$id")") || return 0
+
+    if [ "$choice" = '← 返回上级菜单' ] || [ "$choice" = '✕ 退出菜单' ]; then
+      return 0
+    fi
+
+    local label kind val found=0
+    for e in "${entries[@]}"; do
+      label="${e%%$'\t'*}"
+      if [ "$label" = "$choice" ]; then
+        found=1
+        kind="${e#*$'\t'}"
+        kind="${kind%%$'\t'*}"
+        val="${e##*$'\t'}"
+        if [ "$kind" = 'sub' ]; then
+          run_menu "$val" "$id"
+          break
+        else
+          run_action "$val"
+          exit 0
+        fi
+      fi
+    done
+    [ "$found" = 1 ] || return 0
+  done
+}
+
+run_menu root

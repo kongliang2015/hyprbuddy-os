@@ -52,7 +52,7 @@ hyprland-nixos/
 
 - **Hyprland**：渐变边框、模糊、阴影、动画、完整键位
 - **Waybar**：Kanagawa 风格，工作区/窗口/音量/网络/CPU/内存/电量/时钟
-- **fuzzel**：应用启动器（`Super+D`）+ `Super+Space` 系统菜单
+- **fuzzel**：应用启动器（`Super+D`）+ `Super+Space` 分组菜单（应用 / 系统工具 / 外观 / 会话，多层返回）+「快捷键参考」（动态读取 `hyprctl binds`，带中文说明）
 - **mako**：统一通知样式（圆角/边框/进度条/分级/分组/图标/勿扰）
 - **SwayOSD**：与通知同风格的音量/亮度屏显
 - **hypridle**：5 分钟锁屏、10 分钟熄屏（不自动挂起）
