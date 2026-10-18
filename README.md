@@ -84,6 +84,17 @@ sudo cp system/configuration.nix /etc/nixos/configuration.nix
 sudo nixos-rebuild switch
 ```
 
+### 同步线上改动回项目
+
+改完线上配置后，运行：
+
+```bash
+./sync.sh                  # 自动提交，提交信息带时间戳
+./sync.sh "调整通知样式"    # 自定义提交信息
+```
+
+`sync.sh` 会把 `~/.config`、`~/.local/bin`、`~/configuration.nix.new` 和壁纸同步回项目目录，然后 `git add -A` 并在有改动时提交。
+
 ## 快捷键
 
 完整列表见 [docs/KEYBINDS.md](docs/KEYBINDS.md)。常用：
