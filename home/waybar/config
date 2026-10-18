@@ -12,7 +12,7 @@
   "modules-right": ["tray", "pulseaudio", "network", "cpu", "memory", "battery", "clock"],
   "hyprland/workspaces": { "disable-scroll": true, "show-special": true },
   "wlr/taskbar": {
-    "format": "{icon}",
+    "format": "{title}",
     "icon-size": 16,
     "icon-theme": "Adwaita",
     "tooltip-format": "{title}",
