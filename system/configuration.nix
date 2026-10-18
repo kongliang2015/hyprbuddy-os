@@ -81,6 +81,9 @@
   # SDDM 仍能正常启动 Hyprland 这个 Wayland 会话。
   services.displayManager.sddm.enable = true;
 
+  # 登录界面主题：elarun（暗色风景背景，与 Kanagawa 风格协调）
+  services.displayManager.sddm.theme = "elarun";
+
   # 默认会话设为 Hyprland —— 登录界面会预选它（仍可改选 XFCE/Window Maker）。
   # 会话名对应 wayland-sessions/hyprland.desktop 的文件名。
   services.displayManager.defaultSession = "hyprland";
