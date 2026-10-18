@@ -33,3 +33,16 @@ window#waybar > box {
 #memory { color: #D9B45A; }
 #battery { color: #9B4FC8; }
 #pulseaudio { color: #1E9BD8; }
+
+#taskbar button {
+  padding: 0 6px;
+  margin: 0 1px;
+  border-radius: 6px;
+  background: transparent;
+}
+#taskbar button.active {
+  background: #1B3D5F;
+}
+#taskbar button:hover {
+  background: #16324A;
+}
