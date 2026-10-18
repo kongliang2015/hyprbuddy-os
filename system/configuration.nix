@@ -84,6 +84,17 @@
   # 登录界面主题：elarun（暗色风景背景，与 Kanagawa 风格协调）
   services.displayManager.sddm.theme = "elarun";
 
+  # 修复 SDDM 0.21 (Qt6)：构建只产出 sddm-greeter-qt6，但主题校验按
+  # $SDDM_GREETER_DIR/sddm-greeter 查找，缺失即回退 fallback 主题（主题不生效）。
+  # 给底层 unwrapped 补 sddm-greeter 符号链接，wrapped 会一并生成 wrapper。
+  services.displayManager.sddm.package = pkgs.kdePackages.sddm.override {
+    unwrapped = pkgs.kdePackages.sddm.unwrapped.overrideAttrs (old: {
+      postInstall = (old.postInstall or "") + ''
+        ln -sf sddm-greeter-qt6 $out/bin/sddm-greeter
+      '';
+    });
+  };
+
   # 默认会话设为 Hyprland —— 登录界面会预选它（仍可改选 XFCE/Window Maker）。
   # 会话名对应 wayland-sessions/hyprland.desktop 的文件名。
   services.displayManager.defaultSession = "hyprland";
