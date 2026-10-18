@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# 开始/停止屏幕录制（wf-recorder），文件保存到 ~/Videos
+if pgrep -x wf-recorder >/dev/null 2>&1; then
+  pkill -INT -x wf-recorder
+else
+  dir="$HOME/Videos"
+  mkdir -p "$dir"
+  setsid wf-recorder -f "$dir/rec-$(date +%Y%m%d-%H%M%S).mp4" \
+    >/dev/null 2>&1 < /dev/null &
+fi

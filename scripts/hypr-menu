@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Hyprland 超级菜单（Super+Space），仿 omarchy 的弹出菜单。
+# 用 fuzzel 的 dmenu 模式显示动作列表，选择后执行。
+set -uo pipefail
+
+menu() {
+  fuzzel --dmenu --lines 16 --width 36 --prompt "${1:-  }"
+}
+
+choice=$(printf '%s\n' \
+  '  应用启动器' \
+  '  终端 (kitty)' \
+  '  文件管理器' \
+  '  浏览器' \
+  '  系统监视器 (btop)' \
+  '  区域截图' \
+  '  截图标注' \
+  '  剪贴板历史' \
+  '  取色器' \
+  '  夜间模式开关' \
+  '  开始/停止录屏' \
+  '  下一张壁纸' \
+  '  通知勿扰开关' \
+  '  锁屏' \
+  '  重载 Hyprland' \
+  '  注销' \
+  '  重启' \
+  '  关机' | menu) || exit 0
+
+case "$choice" in
+  *'应用启动器')     exec fuzzel ;;
+  *'终端 (kitty)')   exec kitty ;;
+  *'文件管理器')     exec thunar ;;
+  *'浏览器')         exec firefox ;;
+  *'系统监视器 (btop)') exec kitty -e btop ;;
+  *'区域截图')       exec hyprshot -m region ;;
+  *'截图标注')       exec /home/leonard/.local/bin/screenshot-annotate ;;
+  *'剪贴板历史')     exec sh -c 'cliphist list | fuzzel --dmenu | cliphist decode | wl-copy' ;;
+  *'取色器')         exec hyprpicker -a ;;
+  *'夜间模式开关')   exec /home/leonard/.local/bin/night-mode ;;
+  *'开始/停止录屏')  exec /home/leonard/.local/bin/record-toggle ;;
+  *'下一张壁纸')     exec /home/leonard/.local/bin/wallpaper-next ;;
+  *'通知勿扰开关')   exec /home/leonard/.local/bin/notif-dnd ;;
+  *'锁屏')           exec hyprlock ;;
+  *'重载 Hyprland')  hyprctl reload ;;
+  *'注销')           hyprctl dispatch exit ;;
+  *'重启')           [ "$(printf 'No\nYes' | menu 'Restart? ')" = Yes ] && systemctl reboot ;;
+  *'关机')           [ "$(printf 'No\nYes' | menu 'Poweroff? ')" = Yes ] && systemctl poweroff ;;
+  *) exit 0 ;;
+esac

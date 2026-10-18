@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# 夜间模式：在 4000K 暖色与正常色温之间切换（依赖 hyprsunset 守护进程）
+state="${XDG_RUNTIME_DIR:-/tmp}/hyprsunset.on"
+if [ -f "$state" ]; then
+  hyprctl hyprsunset identity >/dev/null 2>&1
+  rm -f "$state"
+else
+  hyprctl hyprsunset temperature 4000 >/dev/null 2>&1
+  : > "$state"
+fi

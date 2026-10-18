@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# 区域截图并交给 swappy 标注（保存/复制由 swappy 处理）
+grim -g "$(slurp)" - | swappy -f -

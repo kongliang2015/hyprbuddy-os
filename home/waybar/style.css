@@ -1,0 +1,35 @@
+/* Waybar — Kanagawa */
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC", sans-serif;
+  font-size: 13px;
+  color: #dcd7ba;
+  border: none;
+  border-radius: 0;
+}
+window#waybar {
+  background: transparent;
+}
+window#waybar > box {
+  background: #16161d;
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin: 0 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+#workspaces button {
+  padding: 0 6px;
+  color: #727169;
+  border-radius: 8px;
+}
+#workspaces button.active {
+  color: #7e9cd8;
+  background: #2a2a37;
+}
+#workspaces button.urgent {
+  color: #ff5d62;
+}
+#clock { color: #7aa89f; }
+#cpu { color: #76946a; }
+#memory { color: #dca561; }
+#battery { color: #957fb8; }
+#pulseaudio { color: #7fb4ca; }

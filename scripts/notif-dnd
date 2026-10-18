@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# 切换 mako 勿扰模式（Do Not Disturb）
+if makoctl mode 2>/dev/null | grep -qx 'dnd'; then
+  makoctl mode -r dnd
+  notify-send "通知" "勿扰模式：关闭"
+else
+  makoctl mode -a dnd
+  notify-send "通知" "勿扰模式：开启"
+fi

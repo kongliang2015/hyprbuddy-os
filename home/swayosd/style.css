@@ -1,0 +1,29 @@
+/* SwayOSD — Kanagawa，与 mako 通知统一视觉 */
+window {
+  background-color: #1f1f28;
+  border: 2px solid #7e9cd8;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+label {
+  color: #dcd7ba;
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC", sans-serif;
+  font-size: 13px;
+}
+
+image {
+  color: #7e9cd8;
+}
+
+progressbar trough {
+  background-color: #2a2a37;
+  border-radius: 6px;
+  min-height: 6px;
+}
+
+progressbar progress {
+  background-color: #7e9cd8;
+  border-radius: 6px;
+  min-height: 6px;
+}
