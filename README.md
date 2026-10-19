@@ -9,7 +9,6 @@ SDDM 登录 → Hyprland → Waybar 状态栏 / fuzzel 启动器 / mako 通知 /
 - NVIDIA GTX 1050 Ti，闭源驱动（`nvidia-drm.modeset=1`）
 - 登录管理器：**SDDM**，默认会话 Hyprland
 - 中文输入：fcitx5 + 拼音
-- 保留 XFCE / Window Maker 作为可选会话
 
 ## 目录结构
 

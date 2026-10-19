@@ -8,7 +8,7 @@
 
 **原因**：LightDM 启动 Wayland 会话时 seat/输入设备交接有问题，Hyprland 没拿到输入设备。
 
-**修复**：改用 **SDDM**（`services.displayManager.sddm.enable = true`），保留 `services.xserver.desktopManager.xfce.enable`。SDDM 正确交接 seat。
+**修复**：改用 **SDDM**（`services.displayManager.sddm.enable = true`）。SDDM 正确交接 seat。
 
 **验证**：日志 `journalctl -b | grep -iE 'hyprland|seat|libinput'`；`loginctl seat-status seat0` 查看键鼠是否挂在 seat0。
 

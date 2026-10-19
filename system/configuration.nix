@@ -49,7 +49,7 @@
     LC_TIME = "zh_CN.UTF-8";
   };
 
-  # 中文字体：让 Window Maker 字体回退、应用程序及 fcitx5 界面能渲染中文
+  # 中文字体：让窗口管理器字体回退、应用程序及 fcitx5 界面能渲染中文
   fonts.packages = [
     pkgs.wqy_zenhei
     pkgs."noto-fonts-cjk-sans"
@@ -71,8 +71,6 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-  # Enable the XFCE Desktop Environment.
-  services.xserver.desktopManager.xfce.enable = true;
 
   # 图形登录管理器：SDDM。
   # LightDM 启动 Wayland 会话时会把 seat/输入设备交接搞坏（键鼠全死），
@@ -111,12 +109,10 @@
     }
   ];
 
-  # 默认会话设为 Hyprland —— 登录界面会预选它（仍可改选 XFCE/Window Maker）。
+  # 默认会话设为 Hyprland —— 登录界面会预选它。
   # 会话名对应 wayland-sessions/hyprland.desktop 的文件名。
   services.displayManager.defaultSession = "hyprland";
 
-  # Enable the Window Maker desktop environment (selectable session in LightDM).
-  services.xserver.windowManager.windowmaker.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -175,7 +171,7 @@
   # Install firefox.
   programs.firefox.enable = true;
 
-  # Hyprland (Wayland) 桌面会话 —— 可在 LightDM 中与 XFCE 一并选择
+  # Hyprland (Wayland) 桌面会话
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
@@ -300,7 +296,7 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.11"; # Did you read the comment?
-  # 在 Window Maker 等纯窗口管理器会话中自动启动 fcitx5 输入法
+  # 在纯窗口管理器会话中自动启动 fcitx5 输入法
   # 注意：必须用 config.i18n.inputMethod.package（带 addons 的包装）。
   # 不能用 pkgs.fcitx5 —— 裸包不含 libpinyin，fcitx5 会报
   # "Group Item pinyin in group 默认 is not valid" 并移除拼音，导致打不出中文。
