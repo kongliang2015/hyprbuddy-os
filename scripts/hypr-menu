@@ -20,7 +20,7 @@ menu_entries() {
       sub '系统工具'    tools
       sub '外观'        appearance
       sub '会话'        session
-      act '快捷键参考'  '/home/leonard/.local/bin/show-keybinds'
+      act '快捷键参考'  '/home/nixos/.local/bin/show-keybinds'
       ;;
     apps)
       act '应用启动器'        'fuzzel'
@@ -33,22 +33,22 @@ menu_entries() {
       sub '截图'              screenshot
       act '取色器'            'hyprpicker -a'
       act '剪贴板历史'        'cliphist list | fuzzel --dmenu | cliphist decode | wl-copy'
-      act '开始/停止录屏'     '/home/leonard/.local/bin/record-toggle'
+      act '开始/停止录屏'     '/home/nixos/.local/bin/record-toggle'
       ;;
     screenshot)
       act '区域截图'          'hyprshot -m region'
       act '整屏截图'          'hyprshot -m output'
-      act '截图标注'          '/home/leonard/.local/bin/screenshot-annotate'
+      act '截图标注'          '/home/nixos/.local/bin/screenshot-annotate'
       ;;
     appearance)
-      act '夜间模式开关'      '/home/leonard/.local/bin/night-mode'
-      act '下一张壁纸'        '/home/leonard/.local/bin/wallpaper-next'
+      act '夜间模式开关'      '/home/nixos/.local/bin/night-mode'
+      act '下一张壁纸'        '/home/nixos/.local/bin/wallpaper-next'
       act '重新加载壁纸'      '__reload_wallpaper__'
       act '重载 Hyprland'     'hyprctl reload'
       ;;
     session)
       act '锁屏'              'hyprlock'
-      act '通知勿扰开关'      '/home/leonard/.local/bin/notif-dnd'
+      act '通知勿扰开关'      '/home/nixos/.local/bin/notif-dnd'
       act '注销'              'hyprctl dispatch exit'
       act '重启'              '__reboot__'
       act '关机'              '__poweroff__'
