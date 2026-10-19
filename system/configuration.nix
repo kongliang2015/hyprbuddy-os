@@ -2,14 +2,22 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
+let
+  # 部署目标机型，决定加载哪个 profile：
+  #   "virtio"          — 默认模板：QEMU virtio GPU（Mesa / modesetting），Hyprland-only
+  #   "leonard-nvidia"  — 真实 NVIDIA 显卡：580 LTSB 闭源驱动 + 保留 XFCE / Window Maker
+  # 可用 install.sh --profile <名字> 设置，或直接改这里。
+  hardwareProfile = "virtio";
+in
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       <home-manager/nixos>
-    ];
+    ]
+    ++ lib.optional (hardwareProfile == "leonard-nvidia") ./profiles/leonard-nvidia.nix;
 
   # Bootloader.
   home-manager.useGlobalPkgs = true;

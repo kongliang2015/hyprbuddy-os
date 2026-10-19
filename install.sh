@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
+
+# 机型 profile：virtio（默认）/ leonard-nvidia（真实 NVIDIA 显卡）
+PROFILE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --profile) PROFILE="${2:-}"; shift 2 ;;
+    -h|--help) echo "用法: ./install.sh [--profile virtio|leonard-nvidia]"; exit 0 ;;
+    *) echo "未知参数: $1" >&2; exit 1 ;;
+  esac
+done
+
 echo "==> deploying user-level config to ~/.config and ~/.local/bin"
 mkdir -p "$HOME/.config"/{hypr,waybar,fuzzel,kitty,mako,swayosd} "$HOME/.local/bin"
 cp -r "$here/home/hypr/."      "$HOME/.config/hypr/"
@@ -39,6 +50,10 @@ if [ "$BOOT" = "grub" ]; then
 else
   cp "$SYS_SRC" "$SYS_TMP"
 fi
+if [ -n "$PROFILE" ]; then
+  sed -i "s|^  hardwareProfile = \"virtio\";|  hardwareProfile = \"$PROFILE\";|" "$SYS_TMP"
+  echo "==> hardware profile: $PROFILE"
+fi
 sed -i -E 's/^  system.stateVersion = "[0-9.]+";/  system.stateVersion = "PLACEHOLDER";/' "$SYS_TMP"
 sed -i "s/PLACEHOLDER/$CUR_STATE/" "$SYS_TMP"
 sed -i '/^  users.users.nixos = {$/,/^  };/d' "$SYS_TMP"
@@ -49,6 +64,8 @@ if [ -f "$SYS_DST" ]; then
 fi
 sudo cp "$SYS_TMP" "$SYS_DST"
 sudo rm -f "$SYS_TMP"
+sudo mkdir -p /etc/nixos/profiles
+sudo cp -f "$here"/system/profiles/*.nix /etc/nixos/profiles/
 echo "system config written to $SYS_DST"
 echo
 echo "review $SYS_DST then run:"

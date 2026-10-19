@@ -17,7 +17,10 @@ hyprland-nixos/
 ├── README.md
 ├── install.sh                  # 部署用户级配置
 ├── system/
-│   └── configuration.nix       # 系统层配置（需 sudo 应用）
+│   ├── configuration.nix       # 系统层配置（需 sudo 应用）
+│   ├── home.nix                # Home Manager 配置片段（由 NixOS module 导入）
+│   └── profiles/
+│       └── leonard-nvidia.nix  # 机型 profile：真实 NVIDIA 显卡 + 保留 XFCE/WM
 ├── home/
 │   ├── hypr/                   # hyprland.conf / hypridle.conf / hyprlock.conf / hyprpaper.conf
 │   ├── waybar/                 # config + style.css
@@ -58,6 +61,25 @@ hyprland-nixos/
 - **附加脚本**：夜间模式、录屏、截图标注、取色、壁纸轮换
 
 ## 应用配置
+
+### 机型 profile
+
+`system/configuration.nix` 顶部的 `hardwareProfile` 决定加载哪个机型 profile：
+
+| 值 | 适用 | 显卡栈 | 会话 |
+|---|---|---|---|
+| `"virtio"`（默认） | QEMU / virtio GPU 虚拟机 | `modesetting` + Mesa | Hyprland only |
+| `"leonard-nvidia"` | 真实 NVIDIA 显卡（GTX 1050 Ti / Pascal） | 闭源驱动 `legacy_580`（580.178.04） | Hyprland + XFCE + Window Maker |
+
+设置方式：
+
+```bash
+./install.sh --profile leonard-nvidia   # 由脚本写入 configuration.nix
+# 或手动改 system/configuration.nix 里的 hardwareProfile
+```
+
+> NVIDIA 必须留在 580 LTSB 分支：26.05 的 `nvidiaPackages.stable` 已指向 595.x，
+> 该分支不再支持 Maxwell / Pascal / Volta，误用会导致开机黑屏、无图形会话。
 
 ### 方式一：一键脚本
 
