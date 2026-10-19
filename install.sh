@@ -54,3 +54,12 @@ echo
 echo "review $SYS_DST then run:"
 echo "  sudo nixos-rebuild switch"
 echo "then log out/in (or reboot) and pick Hyprland at the login manager."
+
+
+echo "==> installing wallpapers and rewriting hardcoded /home/nixos paths"
+mkdir -p "$HOME/Pictures/wallpapers"
+cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" || true
+# 将配置/脚本里写死的 /home/nixos 替换为当前用户 HOME，使任意用户名可用
+for f in "$HOME"/.config/hypr/* "$HOME"/.local/bin/*; do
+  if [ -f "$f" ]; then sed -i "s|/home/nixos|$HOME|g" "$f" || true; fi
+done
