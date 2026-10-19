@@ -335,6 +335,25 @@ nix build .#checks.x86_64-linux.leonard --dry-run
 
 **判定标准**：改 `distro.gpu.vendor` 一个值，闭包按预期变化；不需要动任何其它文件。
 
+#### P1 验收记录（2026-10-19，分支 `distro/v0`）
+
+| 检查 | 结果 |
+|---|---|
+| `nix flake check` | ✅ 两个 host 全部通过（含 vm-virtio 实际构建） |
+| `hosts/leonard` 闭包 | ✅ **与 P0 的派生路径完全相同**（`bcd7kk9a…`），证明纯重构未改变行为 |
+| `hosts/vm-virtio` | ✅ `videoDrivers=["modesetting"]`、无 XFCE/WM、用户 `nixos` |
+| 代码量 | `hosts/leonard` 从 327 行降到 30 行；`system/` 目录删除 |
+
+三个实现坑（都已写进代码注释）：
+
+1. **`imports` 不能依赖 `config`**。原计划 `imports = [ ./gpu/${config.distro.gpu.vendor}.nix ]` 会形成递归，
+   改为四个厂商模块全部导入、各自用 `lib.mkIf` 包住模块体。
+2. **Nix 的十六进制字面量只认小写**：`0x1E00` 会被解析成 `0` + 未定义变量 `x1E00`；
+   `lib.toInt` 又不接受 `"0x..."`。最终自带 `hexToInt`（foldl + 数字表）解决。
+3. **列表选项的合并顺序与 import 顺序相反**（实测）：把 `base.nix` 放在 `desktop/hyprland.nix` **之后**，
+   `environment.systemPackages` 才会是 `nodejs` 在前，从而与重构前的闭包哈希一致。
+   这条很反直觉，任何"闭包哈希对不上"的排查都应先看列表顺序。
+
 ### P2 · 安装器（探测 → 渲染 host → 安装）
 
 ```bash

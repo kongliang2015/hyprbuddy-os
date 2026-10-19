@@ -30,6 +30,23 @@ cp -r "$here/home/swayosd/."   "$HOME/.config/swayosd/"
 cp "$here"/scripts/* "$HOME/.local/bin/"
 chmod +x "$HOME"/.local/bin/*
 echo "user-level config deployed."
+
+# ── 系统层：自 P1 起由 flake 结构接管（hosts/<host> + modules/）────────────
+# 旧的 system/configuration.nix 模板已移除；自动探测 + 渲染 host 的安装器在 P2 提供。
+if [ ! -f "$here/system/configuration.nix" ]; then
+  echo "==> 部署壁纸并修正用户路径"
+  mkdir -p "$HOME/Pictures/wallpapers"
+  cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
+  for f in "$HOME"/.config/hypr/* "$HOME"/.local/bin/*; do
+    [ -f "$f" ] && sed -i "s|/home/nixos|$HOME|g" "$f" || true
+  done
+  echo
+  echo "系统层已迁移到 flake 结构，请手动执行："
+  echo "  sudo nixos-rebuild switch --flake $here#<host>    # 例如 #leonard"
+  echo "可用的 host 见 hosts/ 目录；P2 会提供自动探测并生成 host 文件的安装器。"
+  exit 0
+fi
+
 detect_bootloader() {
   local cfg=/etc/nixos/configuration.nix
   if [ -f "$cfg" ] && grep -q 'boot.loader.grub.enable = true' "$cfg"; then

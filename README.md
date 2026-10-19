@@ -1,12 +1,13 @@
 # NixOS Hyprland 桌面配置（Kanagawa · omarchy 风格）
 
-在 **NixOS 25.11 + NVIDIA** 上用 Hyprland 搭一套类似 omarchy 的平铺桌面：
+在 **NixOS 26.05 + NVIDIA** 上用 Hyprland 搭一套类似 omarchy 的平铺桌面：
 SDDM 登录 → Hyprland → Waybar 状态栏 / fuzzel 启动器 / mako 通知 / hyprlock 锁屏 / hyprpaper 壁纸 / SwayOSD 屏显，统一 Kanagawa 配色。
 
 ## 环境
 
-- NixOS 25.11（channel 方式，非 flake）
-- NVIDIA GTX 1050 Ti，闭源驱动（`nvidia-drm.modeset=1`）
+- NixOS 26.05（flake 方式，nixpkgs 走清华 nixexprs 输入）
+- NVIDIA GTX 1050 Ti，闭源驱动 `legacy_580`（580.178.04）+ `nvidia-drm.modeset=1`
+- 结构：`hosts/<host>` 只写 `distro.*` 选项，`modules/` 承载全部实现
 - 登录管理器：**SDDM**，默认会话 Hyprland
 - 中文输入：fcitx5 + 拼音
 
@@ -15,12 +16,18 @@ SDDM 登录 → Hyprland → Waybar 状态栏 / fuzzel 启动器 / mako 通知 /
 ```
 hyprland-nixos/
 ├── README.md
-├── install.sh                  # 部署用户级配置
-├── system/
-│   ├── configuration.nix       # 系统层配置（需 sudo 应用）
-│   ├── home.nix                # Home Manager 配置片段（由 NixOS module 导入）
-│   └── profiles/
-│       └── leonard-nvidia.nix  # 机型 profile：真实 NVIDIA 显卡 + 保留 XFCE/WM
+├── flake.nix                   # nixosConfigurations.<host> + checks
+├── flake.lock
+├── install.sh                  # 部署用户级配置（系统层改用 nixos-rebuild --flake）
+├── modules/
+│   ├── default.nix             # 模块汇总入口
+│   ├── options.nix             # distro.* 选项 schema（唯一对外接口）
+│   ├── base.nix / boot.nix / users.nix / assertions.nix
+│   ├── desktop/{hyprland,sessions}.nix
+│   └── hardware/gpu/{all,nvidia,amd,intel,virtio}.nix
+├── hosts/
+│   ├── leonard/                # GTX 1050 Ti / 台式机 / 保留 XFCE+WM
+│   └── vm-virtio/              # QEMU 虚拟机示例
 ├── home/
 │   ├── hypr/                   # hyprland.conf / hypridle.conf / hyprlock.conf / hyprpaper.conf
 │   ├── waybar/                 # config + style.css
@@ -72,65 +79,59 @@ hyprland-nixos/
 
 ## 应用配置
 
-### 机型 profile
+### host 与 distro 选项
 
-`system/configuration.nix` 顶部的 `hardwareProfile` 决定加载哪个机型 profile：
+每台机器是一个 `hosts/<host>/default.nix`，**只写 `distro.*`，不直接写 NixOS 选项**：
 
-| 值 | 适用 | 显卡栈 | 会话 |
-|---|---|---|---|
-| `"virtio"`（默认） | QEMU / virtio GPU 虚拟机 | `modesetting` + Mesa | Hyprland only |
-| `"leonard-nvidia"` | 真实 NVIDIA 显卡（GTX 1050 Ti / Pascal） | 闭源驱动 `legacy_580`（580.178.04） | Hyprland + XFCE + Window Maker |
+```nix
+{ ... }:
+{
+  imports = [ ./hardware-configuration.nix ];
 
-设置方式：
+  networking.hostName = "nixos";
+  system.stateVersion = "25.11";
 
-```bash
-./install.sh --profile leonard-nvidia   # 由脚本写入 configuration.nix
-# 或手动改 system/configuration.nix 里的 hardwareProfile
+  distro = {
+    user.name = "leonard";
+    boot.windowsEntry = true;
+    gpu = {
+      vendor = "nvidia";
+      nvidia = { pciIds = [ "10de:1c82" ]; open = false; };  # auto → legacy_580
+    };
+    desktop.extraSessions = [ "xfce" "windowmaker" ];
+    hardware.battery = false;
+  };
+}
 ```
 
-> NVIDIA 必须留在 580 LTSB 分支：26.05 的 `nvidiaPackages.stable` 已指向 595.x，
+| 选项 | 取值 | 作用 |
+|---|---|---|
+| `distro.gpu.vendor` | nvidia / amd / intel / virtio / none | 选择 GPU 模块 |
+| `distro.gpu.nvidia.branch` | auto / legacy_580 / production / beta | auto 按 pciIds 的 Turing 分界（device id ≥ 0x1E00）判断 |
+| `distro.gpu.nvidia.open` | bool | Pascal 及更早必须 false |
+| `distro.desktop.extraSessions` | xfce / windowmaker 列表 | 额外保留的 X11 会话 |
+| `distro.hardware.{battery,backlight}` | bool | 笔记本能力（P4 起影响 Waybar 与键位） |
+| `distro.agent.*` | enable / agents / diagnostics / usage / localModels | agent 层（P3 落地） |
+
+> NVIDIA 必须留在 580 LTSB：26.05 的 `nvidiaPackages.stable` 已指向 595.x，
 > 该分支不再支持 Maxwell / Pascal / Volta，误用会导致开机黑屏、无图形会话。
 
-### Home Manager 接入方式
-
-`system/configuration.nix` 顶部的 `homeManagerMode` 决定 Home Manager 怎么接入：
-
-| 值 | 行为 | 配置文件位置 | 生效命令 |
-|---|---|---|---|
-| `"module"`（默认） | 作为 NixOS module 集成，用户环境随系统一起构建 | `/etc/nixos/home.nix` | `nixos-rebuild switch` |
-| `"standalone"` | 独立 channel，用户环境单独构建 | `~/.config/home-manager/home.nix` | `nixos-rebuild switch` + `home-manager switch` |
+### 部署
 
 ```bash
-./install.sh --hm standalone --profile leonard-nvidia
-./install.sh --hm module      # 默认，等价于不传
-```
-
-`system/home.nix` 里的 `home.username` / `home.homeDirectory` 用占位符书写，由 install.sh 按实际用户替换；`home.stateVersion` 会一并 align 到系统的 `system.stateVersion`。
-
-> 两种模式互斥：`standalone` 模式不会导入 `<home-manager/nixos>`，因此系统重建不需要 `home-manager` 在 NIX_PATH 里。
-
-### 方式一：一键脚本
-
-```bash
-cd ~/hyprland-nixos
+# 用户级（Hyprland / Waybar / 脚本 / 壁纸）
 ./install.sh
-# 系统层
-sudo nixos-rebuild switch
+
+# 系统级（flake）
+sudo nixos-rebuild switch --flake .#leonard
 ```
 
 然后**注销重登**（或重启），让 `exec-once` 的守护进程启动。
 
-### 方式二：手动
+新增机器：复制 `hosts/vm-virtio` 为新目录，改 `distro.*`，再跑 `nix flake check` 确认求值。
 
-```bash
-# 用户级
-cp -r home/hypr home/waybar home/fuzzel home/kitty home/mako home/swayosd ~/.config/
-cp scripts/* ~/.local/bin/ && chmod +x ~/.local/bin/*
-
-# 系统级
-sudo cp system/configuration.nix /etc/nixos/configuration.nix
-sudo nixos-rebuild switch
-```
+> 用户级包（git/vim/curl…）仍由外部 Home Manager 管理（`~/.config/home-manager`）。
+> 本仓库暂未纳入 HM：本机访问 github.com 被阻断，HM 作为 flake 输入需要单独的镜像方案。
 
 ### 同步线上改动回项目
 
