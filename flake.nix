@@ -31,10 +31,21 @@
     {
       nixosConfigurations = nixpkgs.lib.genAttrs hosts mkHost;
 
-      # nixosConfigurations 不会被 `nix flake check` 自动检查，显式放进 checks
-      # 安装镜像：nixos 最小 ISO + 仓库源码
-      packages.x86_64-linux.iso =
-        (nixpkgs.lib.nixosSystem {
+      # 用户级配置树（~/.config + ~/.local/bin），由 install.sh 软链到用户目录。
+      # 放在 packages 下而不是自定义 output（flake 只认已知 output 名）。
+      packages.x86_64-linux = nixpkgs.lib.genAttrs hosts (name:
+        let
+          c = self.nixosConfigurations.${name}.config;
+        in
+        import ./home/default.nix {
+          inherit (nixpkgs) lib;
+          inherit (c) distro;
+          pkgs = self.nixosConfigurations.${name}.pkgs;
+          home = c.users.users.${c.distro.user.name}.home;
+          hostName = name;
+        })
+      // {
+        iso = (nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
             "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
@@ -42,7 +53,9 @@
             { system.nixos.versionSuffix = versionSuffix; }
           ];
         }).config.system.build.isoImage;
+      };
 
+      # nixosConfigurations 不会被 `nix flake check` 自动检查，显式放进 checks
       checks.x86_64-linux = builtins.listToAttrs (map (name: {
         name = "${name}-toplevel";
         value = self.nixosConfigurations.${name}.config.system.build.toplevel;

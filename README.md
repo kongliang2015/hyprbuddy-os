@@ -35,6 +35,10 @@ hyprland-nixos/
 │   ├── kitty/                  # kitty.conf
 │   ├── mako/                   # config（通知）
 │   └── swayosd/                # style.css（音量/亮度 OSD）
+├── lib/                        # 共享实现：waybar.nix / agent-usage.nix
+├── home/
+│   └── default.nix             # 用户配置树生成器（无 Home Manager 依赖）
+├── installer/                  # detect.sh / render-host.sh / install.sh / ISO
 ├── scripts/                    # hypr-menu / night-mode / record-toggle / ...
 ├── wallpapers/                 # 5 张配色壁纸
 └── docs/
@@ -119,14 +123,19 @@ hyprland-nixos/
 ### 部署
 
 ```bash
-# 用户级（Hyprland / Waybar / 脚本 / 壁纸）
-./install.sh
+# 用户级：构建 homeConfigs 并软链到 ~/.config / ~/.local/bin
+./install.sh --host leonard
 
-# 系统级（flake）
+# 系统级
 sudo nixos-rebuild switch --flake .#leonard
 ```
 
 然后**注销重登**（或重启），让 `exec-once` 的守护进程启动。
+
+用户级配置现在由 `home/default.nix` 生成（`nix build .#leonard` 即可看到产物）：
+`~/.config` 里是对 store 的符号链接，不存在"线上改完再同步回来"的流程。
+主机差异在构建期决定——例如 `distro.hardware.battery = false` 时 Waybar 不会生成 battery 模块，
+`distro.hardware.backlight = false` 时不会生成亮度键，agent 关闭时不会生成 `agent-menu` 键位。
 
 新增机器：复制 `hosts/vm-virtio` 为新目录，改 `distro.*`，再跑 `nix flake check` 确认求值。
 
@@ -161,16 +170,15 @@ distro.agent = {
 > 能访问该域名时把 `agents` 改成 `[ "claude-code" ]` 即可。
 > `localModels` 首次启用后需 `ollama pull qwen2.5-coder:1.5b`（模型不进 Nix store）。
 
-### 同步线上改动回项目
+### 修改配置
 
-改完线上配置后，运行：
+`~/.config` 与 `~/.local/bin` 现在指向 Nix store，**仓库是唯一来源**：
 
-```bash
-./sync.sh                  # 自动提交，提交信息带时间戳
-./sync.sh "调整通知样式"    # 自定义提交信息
-```
+- 改外观/键位 → 改 `home/` 下的资源或 `home/default.nix`，再跑 `./install.sh --host <host>`
+- 改系统能力 → 改 `modules/`，再跑 `sudo nixos-rebuild switch --flake .#<host>`
+- 改机器参数 → 改 `hosts/<host>/default.nix`（只写 `distro.*`）
 
-`sync.sh` 会把 `~/.config`、`~/.local/bin`、`~/configuration.nix.new` 和壁纸同步回项目目录，然后 `git add -A` 并在有改动时提交。
+原先的 `sync.sh`（线上 → 仓库）已移除：链接化的 `~/.config` 没有可回写的实体文件。
 
 ## 安装到新机器
 

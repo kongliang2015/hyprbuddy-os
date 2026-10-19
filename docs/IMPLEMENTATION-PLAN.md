@@ -462,6 +462,47 @@ backlight=true
 
 **注意**：HM 化后 `~/.config` 变成指向 nix store 的符号链接，现有 `sync.sh`（线上 → 仓库）会失效，需改为"仓库即唯一源"，删除 sync.sh 或仅保留 `scripts/` 的同步。
 
+#### P4 验收记录（2026-10-20，分支 `distro/v0`）
+
+**方案调整**：原计划用 Home Manager 模块，但 HM 作为 flake 输入需要 github（本机不可达），
+因此改为 **Nix 直接生成配置树**——目标相同（声明式、按 host 生成、`~/.config` 只读指向 store），
+依赖更少。将来若接入 HM，`home/default.nix` 的产物可作为 `home.file` 的来源平滑迁移。
+
+| 组件 | 文件 | 说明 |
+|---|---|---|
+| 单一来源 | `lib/waybar.nix` | 系统级 `/etc/xdg/waybar` 与用户级 `~/.config/waybar` 共用一份配置生成器 |
+| 单一来源 | `lib/agent-usage.nix` | Waybar 的 agent 用量脚本 |
+| 生成器 | `home/default.nix` | 读 `home/`、`scripts/` 资产，替换 `@HOME@`，按 `distro.*` 追加条件片段，输出 store 树（含 `bin/`） |
+| 部署 | `install.sh` | `nix build .#<host>` → 逐文件软链到 `~/.config` / `~/.local/bin`，真实文件先备份 |
+
+条件化行为（构建期决定）：
+
+| 选项 | 影响 |
+|---|---|
+| `distro.hardware.battery` | 决定 Waybar 是否生成 `battery` 模块 |
+| `distro.hardware.backlight` | 决定 `extra.conf` 是否生成 `XF86MonBrightness*` 键位 |
+| `distro.agent.enable` | 决定是否生成 `Super+Shift+Ctrl+A` 与 Waybar `custom/agent-usage` |
+
+验证：
+
+| 检查 | 结果 |
+|---|---|
+| `nix build .#leonard` | ✅ 生成 5 类配置 + 10 个脚本 |
+| `@HOME@` 残留 | ✅ 无（全部替换为 `/home/leonard`） |
+| `extra.conf` | ✅ 仅 agent 键位（本机 backlight=false，无亮度键） |
+| Waybar 模块 | ✅ `… memory, custom/agent-usage, clock`（无 battery） |
+| `install.sh` 演练（fake HOME） | ✅ 链接正确，旧文件备份到 `~/.config.bak-<时间戳>` |
+| `nix flake check` | ✅ 通过 |
+
+实现要点与变更：
+
+1. **移除 `sync.sh`**：`~/.config` 已是 store 链接，没有可回写的实体文件；仓库成为唯一来源。
+2. **P3 的三个 Waybar 注入选项被取代**：`distro.desktop.waybar{RightExtra,Config,CssExtra}`
+   换成 `distro.desktop.waybarAgentCmd` + `lib/waybar.nix`，避免两份配置各自演化。
+3. **`@HOME@` 占位符**：资产文件不再写死 `/home/nixos`，构建期替换；脚本、hyprpaper、hyprlock 同理。
+4. **`with pkgs` 的遮蔽陷阱**：`hyprland.nix` 里把 Waybar 配置变量命名为 `waybar` 会遮蔽
+   `pkgs.waybar`，导致 `environment.systemPackages` 收到一个 attrset 而报错——已改名 `waybarCfg`。
+
 ## 5. 兼容与迁移策略
 
 - `26.05-dev` 保持现状不动；新结构在 `distro/v0` 分支演进，P0–P1 完成后再决定是否合并。

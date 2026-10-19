@@ -3,57 +3,13 @@
 let
   cfg = config.distro;
 
-  # 基础 Waybar 配置。模块列表可由 distro.hardware.* 与 distro.desktop.waybar* 扩展，
-  # 这样 agent 层等模块无需修改本文件即可注入自定义模块。
-  baseWaybar = {
-    layer = "top";
-    position = "top";
-    height = 28;
-    spacing = 4;
-    margin-top = 6;
-    margin-left = 10;
-    margin-right = 10;
-    radius = 12;
-    modules-left = [ "hyprland/workspaces" "hyprland/window" ];
-    modules-center = [ "hyprland/window" ];
-    modules-right =
-      [ "tray" "pulseaudio" "network" "cpu" "memory" "battery" ]
-      ++ cfg.desktop.waybarRightExtra
-      ++ [ "clock" ];
-    "hyprland/workspaces" = { disable-scroll = true; show-special = true; };
-    pulseaudio = { format = "{volume}%"; format-muted = "MUTE"; };
-    network = { format-wifi = "WIFI {essid}"; format-ethernet = "ETH"; };
-    cpu = { format = "CPU {usage}%"; };
-    memory = { format = "RAM {}%"; };
-    battery = { format = "BAT {capacity}%"; format-charging = "CHG {capacity}%"; };
-    clock = { format = "{:%H:%M %a %d}"; };
+  # Waybar 配置由 lib/waybar.nix 统一生成，用户级配置（home/default.nix）复用同一份。
+  # 注意变量名不能叫 waybar：会遮蔽下面 with pkgs 里的 pkgs.waybar。
+  waybarCfg = import ../../lib/waybar.nix {
+    inherit lib;
+    battery = cfg.hardware.battery;
+    agentUsageCmd = cfg.desktop.waybarAgentCmd;
   };
-
-  baseCss = ''
-    * {
-      font-family: "Noto Sans CJK SC", sans-serif;
-      font-size: 13px;
-      color: #c0caf5;
-      border: none;
-      border-radius: 0;
-    }
-    window#waybar { background: transparent; }
-    window#waybar > box {
-      background: #16161e;
-      border-radius: 12px;
-      padding: 2px 8px;
-      margin: 0 4px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    }
-    #workspaces button { padding: 0 6px; color: #565f89; border-radius: 8px; }
-    #workspaces button.active { color: #7aa2f7; background: #1f2335; }
-    #workspaces button.urgent { color: #f7768e; }
-    #clock { color: #7dcfff; }
-    #cpu { color: #9ece6a; }
-    #memory { color: #e0af68; }
-    #battery { color: #bb9af7; }
-    #pulseaudio { color: #2ac3de; }
-  '';
 in
 lib.mkIf cfg.desktop.enable {
   # 中文输入法：fcitx5 + 拼音
@@ -135,9 +91,8 @@ lib.mkIf cfg.desktop.enable {
   # 系统级 Waybar 配置（Tokyo Night / Kanagawa 风格），放在 /etc/xdg/waybar。
   # 用户可在 ~/.config/waybar 覆盖。
   environment.etc = {
-    "xdg/waybar/config".text =
-      builtins.toJSON (baseWaybar // cfg.desktop.waybarConfig);
-    "xdg/waybar/style.css".text = baseCss + cfg.desktop.waybarCssExtra;
+    "xdg/waybar/config".text = builtins.toJSON waybarCfg.config;
+    "xdg/waybar/style.css".text = waybarCfg.css;
   };
 
   # 在纯窗口管理器会话中自动启动 fcitx5。

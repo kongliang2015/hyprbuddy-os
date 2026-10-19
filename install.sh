@@ -1,153 +1,79 @@
 #!/usr/bin/env bash
+# 部署用户级配置：由 flake 的 homeConfigs.<host> 生成配置树，再软链进 ~/.config 与 ~/.local/bin。
+#
+# 不再拷贝 + sed：配置文件是 Nix store 里的产物，主机差异（电池/背光/agent）在构建期决定。
 set -euo pipefail
-here="$(cd "$(dirname "$0")" && pwd)"
 
-# 机型 profile：virtio（默认）/ leonard-nvidia（真实 NVIDIA 显卡）
-PROFILE=""
-# Home Manager 接入方式：module（默认，随系统构建）/ standalone（channel + home-manager switch）
-HM_MODE=""
+here="$(cd "$(dirname "$0")" && pwd)"
+HOST="${HOST:-$(hostname)}"
+ASSUME_YES=0
+
+usage() {
+  cat <<'EOF'
+用法: ./install.sh [--host <name>] [--yes]
+
+  --host <名字>   hosts/<名字> 对应的配置（默认取 hostname）
+  --yes           覆盖已存在的真实文件时不再询问
+
+说明:
+  配置由 nix build .#homeConfigs.<host> 生成，链接到 ~/.config / ~/.local/bin。
+  被替换的真实文件会备份到 ~/.config.bak-<时间戳>/。
+EOF
+}
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --profile) PROFILE="${2:-}"; shift 2 ;;
-    --hm)      HM_MODE="${2:-}"; shift 2 ;;
-    -h|--help) echo "用法: ./install.sh [--profile virtio|leonard-nvidia] [--hm module|standalone]"; exit 0 ;;
+    --host) HOST="${2:?}"; shift 2 ;;
+    --yes) ASSUME_YES=1; shift ;;
+    -h|--help) usage; exit 0 ;;
     *) echo "未知参数: $1" >&2; exit 1 ;;
   esac
 done
-case "$HM_MODE" in ""|module|standalone) ;; *) echo "--hm 只接受 module 或 standalone" >&2; exit 1 ;; esac
 
-TARGET_USER="${SUDO_USER:-$(id -un)}"
-
-
-echo "==> deploying user-level config to ~/.config and ~/.local/bin"
-mkdir -p "$HOME/.config"/{hypr,waybar,fuzzel,kitty,mako,swayosd} "$HOME/.local/bin"
-cp -r "$here/home/hypr/."      "$HOME/.config/hypr/"
-cp -r "$here/home/waybar/."    "$HOME/.config/waybar/"
-cp -r "$here/home/fuzzel/."    "$HOME/.config/fuzzel/"
-cp -r "$here/home/kitty/."     "$HOME/.config/kitty/"
-cp -r "$here/home/mako/."      "$HOME/.config/mako/"
-cp -r "$here/home/swayosd/."   "$HOME/.config/swayosd/"
-cp "$here"/scripts/* "$HOME/.local/bin/"
-chmod +x "$HOME"/.local/bin/*
-echo "user-level config deployed."
-
-# ── 系统层：自 P1 起由 flake 结构接管（hosts/<host> + modules/）────────────
-# 旧的 system/configuration.nix 模板已移除；自动探测 + 渲染 host 的安装器在 P2 提供。
-if [ ! -f "$here/system/configuration.nix" ]; then
-  echo "==> 部署壁纸并修正用户路径"
-  mkdir -p "$HOME/Pictures/wallpapers"
-  cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
-  for f in "$HOME"/.config/hypr/* "$HOME"/.local/bin/*; do
-    [ -f "$f" ] && sed -i "s|/home/nixos|$HOME|g" "$f" || true
-  done
-  echo
-  echo "系统层已迁移到 flake 结构，请手动执行："
-  echo "  sudo nixos-rebuild switch --flake $here#<host>    # 例如 #leonard"
-  echo "可用的 host 见 hosts/ 目录；P2 会提供自动探测并生成 host 文件的安装器。"
-  exit 0
-fi
-
-detect_bootloader() {
-  local cfg=/etc/nixos/configuration.nix
-  if [ -f "$cfg" ] && grep -q 'boot.loader.grub.enable = true' "$cfg"; then
-    echo grub
-  elif [ -d /sys/firmware/efi ]; then
-    echo systemd-boot
-  else
-    echo grub
-  fi
+[ -f "$here/hosts/$HOST/default.nix" ] || {
+  echo "找不到 hosts/$HOST/default.nix；现有 host：" >&2
+  ls "$here/hosts" | grep -v '^_' >&2
+  exit 1
 }
-BOOT="$(detect_bootloader)"
-echo "==> detected target bootloader: $BOOT"
-SYS_SRC="$here/system/configuration.nix"
-SYS_DST="/etc/nixos/configuration.nix"
-SYS_TMP="$(mktemp /tmp/hyprland-config.XXXXXX.nix)"
-CUR_STATE="$(grep -oE 'system.stateVersion = "[0-9.]+"' /etc/nixos/configuration.nix 2>/dev/null | grep -oE '[0-9]+[.][0-9]+' | head -1)"
-[ -z "$CUR_STATE" ] && CUR_STATE="25.11"
-if [ "$BOOT" = "grub" ]; then
-  cp "$SYS_SRC" "$SYS_TMP"
-  sed -i 's|^  boot.loader.systemd-boot.enable = true;|  boot.loader.grub.enable = true;|' "$SYS_TMP"
-  sed -i '/^  boot.loader.efi.canTouchEfiVariables = true;/d' "$SYS_TMP"
-  sed -i '/^  boot.loader.grub.enable = true;/a   boot.loader.grub.device = "/dev/sda";' "$SYS_TMP"
-  sed -i '/^  boot.loader.grub.device /a   boot.loader.grub.useOSProber = true;' "$SYS_TMP"
-  sed -i "/^  # Windows entry/,/^  '';/d" "$SYS_TMP"
-else
-  cp "$SYS_SRC" "$SYS_TMP"
-fi
-if [ -n "$PROFILE" ]; then
-  sed -i "s|^  hardwareProfile = \"virtio\";|  hardwareProfile = \"$PROFILE\";|" "$SYS_TMP"
-  echo "==> hardware profile: $PROFILE"
-fi
-if [ -n "$HM_MODE" ]; then
-  sed -i "s|^  homeManagerMode = \"module\";|  homeManagerMode = \"$HM_MODE\";|" "$SYS_TMP"
-  echo "==> home-manager mode: $HM_MODE"
-fi
-sed -i -E 's/^  system.stateVersion = "[0-9.]+";/  system.stateVersion = "PLACEHOLDER";/' "$SYS_TMP"
-sed -i "s/PLACEHOLDER/$CUR_STATE/" "$SYS_TMP"
-sed -i '/^  users.users.nixos = {$/,/^  };/d' "$SYS_TMP"
-echo "==> generated system config (bootloader=$BOOT, stateVersion=$CUR_STATE, removed weak nixos user)"
-if [ -f "$SYS_DST" ]; then
-  sudo cp "$SYS_DST" "$SYS_DST.$(date +%Y%m%d%H%M%S).bak"
-  echo "backed up original config -> $SYS_DST.<timestamp>.bak"
-fi
-sudo cp "$SYS_TMP" "$SYS_DST"
-sudo rm -f "$SYS_TMP"
-sudo mkdir -p /etc/nixos/profiles
-sudo cp -f "$here"/system/profiles/*.nix /etc/nixos/profiles/
-echo "system config written to $SYS_DST"
-echo
-echo "review $SYS_DST then run:"
-echo "  sudo nixos-rebuild switch"
-echo "then log out/in (or reboot) and pick Hyprland at the login manager."
 
+echo "==> 生成用户级配置（host: $HOST）"
+out="$(nix --extra-experimental-features 'nix-command flakes' \
+  build --no-link --print-out-paths "path:$here#$HOST")"
 
-echo "==> installing wallpapers and rewriting hardcoded /home/nixos paths"
-mkdir -p "$HOME/Pictures/wallpapers"
-cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" || true
-# 将配置/脚本里写死的 /home/nixos 替换为当前用户 HOME，使任意用户名可用
-for f in "$HOME"/.config/hypr/* "$HOME"/.local/bin/*; do
-  if [ -f "$f" ]; then sed -i "s|/home/nixos|$HOME|g" "$f" || true; fi
-done
-
-
-# 部署 Home Manager 用户配置（home.nix），并确保 home-manager channel 存在
-HM_MODE="${HM_MODE:-module}"
-if [ "$HM_MODE" = "module" ]; then
-  sudo cp "$here/system/home.nix" /etc/nixos/home.nix
-  HM_NIX=/etc/nixos/home.nix
-else
-  HM_NIX="$HOME/.config/home-manager/home.nix"
-  mkdir -p "${HM_NIX%/*}"
-  cp "$here/system/home.nix" "$HM_NIX"
-fi
-if ! sudo nix-channel --list 2>/dev/null | grep -q "^home-manager "; then
-  echo "==> adding home-manager channel"
-  sudo nix-channel --add https://github.com/nix-community/home-manager/archive/release-26.05.tar.gz home-manager || true
-  sudo nix-channel --update home-manager || true
+if [ "$ASSUME_YES" -ne 1 ]; then
+  printf '\n将把 %s 下的文件链接到 ~/.config 与 ~/.local/bin（已存在的真实文件会先备份）。继续？[y/N] ' "$out"
+  read -r ans
+  [ "$ans" = y ] || [ "$ans" = Y ] || { echo "已取消"; exit 0; }
 fi
 
+stamp="$(date +%Y%m%d-%H%M%S)"
+backup="$HOME/.config.bak-$stamp"
 
-# 将系统配置中的用户名占位符替换为实际用户（适配安装时创建的任意用户名）
-if [ -f /etc/nixos/configuration.nix ]; then
-  sudo sed -i "s|__TARGET_USER__|$TARGET_USER|g" /etc/nixos/configuration.nix
-fi
-# profile 里也可能出现占位符（如 home-manager-module.nix）
-for f in /etc/nixos/profiles/*.nix; do
-  [ -e "$f" ] && sudo sed -i "s|__TARGET_USER__|$TARGET_USER|g" "$f"
-done
-
-# home.nix：替换用户名占位符，并把 home.stateVersion 对齐到系统 stateVersion
-if [ -f "$HM_NIX" ]; then
-  if [ "$HM_MODE" = "module" ]; then
-    sudo sed -i "s|__TARGET_USER__|$TARGET_USER|g" "$HM_NIX"
-    sudo sed -i -E "s/^  home.stateVersion = \"[0-9.]+\";/  home.stateVersion = \"$CUR_STATE\";/" "$HM_NIX"
-  else
-    sed -i "s|__TARGET_USER__|$TARGET_USER|g" "$HM_NIX"
-    sed -i -E "s/^  home.stateVersion = \"[0-9.]+\";/  home.stateVersion = \"$CUR_STATE\";/" "$HM_NIX"
+echo "==> 链接配置"
+while IFS= read -r rel; do
+  case "$rel" in
+    bin/*) dst="$HOME/.local/bin/${rel#bin/}" ;;
+    *)     dst="$HOME/.config/$rel" ;;
+  esac
+  mkdir -p "$(dirname "$dst")"
+  if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+    mkdir -p "$backup/$(dirname "${dst#$HOME/}")"
+    mv "$dst" "$backup/${dst#$HOME/}"
+    echo "  备份 ${dst#$HOME/}"
   fi
-fi
+  ln -sfn "$out/$rel" "$dst"
+  echo "  ${dst#$HOME/} -> $out/$rel"
+done < <(cd "$out" && find . \( -type f -o -type l \) | sed 's|^\./||' | sort)
 
-if [ "$HM_MODE" = "standalone" ]; then
-  echo
-  echo "==> Home Manager 为 standalone 模式，系统重建后再执行：home-manager switch"
-fi
+echo "==> 壁纸"
+mkdir -p "$HOME/Pictures/wallpapers"
+cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
+
+echo
+echo "完成。注销重登（或重启）让 Hyprland 读取新配置。"
+[ -d "$backup" ] && echo "旧文件备份在: $backup"
+echo
+echo "改了配置后的流程："
+echo "  1. 编辑仓库下的 home/ 或 hosts/$HOST"
+echo "  2. ./install.sh --host $HOST      # 重新生成并链接"
+echo "  3. 系统级改动: sudo nixos-rebuild switch --flake .#$HOST"

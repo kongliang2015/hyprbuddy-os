@@ -79,21 +79,12 @@ in
       };
       theme = mkOption { type = types.str; default = "elarun"; };
 
-      # Waybar 扩展点：agent 层等模块通过这三项注入自定义模块，无需改本文件。
-      waybarRightExtra = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = "追加到 waybar modules-right 的模块名（按顺序插在 clock 之前）";
-      };
-      waybarConfig = mkOption {
-        type = types.attrs;
-        default = { };
-        description = "与基础配置合并的 waybar 模块定义";
-      };
-      waybarCssExtra = mkOption {
-        type = types.str;
-        default = "";
-        description = "追加到系统级 waybar style.css 末尾的 CSS";
+      # Waybar 的 agent 用量命令：由 modules/agent/usage.nix 注入，
+      # 为空表示不显示该模块。配置本身由 lib/waybar.nix 统一生成。
+      waybarAgentCmd = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "custom/agent-usage 的 exec 路径；null 表示不启用该模块";
       };
     };
 
