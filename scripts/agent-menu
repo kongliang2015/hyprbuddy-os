@@ -3,9 +3,11 @@
 # 只列出 PATH 里真实存在的 agent，避免选中后 command not found。
 set -euo pipefail
 
+# 用 if 而不是 a && b：在 set -e 下，最后一个未安装项会让整个命令替换返回非零，
+# 脚本会在调用 fuzzel 之前就退出（这正是"按了没反应"的原因）。
 available=$(
   for a in claude opencode codex aider; do
-    command -v "$a" >/dev/null 2>&1 && echo "$a"
+    if command -v "$a" >/dev/null 2>&1; then echo "$a"; fi
   done
 )
 
