@@ -74,3 +74,10 @@ if ! sudo nix-channel --list 2>/dev/null | grep -q "^home-manager "; then
   sudo nix-channel --add https://github.com/nix-community/home-manager/archive/release-26.05.tar.gz home-manager || true
   sudo nix-channel --update home-manager || true
 fi
+
+
+# 将系统配置中的用户名占位符替换为实际用户（适配安装时创建的任意用户名）
+TARGET_USER="${SUDO_USER:-$(id -un)}"
+if [ -f /etc/nixos/configuration.nix ]; then
+  sudo sed -i "s|__TARGET_USER__|$TARGET_USER|g" /etc/nixos/configuration.nix
+fi

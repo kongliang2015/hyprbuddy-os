@@ -14,7 +14,7 @@
   # Bootloader.
   home-manager.useGlobalPkgs = true;
   home-manager.useUserPackages = true;
-  home-manager.users.leonard = import ./home.nix;
+  home-manager.users.__TARGET_USER__ = import ./home.nix;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   # Windows entry (separate disk nvme1n1), chainloaded via the copy of its
@@ -147,9 +147,9 @@
   # services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.leonard = {
+  users.users.__TARGET_USER__ = {
     isNormalUser = true;
-    description = "leonard";
+    description = "__TARGET_USER__";
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
     #  thunderbird
