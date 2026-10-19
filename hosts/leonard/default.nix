@@ -18,6 +18,15 @@
       };
     };
     desktop.extraSessions = [ "xfce" "windowmaker" ];
+    agent = {
+      enable = true;
+      # claude-code 的二进制从 downloads.claude.ai 拉取，本机网络不可达（构建期失败）；
+      # 能访问该域名时改成 [ "claude-code" ] 即可，枚举已支持。
+      agents = [ "opencode" ];
+      usage = true;
+      diagnostics = false;   # 需先开 localModels 并 ollama pull
+      localModels = false;
+    };
     hardware.battery = false;
     hardware.backlight = false;
   };

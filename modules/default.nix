@@ -10,5 +10,6 @@
     ./users.nix
     ./desktop/sessions.nix
     ./hardware/gpu/all.nix
+    ./agent/default.nix
   ];
 }

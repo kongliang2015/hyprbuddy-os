@@ -385,6 +385,39 @@ backlight=true
 
 **验收**：`distro.agent.enable = false` 时闭包中不含任何 agent 包与服务；开启后 `systemctl list-unit-files | grep coredump-analyze` 可见。
 
+#### P3 验收记录（2026-10-19，分支 `distro/v0`）
+
+六层落点：
+
+| 层 | 文件 | 实现 |
+|---|---|---|
+| 1 入口 | `modules/agent/core.nix` | 按 `distro.agent.agents` 装包；`Super+Shift+Ctrl+A` → `scripts/agent-menu`（fuzzel 选择） |
+| 2 主题 | `scripts/agent-theme-sync` | jq merge `~/.claude/settings.json` 的 `theme` 字段，不覆盖其它设置 |
+| 3 诊断 | `modules/agent/diagnostics.nix` | `systemd.paths.coredump-watch` + `coredump-analyze`（oneshot，User=主用户，SupplementaryGroups=systemd-coredump）→ 本地 ollama → mako/日志 |
+| 4 观测 | `modules/agent/usage.nix` | 汇总 `~/.claude/projects/**/*.jsonl` 当日 token，注入 Waybar `custom/agent-usage` |
+| 5 变更 | `scripts/agent-apply` | `git diff` → 求值 → `nixos-rebuild build --flake` → 打印 sudo 命令 |
+| 6 本地模型 | `modules/agent/local-llm.nix` | `services.ollama`，按 `distro.gpu.vendor` 选 `ollama-cuda/rocm/vulkan/cpu` |
+
+验证：
+
+| 检查 | 结果 |
+|---|---|
+| `agent.enable = false` | ✅ 无 agent 包、无 `custom/agent-usage`、无 coredump 单元 |
+| `agent.enable = true` | ✅ 注入 `custom/agent-usage`，模块列表顺序 `… battery, custom/agent-usage, clock` |
+| Waybar 基础配置 | ✅ 与旧文本逐键语义一致（仅序列化方式变化） |
+| `diagnostics + localModels` | ✅ 生成 `coredump-watch`/`coredump-analyze`，ollama 派生路径等于 `pkgs.ollama-cuda` |
+| `nix flake check` | ✅ 两 host 通过 |
+
+三个必须记住的点：
+
+1. **`claude-code` 在本机不可构建**：它的二进制从 `downloads.claude.ai` 拉（fetchurl），本机网络不可达，
+   因此 `hosts/leonard` 暂时用 `opencode`（可替换、可离线）。枚举保留 `claude-code`，换到能访问的网络改一行即可。
+2. **26.05 移除了 `services.ollama.acceleration`**：改用包变体 `ollama-{cuda,rocm,vulkan,cpu}`，
+   且 CUDA 变体需要 `nixpkgs.config.allowUnfree`（base.nix 已开）。
+3. **Waybar 配置改为 `builtins.toJSON` 生成**：为了给 agent/usage 之类的模块提供注入点
+   （`distro.desktop.waybar{RightExtra,Config,CssExtra}`）。基础配置与旧文本逐键一致，
+   但序列化方式变了，闭包哈希因此与 P1 不同——这属于预期变化，不再用哈希做等价判据。
+
 ### P4 · 用户层声明化（把 `cp + sed` 换成 HM 模块）
 
 现状 `install.sh` 把 `home/` 拷进 `~/.config` 再 `sed` 替换路径。改为 Home Manager 生成：

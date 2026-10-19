@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# agent 选择器：Super+Shift+Ctrl+A
+set -euo pipefail
+
+cmd=$(printf '%s\n' claude opencode codex aider \
+  | fuzzel --dmenu --prompt 'agent> ' || true)
+
+[ -z "${cmd:-}" ] && exit 0
+
+case "$cmd" in
+  claude)   exec kitty -e claude ;;
+  opencode) exec kitty -e opencode ;;
+  codex)    exec kitty -e codex ;;
+  aider)    exec kitty -e aider ;;
+esac

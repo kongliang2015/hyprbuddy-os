@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# agent 改动的唯一入口：改 models/hosts 后先验证求值，再构建，最后打印应用命令。
+set -euo pipefail
+
+repo="${HYPRLAND_NIXOS_REPO:-$HOME/hyprland-nixos}"
+host="${1:-$(hostname)}"
+
+cd "$repo"
+
+echo "==> host: $host"
+git --no-pager diff --stat || true
+
+echo "==> 求值"
+nix eval --raw ".#nixosConfigurations.${host}.config.system.build.toplevel.drvPath" > /dev/null
+
+echo "==> 构建"
+nixos-rebuild build --flake ".#${host}"
+
+echo
+echo "构建通过。应用："
+echo "  sudo nixos-rebuild switch --flake $repo#${host}"

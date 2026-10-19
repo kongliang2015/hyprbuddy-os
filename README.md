@@ -133,6 +133,34 @@ sudo nixos-rebuild switch --flake .#leonard
 > 用户级包（git/vim/curl…）仍由外部 Home Manager 管理（`~/.config/home-manager`）。
 > 本仓库暂未纳入 HM：本机访问 github.com 被阻断，HM 作为 flake 输入需要单独的镜像方案。
 
+### Agent 层
+
+`distro.agent.*` 开启后，agent 是系统的一部分而不是外挂应用：
+
+| 能力 | 落点 | 使用 |
+|---|---|---|
+| 入口 | `modules/agent/core.nix` + `scripts/agent-menu` | `Super+Shift+Ctrl+A`（fuzzel 选择 agent） |
+| 主题同步 | `scripts/agent-theme-sync` | 让 agent 界面跟随系统暗色，jq merge 不覆盖其它设置 |
+| 崩溃诊断 | `modules/agent/diagnostics.nix` | 监听 `/var/lib/systemd/coredump`，本地模型分析 → 通知 + `~/.local/state/agent/coredump-report.md` |
+| 用量观测 | `modules/agent/usage.nix` | Waybar `custom/agent-usage`（当日 token） |
+| 变更 | `scripts/agent-apply` | `git diff` → 求值 → 构建 → 打印 sudo 命令 |
+| 本地模型 | `modules/agent/local-llm.nix` | `services.ollama`，按 GPU 选 cuda/rocm/vulkan/cpu |
+
+```nix
+distro.agent = {
+  enable = true;
+  agents = [ "opencode" ];   # 可选 claude-code / opencode / codex / aider-chat
+  usage = true;
+  diagnostics = true;        # 依赖 localModels
+  localModels = true;
+  model = "qwen2.5-coder:1.5b";
+};
+```
+
+> `claude-code` 的二进制来自 `downloads.claude.ai`，本机网络不可达，构建会失败；
+> 能访问该域名时把 `agents` 改成 `[ "claude-code" ]` 即可。
+> `localModels` 首次启用后需 `ollama pull qwen2.5-coder:1.5b`（模型不进 Nix store）。
+
 ### 同步线上改动回项目
 
 改完线上配置后，运行：

@@ -78,6 +78,23 @@ in
         description = "除 Hyprland 外额外保留的 X11 会话";
       };
       theme = mkOption { type = types.str; default = "elarun"; };
+
+      # Waybar 扩展点：agent 层等模块通过这三项注入自定义模块，无需改本文件。
+      waybarRightExtra = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "追加到 waybar modules-right 的模块名（按顺序插在 clock 之前）";
+      };
+      waybarConfig = mkOption {
+        type = types.attrs;
+        default = { };
+        description = "与基础配置合并的 waybar 模块定义";
+      };
+      waybarCssExtra = mkOption {
+        type = types.str;
+        default = "";
+        description = "追加到系统级 waybar style.css 末尾的 CSS";
+      };
     };
 
     hardware = {
@@ -87,7 +104,8 @@ in
     };
 
     agent = {
-      enable = mkOption { type = types.bool; default = true; };
+      # 默认关闭：agent 栈会引入较大的包（claude-code 等），由 host 显式开启。
+      enable = mkOption { type = types.bool; default = false; };
       agents = mkOption {
         type = types.listOf (types.enum [ "claude-code" "opencode" "codex" "aider-chat" ]);
         default = [ "claude-code" ];
@@ -95,6 +113,11 @@ in
       diagnostics = mkOption { type = types.bool; default = true; };
       usage = mkOption { type = types.bool; default = true; };
       localModels = mkOption { type = types.bool; default = false; };
+      model = mkOption {
+        type = types.str;
+        default = "qwen2.5-coder:1.5b";
+        description = "本地模型名；需先 `ollama pull`。诊断与摘要都使用它";
+      };
     };
   };
 }

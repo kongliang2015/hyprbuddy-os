@@ -1,5 +1,9 @@
 # Agent 层落地方案（NixOS 版）
 
+> **落地状态（P3，2026-10-19）**：六层已实现为 `modules/agent/*` 与 `scripts/agent-*`，
+> 与本文件的映射关系记录在 `docs/IMPLEMENTATION-PLAN.md` 的 P3 验收记录中。
+> 本文保留为设计依据；实现细节以代码为准。
+>
 > 目标：在 NixOS + Hyprland 上复刻 Omarchy 的 AI agent 层，并在声明式系统的约束下给出可执行路径。
 > 关联：`docs/ROADMAP.md`、`docs/TROUBLESHOOTING.md`、skill `nixos-desktop-settings`。
 
