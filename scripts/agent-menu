@@ -1,10 +1,22 @@
 #!/usr/bin/env bash
 # agent 选择器：Super+Shift+Ctrl+A
+# 只列出 PATH 里真实存在的 agent，避免选中后 command not found。
 set -euo pipefail
 
-cmd=$(printf '%s\n' claude opencode codex aider \
-  | fuzzel --dmenu --prompt 'agent> ' || true)
+available=$(
+  for a in claude opencode codex aider; do
+    command -v "$a" >/dev/null 2>&1 && echo "$a"
+  done
+)
 
+if [ -z "$available" ]; then
+  msg="没有可用的 agent。先装一个（hosts/<host> 的 distro.agent.agents）"
+  command -v notify-send >/dev/null 2>&1 &&
+    notify-send -a agent-menu "agent 选择器" "$msg" || echo "$msg" >&2
+  exit 0
+fi
+
+cmd=$(printf '%s\n' "$available" | fuzzel --dmenu --prompt 'agent> ' || true)
 [ -z "${cmd:-}" ] && exit 0
 
 case "$cmd" in
@@ -12,4 +24,5 @@ case "$cmd" in
   opencode) exec kitty -e opencode ;;
   codex)    exec kitty -e codex ;;
   aider)    exec kitty -e aider ;;
+  *) echo "未知 agent: $cmd" >&2; exit 1 ;;
 esac
