@@ -296,6 +296,29 @@ nix eval .#nixosConfigurations.leonard.config.services.xserver.videoDrivers
 
 **回滚**：`git revert`，系统未变。
 
+#### P0 验收记录（2026-10-19，分支 `distro/v0`）
+
+| 检查 | 结果 |
+|---|---|
+| `nix flake lock` | ✅ 锁定 26.05.12192 tarball（narHash） |
+| `nix flake check` | ✅ `checks.x86_64-linux.leonard-toplevel` 通过 |
+| `nix build …system.build.toplevel` | ✅ 构建成功 |
+| 关键选项 | ✅ `videoDrivers=["nvidia"]`、`nvidia=580.178.04`、XFCE+WM、`stateVersion=25.11`，与 `/etc/nixos` 一致 |
+| 闭包内容 | ⚠️ 18 个文件不同，全部来自 NIX_PATH / nix registry（见下） |
+
+差异根因（非配置差异）：
+
+- channel 构建：`NIX_PATH` 含 `nixpkgs=/nix/var/nix/profiles/per-user/root/channels/nixos`；
+- flake 构建：`NIX_PATH` 为 `nixpkgs=flake:nixpkgs`，并在 `/etc/nix/registry.json` 注册输入路径；
+- 其余 16 个文件（`etc/profile`、`etc/set-environment`、`activate`、`sw/bin/*` 等）都是引用这两者的级联结果。
+
+结论：**包集合与服务集合完全一致**，差异只存在于"nixpkgs 从哪里解析"这条元数据上，属 flake/channel 固有差别，不追求消除。
+
+实现细节两个坑（已在 `flake.nix` 注释）：
+
+1. npm 之外的第一坑：flake 模式下 `lib.trivial.versionSuffix` 被 `lib/flake-version-info.nix` 覆盖为 `.19800101.dirty`（tarball 输入没有 git 元数据），必须直接读 `nixpkgs + "/.version-suffix"` 才能让 `nixos-version` 与 channel 一致。
+2. 本机访问 `github.com` 被阻断，`nixpkgs` 输入改用清华镜像的 `nixexprs.tar.xz`，由 `flake.lock` 的 narHash 锁定；后续接入 home-manager 输入时需要单独的镜像方案。
+
 ### P1 · options schema + GPU 四厂商
 
 - 落地 `modules/options.nix`、`modules/hardware/gpu*`、`modules/assertions.nix`。
