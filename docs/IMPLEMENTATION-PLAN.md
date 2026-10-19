@@ -527,3 +527,42 @@ backlight=true
 3. 安装器在无网络交互的前提下完成探测并产出可构建的 host 文件。
 4. `hosts/leonard` 的闭包与本机当前 `/etc/nixos` 产出的关键选项完全一致（已用 eval 逐项核对）。
 5. agent 可通过 `scripts/agent/apply` 完成"改 host → 校验 → 构建"，不接触 `sed`。
+
+## 8. 当前状态（2026-10-20）
+
+P0–P4 全部完成并已在本机落地。
+
+| 项 | 状态 |
+|---|---|
+| 系统世代 | `system-18`，26.05.12192.8ce73368d1ef |
+| 分支 | `distro/v0` @ `6e110c4`，工作区干净、与远端同步 |
+| 结构 | flake + 自动发现的 `hosts/`（leonard、vm-virtio）+ `modules/`（options/base/boot/users/desktop/gpu/agent）+ `home/` 生成器 + `installer/` |
+| 用户层 | `~/.config` 与 `~/.local/bin` 共 21 个符号链接指向 store；无实体配置文件 |
+| 系统入口 | `/etc/nixos/configuration.nix` 已改为 `throw` 桩，误用不带 `--flake` 的 rebuild 会立即中止 |
+| agent | `codebuddy`（仓库打包，`pkgs/codebuddy`）+ `opencode`；`agent-menu` 只列 `command -v` 命中的项 |
+| 安装介质 | `nix build .#packages.x86_64-linux.iso` → 1.5 GB，自带仓库与 `install-hyprland-nixos` |
+| 历史分支 | `main`/`26.05-dev` 为重构前状态；`25.11-legacy` 为升级前的 25.11 配置 |
+
+### 8.1 尚未完成
+
+| 项 | 说明 |
+|---|---|
+| disko 集成 | 安装器目前不分区；需要时把分区表也声明化 |
+| CI | `nix flake check` 只在本地跑，没有 PR 门禁 |
+| Home Manager 输入 | 本机 github 不可达；P4 用 Nix 生成树替代，将来接通后可平滑迁移到 `home.file` |
+| `claude-code` / `codex` / `aider` | 二进制来源分别被 `downloads.claude.ai`、github 阻断；nixpkgs 里的包在本机不可构建。`codebuddy` 走 npm registry 成功，其余三个待网络条件允许 |
+| Hyprland 配置数据化 | `home/hypr/hyprland.conf` 仍是文本资产 + `extra.conf` 拼接；完全 `settings` 化的收益有限，暂不做 |
+| Waybar 电池/背光 | 已按 `distro.hardware.*` 条件化，但尚未在笔记本上实测 |
+
+### 8.2 踩过的坑（按发现顺序，均在代码注释中标注）
+
+1. **tarball 输入的 `versionSuffix`**：flake 模式下 `lib.trivial.versionSuffix` 被覆盖成 `.19800101.dirty`，必须直接读 `nixpkgs + "/.version-suffix"`。
+2. **`imports` 不能依赖 `config`**：会递归；改为四个厂商模块全导入、各自 `mkIf` 包体。
+3. **Nix 十六进制字面量只认小写**：`0x1E00` 被解析成 `0` + 未定义变量；`lib.toInt` 也不接受 `"0x"` 前缀。
+4. **列表选项合并顺序与 import 顺序相反**：`environment.systemPackages` 的次序要考 import 顺序对齐，否则闭包哈希全变。
+5. **`with pkgs` 遮蔽**：模块里把变量命名为 `waybar` 会遮蔽 `pkgs.waybar`，报"不是 package"类型错误。
+6. **`set -e` + 命令替换**：`for …; do cmd || true; done` 的退出码会传染给整个替换，导致脚本提前退出（agent-menu 按键无反应）。
+7. **`environment.etc` 不能指向目录**：ISO 的 `sources` 构建会失败，改用 `runCommand` 打包。
+8. **26.05 选项改名**：`isoImage.isoName` → `image.baseName`/`fileName`；`services.ollama.acceleration` 移除，改用 `ollama-{cuda,rocm,vulkan,cpu}` 包变体。
+9. **kitty `remember_window_size`**：会带回上次的 maximized 状态，在平铺 WM 里表现为"新终端占满屏幕"。
+
