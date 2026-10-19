@@ -81,6 +81,24 @@ hyprland-nixos/
 > NVIDIA 必须留在 580 LTSB 分支：26.05 的 `nvidiaPackages.stable` 已指向 595.x，
 > 该分支不再支持 Maxwell / Pascal / Volta，误用会导致开机黑屏、无图形会话。
 
+### Home Manager 接入方式
+
+`system/configuration.nix` 顶部的 `homeManagerMode` 决定 Home Manager 怎么接入：
+
+| 值 | 行为 | 配置文件位置 | 生效命令 |
+|---|---|---|---|
+| `"module"`（默认） | 作为 NixOS module 集成，用户环境随系统一起构建 | `/etc/nixos/home.nix` | `nixos-rebuild switch` |
+| `"standalone"` | 独立 channel，用户环境单独构建 | `~/.config/home-manager/home.nix` | `nixos-rebuild switch` + `home-manager switch` |
+
+```bash
+./install.sh --hm standalone --profile leonard-nvidia
+./install.sh --hm module      # 默认，等价于不传
+```
+
+`system/home.nix` 里的 `home.username` / `home.homeDirectory` 用占位符书写，由 install.sh 按实际用户替换；`home.stateVersion` 会一并 align 到系统的 `system.stateVersion`。
+
+> 两种模式互斥：`standalone` 模式不会导入 `<home-manager/nixos>`，因此系统重建不需要 `home-manager` 在 NIX_PATH 里。
+
 ### 方式一：一键脚本
 
 ```bash

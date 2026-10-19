@@ -10,19 +10,24 @@ let
   #   "leonard-nvidia"  — 真实 NVIDIA 显卡：580 LTSB 闭源驱动 + 保留 XFCE / Window Maker
   # 可用 install.sh --profile <名字> 设置，或直接改这里。
   hardwareProfile = "virtio";
+
+  # Home Manager 接入方式：
+  #   "module"     — 作为 NixOS module 集成（用户环境随系统一起构建），默认
+  #   "standalone" — 独立使用 channel + `home-manager switch`，配置在 ~/.config/home-manager
+  # 可用 install.sh --hm <值> 设置，或直接改这里。
+  homeManagerMode = "module";
+  useHmModule = homeManagerMode == "module";
 in
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      <home-manager/nixos>
     ]
+    ++ lib.optional useHmModule <home-manager/nixos>
+    ++ lib.optional useHmModule ./profiles/home-manager-module.nix
     ++ lib.optional (hardwareProfile == "leonard-nvidia") ./profiles/leonard-nvidia.nix;
 
   # Bootloader.
-  home-manager.useGlobalPkgs = true;
-  home-manager.useUserPackages = true;
-  home-manager.users.__TARGET_USER__ = import ./home.nix;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   # Windows entry (separate disk nvme1n1), chainloaded via the copy of its
