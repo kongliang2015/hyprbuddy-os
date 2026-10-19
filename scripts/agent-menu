@@ -6,7 +6,7 @@ set -euo pipefail
 # 用 if 而不是 a && b：在 set -e 下，最后一个未安装项会让整个命令替换返回非零，
 # 脚本会在调用 fuzzel 之前就退出（这正是"按了没反应"的原因）。
 available=$(
-  for a in claude opencode codex aider; do
+  for a in claude codebuddy codex opencode aider; do
     if command -v "$a" >/dev/null 2>&1; then echo "$a"; fi
   done
 )
@@ -22,8 +22,9 @@ cmd=$(printf '%s\n' "$available" | fuzzel --dmenu --prompt 'agent> ' || true)
 [ -z "${cmd:-}" ] && exit 0
 
 case "$cmd" in
-  claude)   exec kitty -e claude ;;
-  opencode) exec kitty -e opencode ;;
+  claude)    exec kitty -e claude ;;
+  codebuddy) exec kitty -e codebuddy ;;
+  opencode)  exec kitty -e opencode ;;
   codex)    exec kitty -e codex ;;
   aider)    exec kitty -e aider ;;
   *) echo "未知 agent: $cmd" >&2; exit 1 ;;
