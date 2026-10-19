@@ -88,7 +88,7 @@
   # $SDDM_GREETER_DIR/sddm-greeter 查找，缺失即回退 fallback 主题（主题不生效）。
   # 给底层 unwrapped 补 sddm-greeter 符号链接，wrapped 会一并生成 wrapper。
   services.displayManager.sddm.package = pkgs.kdePackages.sddm.override {
-    unwrapped = pkgs.kdePackages.sddm.unwrapped.overrideAttrs (old: {
+    sddm-unwrapped = pkgs.kdePackages.sddm.unwrapped.overrideAttrs (old: {
       postInstall = (old.postInstall or "") + ''
         ln -sf sddm-greeter-qt6 $out/bin/sddm-greeter
       '';
@@ -164,25 +164,10 @@
     "https://mirrors.ustc.edu.cn/nix-channels/store"
   ];
 
-  services.xserver.videoDrivers = [ "nvidia" ];
+  services.xserver.videoDrivers = [ "modesetting" ];
 
-  # NVIDIA 驱动配置
-  hardware.nvidia = {
-    # 驱动版本：stable / beta / production / vulkan_beta
-    # 不同系列显卡选不同分支，见下方说明
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-
-    # 使用内核模块模式（现代 GPU 推荐）
-    open = false;  # 闭源内核模块；Turing+(RTX 20系及以上) 可设为 true 使用开源内核模块
-
-    # Wayland / X11 混合相关
-    modesetting.enable = true;
-
-    # 电源管理（笔记本推荐开启，台式机可选）
-    powerManagement.enable = true;
-    # 细粒度电源管理（仅部分笔记本需要）
-    # powerManagement.finegrained = true;
-  };
+  # 本机是 QEMU virtio GPU（非 NVIDIA），用通用 modesetting 驱动 + Mesa
+  hardware.opengl.enable = true;
 
   # 如果用 Wayland，确保内核支持
   # boot.kernelParams = [ "nvidia-drm.modeset=1" ];
@@ -199,8 +184,7 @@
   # hyprlock 锁屏需要 PAM 服务来校验密码
   security.pam.services.hyprlock = { };
 
-  # NVIDIA DRM modeset：Wayland/Hyprland 在此显卡上必需的开关
-  boot.kernelParams = [ "nvidia-drm.modeset=1" ];
+  # 本机为 virtio GPU，无需 NVIDIA 内核参数（nvidia-drm.modeset 仅对真实 N 卡有效）
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -330,5 +314,15 @@
     partOf = [ "graphical-session.target" ];
   };
 
+  # 声明 nixos 账户，避免切换世代时账户被删除导致 SSH 失效
+  users.mutableUsers = true;
+  users.users.nixos = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "networkmanager" ];
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHCfLhHIKYiYSR3zOc/YZBhdRNFrNsy1AFVahKGo91Hw phytium@host"
+    ];
+    initialPassword = "nixos";
+  };
 
 }
