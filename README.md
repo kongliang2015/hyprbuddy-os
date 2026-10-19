@@ -65,7 +65,6 @@ hyprland-nixos/
 cd ~/hyprland-nixos
 ./install.sh
 # 系统层
-sudo cp system/configuration.nix /etc/nixos/configuration.nix
 sudo nixos-rebuild switch
 ```
 
@@ -128,3 +127,31 @@ LightDM 启动 Wayland 会话时会破坏 seat/输入设备交接：Hyprland 起
 ## 后续路线
 
 与 omarchy 的差距、可继续实现的功能见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+
+
+## 用户名与主目录自适应
+
+仓库不绑定固定用户名，可部署到安装时创建了任意用户名的 NixOS：
+
+- `system/configuration.nix` 中的用户写作占位符 `__TARGET_USER__`；
+- `home/`、`scripts/` 中的路径统一写作 `/home/nixos`（占位）。
+
+以目标用户身份运行 `./install.sh` 时会自动：
+
+1. 用实际用户（`$SUDO_USER`，否则 `id -un`）替换 `__TARGET_USER__`；
+2. 用该用户的 `$HOME` 替换配置/脚本中的 `/home/nixos`；
+3. 把 `wallpapers/*` 复制到 `~/Pictures/wallpapers/`；
+4. 把 `system/home.nix` 部署到 `/etc/nixos/home.nix`，并检查/添加 `home-manager` channel。
+
+因此无需手工修改用户名或路径。
+
+手动部署（方式二）时，需先在复制系统配置前替换占位符：
+
+```bash
+sed -i "s/__TARGET_USER__/$USER/g" system/configuration.nix
+sudo cp system/configuration.nix /etc/nixos/configuration.nix
+sudo cp system/home.nix /etc/nixos/home.nix
+```
+
+> `home-manager` 需预先添加 channel：
+> `sudo nix-channel --add https://github.com/nix-community/home-manager/archive/release-26.05.tar.gz home-manager && sudo nix-channel --update`
