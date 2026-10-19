@@ -25,6 +25,14 @@
           ./modules/default.nix
           ./hosts/${name}/default.nix
           { system.nixos.versionSuffix = versionSuffix; }
+          # 仓库自带的包（nixpkgs 没有的），通过 overlay 暴露为 pkgs.<name>
+          {
+            nixpkgs.overlays = [
+              (final: _prev: {
+                codebuddy = final.callPackage ./pkgs/codebuddy { };
+              })
+            ];
+          }
         ];
       };
     in

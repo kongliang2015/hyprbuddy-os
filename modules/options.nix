@@ -98,7 +98,7 @@ in
       # 默认关闭：agent 栈会引入较大的包（claude-code 等），由 host 显式开启。
       enable = mkOption { type = types.bool; default = false; };
       agents = mkOption {
-        type = types.listOf (types.enum [ "claude-code" "opencode" "codex" "aider-chat" ]);
+        type = types.listOf (types.enum [ "claude-code" "codebuddy" "opencode" "codex" "aider-chat" ]);
         default = [ "claude-code" ];
       };
       diagnostics = mkOption { type = types.bool; default = true; };

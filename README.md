@@ -158,7 +158,7 @@ sudo nixos-rebuild switch --flake .#leonard
 ```nix
 distro.agent = {
   enable = true;
-  agents = [ "opencode" ];   # 可选 claude-code / opencode / codex / aider-chat
+  agents = [ "opencode" "codebuddy" ];   # 可选 claude-code / codebuddy / opencode / codex / aider-chat
   usage = true;
   diagnostics = true;        # 依赖 localModels
   localModels = true;
@@ -166,6 +166,9 @@ distro.agent = {
 };
 ```
 
+> `codebuddy` 由仓库自己打包（`pkgs/codebuddy`，从 npm registry 取 tarball + 固定 lockfile），
+> 不依赖手工 `npm i -g`；升级时改 `version`/`src.hash` 后重新取 `npmDepsHash`。
+>
 > `claude-code` 的二进制来自 `downloads.claude.ai`，本机网络不可达，构建会失败；
 > 能访问该域名时把 `agents` 改成 `[ "claude-code" ]` 即可。
 > `localModels` 首次启用后需 `ollama pull qwen2.5-coder:1.5b`（模型不进 Nix store）。
