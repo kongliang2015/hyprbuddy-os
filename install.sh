@@ -63,3 +63,14 @@ cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" || true
 for f in "$HOME"/.config/hypr/* "$HOME"/.local/bin/*; do
   if [ -f "$f" ]; then sed -i "s|/home/nixos|$HOME|g" "$f" || true; fi
 done
+
+
+# 部署 Home Manager 用户配置（home.nix），并确保 home-manager channel 存在
+if [ -f "$here/system/home.nix" ]; then
+  sudo cp "$here/system/home.nix" /etc/nixos/home.nix
+fi
+if ! sudo nix-channel --list 2>/dev/null | grep -q "^home-manager "; then
+  echo "==> adding home-manager channel"
+  sudo nix-channel --add https://github.com/nix-community/home-manager/archive/release-26.05.tar.gz home-manager || true
+  sudo nix-channel --update home-manager || true
+fi
