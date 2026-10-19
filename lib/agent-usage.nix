@@ -3,7 +3,8 @@
 pkgs.writeShellScript "agent-usage" ''
   set -uo pipefail
   dir="''${HOME}/.claude/projects"
-  [ -d "$dir" ] || exit 0
+  # 还没用过 Claude Code 时输出 0，避免 Waybar 出现空白模块
+  if [ ! -d "$dir" ]; then echo 0; exit 0; fi
   ${pkgs.python3}/bin/python3 - "$dir" <<'PY'
 import datetime, json, os, sys
 
