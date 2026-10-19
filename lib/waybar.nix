@@ -46,7 +46,9 @@ in
     margin-right = 10;
     radius = 12;
 
-    modules-left = [ "hyprland/workspaces" "hyprland/window" ];
+    # 注意：窗口标题只放 center。曾经 left 里也写了一份 hyprland/window，
+    # 导致 Waybar 出现两个完全相同的标题模块。
+    modules-left = [ "hyprland/workspaces" ];
     modules-center = [ "hyprland/window" ];
     modules-right =
       [ "tray" "pulseaudio" "network" "cpu" "memory" ]
