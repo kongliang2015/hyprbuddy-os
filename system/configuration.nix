@@ -163,7 +163,7 @@
   services.xserver.videoDrivers = [ "modesetting" ];
 
   # 本机是 QEMU virtio GPU（非 NVIDIA），用通用 modesetting 驱动 + Mesa
-  hardware.opengl.enable = true;
+  hardware.graphics.enable = true;
 
   # 如果用 Wayland，确保内核支持
   # boot.kernelParams = [ "nvidia-drm.modeset=1" ];
