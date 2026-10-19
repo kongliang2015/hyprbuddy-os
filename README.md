@@ -33,8 +33,18 @@ hyprland-nixos/
 └── docs/
     ├── KEYBINDS.md             # 完整快捷键
     ├── TROUBLESHOOTING.md      # 踩坑与修复记录
-    └── ROADMAP.md              # 与 omarchy 的差距与后续
+    ├── ROADMAP.md              # 与 omarchy 的差距与后续
+    ├── ARCHITECTURE-REVIEW.md  # 架构评估：现状 vs 发行版目标
+    ├── IMPLEMENTATION-PLAN.md  # flake/options/host 改造的实施计划
+    └── AGENT-LAYER.md          # AI agent 层落地设计
 ```
+
+## 设计文档
+
+本项目的目标是做成 **AI agent 原生**、可覆盖多种显卡（NVIDIA / AMD / Intel / virtio）的 NixOS 发行版骨架。当前结构与该目标之间的差距、以及分阶段改造方案：
+
+- [docs/ARCHITECTURE-REVIEW.md](docs/ARCHITECTURE-REVIEW.md)：评估结论与四个结构性硬伤
+- [docs/IMPLEMENTATION-PLAN.md](docs/IMPLEMENTATION-PLAN.md)：flake + options + host 的目标结构与 P0–P4 实施步骤
 
 ## 已实现的功能
 
