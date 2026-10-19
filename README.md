@@ -172,6 +172,39 @@ distro.agent = {
 
 `sync.sh` 会把 `~/.config`、`~/.local/bin`、`~/configuration.nix.new` 和壁纸同步回项目目录，然后 `git add -A` 并在有改动时提交。
 
+## 安装到新机器
+
+```bash
+# 1. 构建安装镜像（约 1.5 GB）
+nix build .#packages.x86_64-linux.iso
+# 产物: result/iso/hyprland-nixos-installer.iso
+
+# 2. 写入 U 盘
+sudo dd if=result/iso/hyprland-nixos-installer.iso of=/dev/sdX bs=4M status=progress oflag=sync
+```
+
+镜像启动后自动以 root 登录，先手动分区并把目标根分区挂到 `/mnt`，然后：
+
+```bash
+install-hyprland-nixos --hostname mypc --user leonard --sessions "xfce windowmaker"
+```
+
+安装器会依次完成：探测（GPU / 引导器 / 电池 / 背光 / Windows 项）→ 渲染
+`hosts/<hostname>/default.nix` → 求值确认可构建 → `nixos-install --flake` →
+把仓库复制到 `/home/<user>/hyprland-nixos`。
+
+常用参数：
+
+| 参数 | 作用 |
+|---|---|
+| `--dry-run` | 只渲染 + 求值，不写目标盘 |
+| `--no-agent` | 不装 agent 层 |
+| `--yes` | 跳过确认 |
+| `--state-version` | 指定 `system.stateVersion` |
+
+> **安装器不分区、不格式化**。它只写已挂载的 `--target`，分区交给 disko 或手工步骤——
+> 一条命令抹掉整块盘的代价太高。也可以单独跑 `installer/detect.sh` 看探测结果。
+
 ## 快捷键
 
 完整列表见 [docs/KEYBINDS.md](docs/KEYBINDS.md)。常用：

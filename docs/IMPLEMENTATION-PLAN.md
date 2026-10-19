@@ -372,6 +372,37 @@ backlight=true
 
 **验收**：在 virtio 虚拟机里用 ISO 完整装一遍，装完 `nvidia-smi` 不存在、`Hyprland` 正常；在真机上重装一次验证 NVIDIA 路径。
 
+#### P2 验收记录（2026-10-20，分支 `distro/v0`）
+
+| 组件 | 文件 | 说明 |
+|---|---|---|
+| 探测 | `installer/detect.sh` | `lspci` → GPU 厂商 + NVIDIA PCI id；`/sys/class/power_supply|backlight` → 笔记本特征；`/sys/firmware/efi`+`/boot/grub` → 引导器；`/boot/EFI/Microsoft` → Windows 项 |
+| 渲染 | `installer/render-host.sh` | `hosts/_template/default.nix` 的 `@VAR@` 替换；空格分隔值自动转成 Nix 列表；渲染后 `nix-instantiate --parse` 校验 |
+| 安装 | `installer/install.sh` | 探测 → 工作副本 → `nixos-generate-config` → 渲染 → 求值 → `nixos-install --flake` → 把仓库放进 `/home/<user>` |
+| 镜像 | `installer/iso-config.nix` + flake `packages.<sys>.iso` | 最小 ISO + 仓库 + `install-hyprland-nixos` 包装命令 |
+
+验证：
+
+| 检查 | 结果 |
+|---|---|
+| `detect.sh` 在本机 | ✅ `systemd-boot` / `nvidia 10de:1c82` / 无电池 / 无背光 |
+| 渲染合成 host（gt2） | ✅ 生成文件通过 `nix-instantiate --parse` |
+| 渲染结果求值 | ✅ `videoDrivers=["nvidia"]`、`branch=legacy_580`、hostname=gt2、user=leonard |
+| `install.sh --dry-run` 全流程 | ✅ 探测 → 计划 → 渲染 → 求值通过（未写盘） |
+| ISO 求值 / 构建 | ✅ `nix build .#packages.x86_64-linux.iso` |
+
+四个实现要点：
+
+1. **flake 自动发现 `hosts/*`**：安装器渲染出的 host 立刻可 `nixosConfigurations.<host>`，无需改 flake。
+   求值必须用 `path:$work/src#…` 前缀——直接用 `$work/src#…` 时 git 过滤会隐藏未提交的 host。
+2. **安装器不分区**：`install.sh` 只接受已挂载的 `--target`，并默认要求确认；分区/格式化留给 disko 或人工，
+   避免"一条命令抹盘"。这是有意为之的保守设计。
+3. **模板占位符**：`hosts/_template` 用 `@VAR@` 占位，`render-host.sh` 负责把 `xfce windowmaker` 这类空格分隔值转成
+   `"xfce" "windowmaker"`，并在渲染后检查是否残留占位符。
+4. **ISO 里仓库不能放 `/etc`**：`environment.etc."<name>".source` 指向目录会让 ISO 的 `sources` 构建失败，
+   改为 `runCommand` 打包成普通包，再用包装脚本 `install-hyprland-nixos` 调用。另：26.05 把
+   `isoImage.isoName` 重命名为 `image.fileName`。
+
 ### P3 · agent 层（映射 `docs/AGENT-LAYER.md` 六层）
 
 | 层 | 落点 | 关键实现 |

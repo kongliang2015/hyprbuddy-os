@@ -7,7 +7,11 @@
 
   outputs = { self, nixpkgs }:
     let
-      hosts = [ "leonard" "vm-virtio" ];
+      # 自动发现 hosts/<name>/：以 _ 开头的目录（如 _template）是模板，不计入。
+      hostEntries = builtins.readDir ./hosts;
+      hosts = builtins.filter
+        (n: hostEntries.${n} == "directory" && !(nixpkgs.lib.hasPrefix "_" n))
+        (builtins.attrNames hostEntries);
 
       # 注意：不能用 nixpkgs.lib.trivial.versionSuffix——flake 模式下的 lib 会被
       # lib/flake-version-info.nix 覆盖成 ".19800101.dirty"（tarball 无 git 元数据）。
@@ -28,6 +32,17 @@
       nixosConfigurations = nixpkgs.lib.genAttrs hosts mkHost;
 
       # nixosConfigurations 不会被 `nix flake check` 自动检查，显式放进 checks
+      # 安装镜像：nixos 最小 ISO + 仓库源码
+      packages.x86_64-linux.iso =
+        (nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+            ./installer/iso-config.nix
+            { system.nixos.versionSuffix = versionSuffix; }
+          ];
+        }).config.system.build.isoImage;
+
       checks.x86_64-linux = builtins.listToAttrs (map (name: {
         name = "${name}-toplevel";
         value = self.nixosConfigurations.${name}.config.system.build.toplevel;
