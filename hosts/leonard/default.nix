@@ -23,9 +23,9 @@
       # claude-code 的二进制从 downloads.claude.ai 拉取，本机网络不可达（构建期失败）；
       # 能访问该域名时改成 [ "claude-code" ] 即可，枚举已支持。
       agents = [ "opencode" "codebuddy" ];
-      # claude 未装 / opencode 无数据 / codebuddy 无结构化 token，AGENT 模块恒 0；
-      # 有真实数据源后再开（agent-usage 聚合逻辑已就绪）
-      usage = false;
+      # codebuddy 的会话日志（~/.codebuddy/projects/*.jsonl）内含 usage，
+      # agent-usage 按 /cost 口径统计当日 output
+      usage = true;
       diagnostics = false;   # 需先开 localModels 并 ollama pull
       localModels = false;
     };

@@ -104,6 +104,7 @@ in
   // lib.optionalAttrs (agentUsageCmd != null) {
     "custom/agent-usage" = {
       exec = agentUsageCmd;
+      return-type = "json";
       interval = 60;
       format = "AGENT {}";
       tooltip = true;
