@@ -71,12 +71,12 @@ lib.mkIf cfg.desktop.enable {
   security.pam.services.hyprlock = { };
 
   # polkit 认证代理（GUI 提权）
-  systemd.user.services.polkit-gnome = {
-    description = "Polkit GNOME Authentication Agent";
+  systemd.user.services.hyprpolkitagent = {
+    description = "Hyprland Polkit Authentication Agent";
     wantedBy = [ "graphical-session.target" ];
     partOf = [ "graphical-session.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      ExecStart = "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
       Restart = "on-failure";
     };
   };
@@ -109,7 +109,7 @@ lib.mkIf cfg.desktop.enable {
     hyprpicker    # 屏幕取色
     libnotify     # notify-send
     thunar        # 文件管理器（Super+E）
-    polkit_gnome  # polkit 认证代理（GUI 提权）
+    hyprpolkitagent  # polkit 认证代理（hyprwm 官方，替代 polkit_gnome）
   ];
 
   # 系统级 Waybar 配置（Tokyo Night / Kanagawa 风格），放在 /etc/xdg/waybar。
