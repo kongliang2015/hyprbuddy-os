@@ -15,6 +15,14 @@ WALL="$HOME/Pictures/wallpapers"
 
 mkdir -p "$STATE_DIR"
 
+# 确保 hyprpaper 守护进程在运行（VM 里它可能提前退出，导致壁纸指令静默失败）
+ensure_hyprpaper() {
+  if ! pgrep -x hyprpaper >/dev/null 2>&1; then
+    setsid hyprpaper >/dev/null 2>&1 < /dev/null &
+    sleep 0.6
+  fi
+}
+
 # 主题表字段：
 # name|wallpaper|ha1|ha2|hi
 # |wb_bg|wb_fg|wb_ws|wb_wsafg|wb_wsabg|wb_urgent|wb_clock|wb_cpu|wb_mem|wb_bat|wb_pulse|wb_agent
@@ -57,10 +65,12 @@ if command -v hyprctl >/dev/null 2>&1; then
   hyprctl keyword general:col.inactive_border "rgba(${HI}aa)" 2>/dev/null
 fi
 
-# ── 壁纸 ────────────────────────────────────────
+# ── 壁纸（先确保 hyprpaper 在运行） ─────────────
 IMG="$WALL/$WALLPAPER"
 if [ -f "$IMG" ] && command -v hyprctl >/dev/null 2>&1; then
+  ensure_hyprpaper
   hyprctl hyprpaper preload "$IMG" 2>/dev/null
+  sleep 0.2
   hyprctl hyprpaper wallpaper ",$IMG" 2>/dev/null
 fi
 
