@@ -162,6 +162,59 @@ if [ -f "$FUZZEL" ]; then
   fi
 fi
 
+# ── mako 通知（替换颜色键 + makoctl reload 热加载） ──
+MAKO="$XDG_CONFIG_HOME/mako/config"
+if [ -f "$MAKO" ]; then
+  if [ -L "$MAKO" ]; then MSRC=$(readlink -f "$MAKO"); else MSRC="$MAKO"; fi
+  mkdir -p "$XDG_CONFIG_HOME/mako"
+  awk -v bg="${WB_BG}f2" -v fg="${WB_FG}" -v border="${WB_WSAFG}" \
+      -v prog="${WB_PULSE}cc" -v low="${WB_WS}" -v crit="${WB_URGENT}" '
+    /^\[/ { sec=$0 }
+    sec == "" {
+      if ($0 ~ /^background-color=/) { print "background-color=#" bg; next }
+      if ($0 ~ /^text-color=/)       { print "text-color=#" fg; next }
+      if ($0 ~ /^border-color=/)     { print "border-color=#" border; next }
+      if ($0 ~ /^progress-color=/)   { print "progress-color=#" prog; next }
+    }
+    sec == "[urgency=low]" && $0 ~ /^border-color=/ { print "border-color=#" low; next }
+    sec == "[urgency=critical]" && $0 ~ /^border-color=/ { print "border-color=#" crit; next }
+    { print }
+  ' "$MSRC" > "$MAKO.tmp" 2>/dev/null || true
+  if [ -s "$MAKO.tmp" ]; then
+    mv -f "$MAKO.tmp" "$MAKO"
+    makoctl reload >/dev/null 2>&1 || true
+  else
+    rm -f "$MAKO.tmp"
+  fi
+fi
+
+# ── swayosd OSD（值替换 + 重启 swayosd-server） ──
+# 注意 comm 是 .swayosd-server（包装器改名），与 waybar 同理用无标志 pgrep/pkill
+OSD="$XDG_CONFIG_HOME/swayosd/style.css"
+if [ -f "$OSD" ]; then
+  if [ -L "$OSD" ]; then SSRC=$(readlink -f "$OSD"); else SSRC="$OSD"; fi
+  mkdir -p "$XDG_CONFIG_HOME/swayosd"
+  sed -e "s/#0f2438/#${WB_BG}/" \
+      -e "s/#0e7fa8/#${WB_WSAFG}/" \
+      -e "s/#d7e7f5/#${WB_FG}/" \
+      -e "s/#1e9bd8/#${WB_PULSE}/" \
+      -e "s/#1b3d5f/#${WB_WSABG}/" \
+      "$SSRC" > "$OSD.tmp" 2>/dev/null || true
+  (
+    flock -x 201
+    if [ -s "$OSD.tmp" ]; then
+      mv -f "$OSD.tmp" "$OSD"
+    else
+      rm -f "$OSD.tmp"
+    fi
+    if pgrep swayosd-server >/dev/null 2>&1; then
+      pkill swayosd-server 2>/dev/null
+      sleep 0.3
+      setsid swayosd-server >/dev/null 2>&1 < /dev/null 201>&- &
+    fi
+  ) 201>"$RUNTIME/theme-next/osd.lock"
+fi
+
 # ── Kitty（include 持久化 + 实时 set-colors） ───
 mkdir -p "$XDG_CONFIG_HOME/kitty"
 cat > "$XDG_CONFIG_HOME/kitty/theme.inc.conf" <<KITTY
