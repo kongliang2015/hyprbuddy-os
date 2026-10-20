@@ -4,13 +4,14 @@
 # 注意：GTK 的 CSS 不支持 :root 和 var() 自定义属性（报 "Invalid name of pseudo-class"
 # 会让 Waybar 直接拒绝启动），所以配色全部写具体颜色值。换肤由 theme-next 把整份
 # CSS（同样只有具体颜色值）重写到 ~/.config/waybar/style.css。
-{ lib, home ? "/home/nixos", battery ? false, agentUsageCmd ? null }:
+# 字体栈首位必须是 Nerd Font：模块图标用 Nerd Font 字形，中文由 fontconfig 回退到 Noto。
+{ lib, battery ? false, agentUsageCmd ? null }:
 let
   inherit (lib) optional optionalString;
 
   baseCss = ''
     * {
-      font-family: "Noto Sans CJK SC", sans-serif;
+      font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC", sans-serif;
       font-size: 13px;
       color: #c0caf5;
       border: none;
@@ -24,9 +25,24 @@ let
       margin: 0 4px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     }
-    #workspaces button { padding: 0 6px; color: #565f89; border-radius: 8px; }
+    /* workspaces：胶囊 + hover */
+    #workspaces button { padding: 0 8px; margin: 2px 1px; color: #565f89; border-radius: 8px; }
+    #workspaces button:hover { color: #7aa2f7; background: #1f2335; }
     #workspaces button.active { color: #7aa2f7; background: #1f2335; }
     #workspaces button.urgent { color: #f7768e; }
+    /* 中间窗口标题：独立胶囊 */
+    #window { background: #16161e; border-radius: 10px; padding: 0 12px; color: #565f89; }
+    /* 分组胶囊（与 Hyprland rounding=10 对齐） */
+    #group-hardware, #group-media, #group-clock {
+      background: #1f2335;
+      border: 1px solid #7aa2f7;
+      border-radius: 10px;
+      padding: 0 8px;
+      margin: 4px 3px;
+    }
+    #group-hardware:hover, #group-media:hover, #group-clock:hover { background: #565f89; }
+    #network, #tray { border: 1px solid #7aa2f7; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
+    #network:hover { background: #1f2335; }
     #clock { color: #7dcfff; }
     #cpu { color: #9ece6a; }
     #memory { color: #e0af68; }
@@ -39,8 +55,8 @@ in
   config = {
     layer = "top";
     position = "top";
-    height = 28;
-    spacing = 4;
+    height = 30;
+    spacing = 6;
     margin-top = 6;
     margin-left = 10;
     margin-right = 10;
@@ -49,11 +65,17 @@ in
     # 导致 Waybar 出现两个完全相同的标题模块。
     modules-left = [ "hyprland/workspaces" ];
     modules-center = [ "hyprland/window" ];
+    # 右侧按功能分组：托盘 / 音量 / 网络 / CPU+内存(+电池) / 时钟
     modules-right =
-      [ "tray" "pulseaudio" "network" "cpu" "memory" ]
-      ++ optional battery "battery"
-      ++ optional (agentUsageCmd != null) "custom/agent-usage"
-      ++ [ "clock" ];
+      [ "tray" "group/media" "network" "group/hardware" "group/clock" ]
+      ++ optional (agentUsageCmd != null) "custom/agent-usage";
+
+    "group/media" = { orientation = "horizontal"; modules = [ "pulseaudio" ]; };
+    "group/hardware" = {
+      orientation = "horizontal";
+      modules = [ "cpu" "memory" ] ++ optional battery "battery";
+    };
+    "group/clock" = { orientation = "horizontal"; modules = [ "clock" ]; };
 
     # persistent-workspaces: 空桌面/锁屏解锁后 1-4 也常驻显示，不再消失
     "hyprland/workspaces" = {
@@ -62,12 +84,22 @@ in
       persistent-workspaces = { "*" = 4; };
     };
 
-    pulseaudio = { format = "{volume}%"; format-muted = "MUTE"; };
-    network = { format-wifi = "WIFI {essid}"; format-ethernet = "ETH"; };
-    cpu = { format = "CPU {usage}%"; };
-    memory = { format = "RAM {}%"; };
-    battery = { format = "BAT {capacity}%"; format-charging = "CHG {capacity}%"; };
-    clock = { format = "{:%H:%M %a %d}"; };
+    pulseaudio = {
+      format = "{icon} {volume}%";
+      format-muted = " MUTE";
+      format-icons = [ "" "" "" ];
+      on-click = "pavucontrol";
+      tooltip-format = "音量 {volume}%";
+    };
+    network = { format-wifi = " {essid}"; format-ethernet = " ETH"; };
+    cpu = { format = " {usage}%"; };
+    memory = { format = " {}%"; };
+    battery = {
+      format = "{icon} {capacity}%";
+      format-charging = " {capacity}%";
+      format-icons = [ "" "" "" "" "" ];
+    };
+    clock = { format = " {:%H:%M}"; tooltip-format = "{:%A %d %B %Y}"; };
   }
   // lib.optionalAttrs (agentUsageCmd != null) {
     "custom/agent-usage" = {
