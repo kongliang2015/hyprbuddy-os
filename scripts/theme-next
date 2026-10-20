@@ -144,21 +144,15 @@ if command -v kitty >/dev/null 2>&1; then
     2>/dev/null || true
 fi
 
-# ── hyprlock 锁屏 ───────────────────────────────
+# ── hyprlock 锁屏（只写变量；控件块在 hyprlock.conf 里，写控件块会因 source 追加出重复控件） ──
 mkdir -p "$XDG_CONFIG_HOME/hypr"
 cat > "$XDG_CONFIG_HOME/hypr/theme-hyprlock.conf" <<LOCK
-background {
-    color = rgba(${WB_BG}ff)
-}
-label {
-    color = rgba(${WB_FG}ff)
-}
-input-field {
-    inner_color = rgba(${WB_BG}e6)
-    outer_color = rgba(${WB_AGENT}ff)
-    font_color = rgba(${WB_FG}ff)
-    dots_color = rgba(${WB_FG}ff)
-}
+\$hl_bg = rgba(${WB_BG}ff)
+\$hl_fg = rgba(${WB_FG}ff)
+\$hl_inner = rgba(${WB_BG}e6)
+\$hl_outer = rgba(${WB_AGENT}ff)
+\$hl_dots = rgba(${WB_FG}ff)
+\$hl_bgpath = ${HOME}/Pictures/wallpapers/${WALLPAPER}
 LOCK
 
 command -v notify-send >/dev/null 2>&1 && notify-send -a theme-next "主题 -> $NAME" 2>/dev/null || true
