@@ -167,17 +167,21 @@ MAKO="$XDG_CONFIG_HOME/mako/config"
 if [ -f "$MAKO" ]; then
   if [ -L "$MAKO" ]; then MSRC=$(readlink -f "$MAKO"); else MSRC="$MAKO"; fi
   mkdir -p "$XDG_CONFIG_HOME/mako"
-  awk -v bg="${WB_BG}f2" -v fg="${WB_FG}" -v border="${WB_WSAFG}" \
-      -v prog="${WB_PULSE}cc" -v low="${WB_WS}" -v crit="${WB_URGENT}" '
+  awk -v bg="${WB_BG}cc" -v fg="${WB_FG}" -v border="${WB_WSAFG}" \
+      -v prog="${WB_PULSE}cc" -v low="${WB_WS}" -v crit="${WB_URGENT}" \
+      -v lowbg="${WB_BG}dd" -v critbg="${WB_BG}ff" -v wsfg="${WB_WS}" '
     /^\[/ { sec=$0 }
     sec == "" {
       if ($0 ~ /^background-color=/) { print "background-color=#" bg; next }
       if ($0 ~ /^text-color=/)       { print "text-color=#" fg; next }
       if ($0 ~ /^border-color=/)     { print "border-color=#" border; next }
       if ($0 ~ /^progress-color=/)   { print "progress-color=#" prog; next }
+      if ($0 ~ /^format=/) { print "format=<b>%s</b>\\n<span foreground=\"#" wsfg "\">%b</span>"; next }
     }
     sec == "[urgency=low]" && $0 ~ /^border-color=/ { print "border-color=#" low; next }
+    sec == "[urgency=low]" && $0 ~ /^background-color=/ { print "background-color=#" lowbg; next }
     sec == "[urgency=critical]" && $0 ~ /^border-color=/ { print "border-color=#" crit; next }
+    sec == "[urgency=critical]" && $0 ~ /^background-color=/ { print "background-color=#" critbg; next }
     { print }
   ' "$MSRC" > "$MAKO.tmp" 2>/dev/null || true
   if [ -s "$MAKO.tmp" ]; then
