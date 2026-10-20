@@ -70,6 +70,13 @@ echo "==> 壁纸"
 mkdir -p "$HOME/Pictures/wallpapers"
 cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
 
+echo "==> Hyprland 配置自检"
+if [ -x "$HOME/.local/bin/hypr-check" ]; then
+  "$HOME/.local/bin/hypr-check" || true
+else
+  echo "  - 跳过（hypr-check 未安装）"
+fi
+
 echo
 echo "完成。注销重登（或重启）让 Hyprland 读取新配置。"
 [ -d "$backup" ] && echo "旧文件备份在: $backup"

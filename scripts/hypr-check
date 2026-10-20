@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Hyprland 配置自检（由 install.sh 调用，也可手动执行）。
+#   1. 0.55 的 Lua 优先规则：存在 hyprland.lua 时 .conf 会被忽略
+#   2. 运行时解析错误：hyprctl configerrors（需在 Hyprland 会话内）
+#   3. 规则语法 lint：0.55 要求 match: 前缀，旧语法可能静默失效
+# 退出码：0 = 通过，1 = 有警告。
+set -uo pipefail
+
+conf="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/hyprland.conf"
+lua="${conf%.conf}.lua"
+status=0
+warn() { echo "  ! $*"; status=1; }
+info() { echo "  - $*"; }
+
+# 1) Lua 优先
+if [ -f "$lua" ]; then
+  warn "存在 $lua：Hyprland 0.55 会优先加载 Lua 配置，$conf 将被忽略"
+fi
+
+# 2) 运行时解析错误（会话外 hyprctl version 会失败，自动跳过）
+if command -v hyprctl >/dev/null 2>&1 && hyprctl version >/dev/null 2>&1; then
+  errs=$(hyprctl configerrors 2>/dev/null | sed '/^[[:space:]]*$/d')
+  if [ -n "$errs" ]; then
+    warn "hyprctl configerrors 报告解析错误："
+    printf '%s\n' "$errs" | sed 's/^/      /'
+  else
+    info "configerrors 无错误"
+  fi
+else
+  info "未在 Hyprland 会话中，跳过运行时检查"
+fi
+
+# 3) 规则语法 lint
+if [ -f "$conf" ]; then
+  old_wr=$(grep -nE '^[[:space:]]*windowrule[[:space:]]*=[[:space:]]*[a-z_]+[[:space:]]+(class|title|initial_class|initial_title):' "$conf" 2>/dev/null)
+  old_lr=$(grep -nE '^[[:space:]]*layerrule[[:space:]]*=[[:space:]]*[a-z_]+[[:space:]]*,' "$conf" 2>/dev/null)
+  if [ -n "$old_wr" ]; then
+    warn "windowrule 疑似 0.54 旧语法（0.55 下静默失效，不报错）："
+    printf '%s\n' "$old_wr" | sed 's/^/      /'
+    echo "      正确：windowrule = match:class ^(名字)$, float true, size monitor_w*0.72 monitor_h*0.72"
+  fi
+  if [ -n "$old_lr" ]; then
+    warn "layerrule 疑似 0.54 旧语法（0.55 下报 invalid field）："
+    printf '%s\n' "$old_lr" | sed 's/^/      /'
+    echo "      正确：layerrule = match:namespace <namespace>, blur true, ignore_alpha 0.3"
+  fi
+  [ -z "$old_wr$old_lr" ] && info "windowrule/layerrule 语法符合 0.55"
+fi
+
+if [ "$status" -eq 0 ]; then
+  echo "  - 自检通过"
+fi
+exit "$status"
