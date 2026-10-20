@@ -7,20 +7,29 @@
 
   outputs = { self, nixpkgs }:
     let
+      lib = nixpkgs.lib;
+
       # 自动发现 hosts/<name>/：以 _ 开头的目录（如 _template）是模板，不计入。
       hostEntries = builtins.readDir ./hosts;
       hosts = builtins.filter
-        (n: hostEntries.${n} == "directory" && !(nixpkgs.lib.hasPrefix "_" n))
+        (n: hostEntries.${n} == "directory" && !(lib.hasPrefix "_" n))
         (builtins.attrNames hostEntries);
 
       # 注意：不能用 nixpkgs.lib.trivial.versionSuffix——flake 模式下的 lib 会被
       # lib/flake-version-info.nix 覆盖成 ".19800101.dirty"（tarball 无 git 元数据）。
       # 直接读 nixpkgs 自带的 .version-suffix 才能拿到 channel 的真实后缀。
       versionSuffix =
-        nixpkgs.lib.removeSuffix "\n" (builtins.readFile (nixpkgs + "/.version-suffix"));
+        lib.removeSuffix "\n" (builtins.readFile (nixpkgs + "/.version-suffix"));
 
-      mkHost = name: nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
+      # 各机目标架构；未列出的默认 x86_64-linux。
+      # aarch64 分支：virtio 虚机改为 aarch64，便于在 ARM 主机上构建/验证。
+      hostSystems = {
+        "vm-virtio" = "aarch64-linux";
+      };
+      systemFor = name: hostSystems.${name} or "x86_64-linux";
+
+      mkHost = name: lib.nixosSystem {
+        system = systemFor name;
         modules = [
           ./modules/default.nix
           ./hosts/${name}/default.nix
@@ -35,13 +44,9 @@
           }
         ];
       };
-    in
-    {
-      nixosConfigurations = nixpkgs.lib.genAttrs hosts mkHost;
 
       # 用户级配置树（~/.config + ~/.local/bin），由 install.sh 软链到用户目录。
-      # 放在 packages 下而不是自定义 output（flake 只认已知 output 名）。
-      packages.x86_64-linux = nixpkgs.lib.genAttrs hosts (name:
+      homePkg = name:
         let
           c = self.nixosConfigurations.${name}.config;
         in
@@ -51,22 +56,36 @@
           pkgs = self.nixosConfigurations.${name}.pkgs;
           home = c.users.users.${c.distro.user.name}.home;
           hostName = name;
-        })
-      // {
-        iso = (nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = [
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            ./installer/iso-config.nix
-            { system.nixos.versionSuffix = versionSuffix; }
-          ];
-        }).config.system.build.isoImage;
-      };
+        };
+
+      # 按目标架构分组，生成 packages.<system> / checks.<system>
+      hostsBySystem = builtins.groupBy (name: systemFor name) hosts;
+
+      # 安装镜像：aarch64 分支产出 aarch64 ISO。
+      isoSystem = "aarch64-linux";
+      mkIso = system: (lib.nixosSystem {
+        inherit system;
+        modules = [
+          "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+          ./installer/iso-config.nix
+          { system.nixos.versionSuffix = versionSuffix; }
+        ];
+      }).config.system.build.isoImage;
+    in
+    {
+      nixosConfigurations = lib.genAttrs hosts mkHost;
+
+      packages = lib.mapAttrs
+        (system: names:
+          lib.genAttrs names homePkg
+          // lib.optionalAttrs (system == isoSystem) { iso = mkIso system; })
+        hostsBySystem;
 
       # nixosConfigurations 不会被 `nix flake check` 自动检查，显式放进 checks
-      checks.x86_64-linux = builtins.listToAttrs (map (name: {
-        name = "${name}-toplevel";
-        value = self.nixosConfigurations.${name}.config.system.build.toplevel;
-      }) hosts);
+      checks = lib.mapAttrs
+        (system: names:
+          lib.genAttrs names
+            (name: self.nixosConfigurations.${name}.config.system.build.toplevel))
+        hostsBySystem;
     };
 }
