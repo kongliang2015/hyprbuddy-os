@@ -5,9 +5,15 @@
 # 会让 Waybar 直接拒绝启动），所以配色全部写具体颜色值。换肤由 theme-next 把整份
 # CSS（同样只有具体颜色值）重写到 ~/.config/waybar/style.css。
 # 字体栈首位必须是 Nerd Font：模块图标用 Nerd Font 字形，中文由 fontconfig 回退到 Noto。
-{ lib, battery ? false, agentUsageCmd ? null }:
+#
+# 插件：waybar 无二进制插件机制，扩展靠内置模块 + custom/<name> 脚本模块
+# （return-type json 返回 text/tooltip/class，配合 exec-if/hide-empty-text/on-click）。
+{ lib, home, battery ? false, agentUsageCmd ? null }:
 let
   inherit (lib) optional optionalString;
+
+  # waybar 进程 PATH 只含 /run/current-system/sw/bin，用户脚本必须走绝对路径
+  bin = name: "${home}/.local/bin/${name}";
 
   baseCss = ''
     * {
@@ -43,6 +49,12 @@ let
     #group-hardware:hover, #group-media:hover, #group-clock:hover { background: #565f89; }
     #network, #tray { border: 1px solid #7aa2f7; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
     #network:hover { background: #1f2335; }
+    /* 插件模块 */
+    #mpris { color: #c0caf5; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
+    #custom-ime { color: #565f89; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
+    #custom-ime.active { color: #2ac3de; }
+    #custom-dnd { color: #f7768e; padding: 0 6px; margin: 4px 2px; }
+    #custom-recording { color: #f7768e; padding: 0 6px; margin: 4px 2px; }
     #clock { color: #7dcfff; }
     #cpu { color: #9ece6a; }
     #memory { color: #e0af68; }
@@ -65,9 +77,10 @@ in
     # 导致 Waybar 出现两个完全相同的标题模块。
     modules-left = [ "hyprland/workspaces" ];
     modules-center = [ "hyprland/window" ];
-    # 右侧按功能分组：托盘 / 音量 / 网络 / CPU+内存(+电池) / 时钟
+    # 右侧：媒体 / 托盘 / 音量 / 网络 / CPU+内存(+电池) / 时钟 / 输入法 / 勿扰 / 录屏
     modules-right =
-      [ "tray" "group/media" "network" "group/hardware" "group/clock" ]
+      [ "mpris" "tray" "group/media" "network" "group/hardware" "group/clock"
+        "custom/ime" "custom/dnd" "custom/recording" ]
       ++ optional (agentUsageCmd != null) "custom/agent-usage";
 
     "group/media" = { orientation = "horizontal"; modules = [ "pulseaudio" ]; };
@@ -84,6 +97,7 @@ in
       persistent-workspaces = { "*" = 4; };
     };
 
+    # ── 内置模块 ──
     pulseaudio = {
       format = "{icon} {volume}%";
       format-muted = " MUTE";
@@ -100,6 +114,51 @@ in
       format-icons = [ "" "" "" "" "" ];
     };
     clock = { format = " {:%H:%M}"; tooltip-format = "{:%A %d %B %Y}"; };
+
+    # ── 插件：媒体播放（无播放器时自动隐藏）──
+    mpris = {
+      format = " {title}";
+      format-paused = " {title}";
+      player-icons = { default = ""; };
+      status-icons = { paused = ""; };
+      max-length = 28;
+      tooltip-format = "{player}\n{title}\n{artist} · {album}";
+      on-click = "playerctl play-pause";
+      on-scroll-up = "playerctl next";
+      on-scroll-down = "playerctl previous";
+    };
+
+    # ── 插件：输入法状态（custom 脚本，点击切换）──
+    "custom/ime" = {
+      exec = bin "waybar-ime";
+      return-type = "json";
+      interval = 1;
+      format = "{}";
+      tooltip = true;
+      on-click = "fcitx5-remote -t";
+    };
+
+    # ── 插件：勿扰指示（仅开启时显示，点击切换）──
+    "custom/dnd" = {
+      exec = bin "waybar-dnd";
+      return-type = "json";
+      exec-if = "makoctl mode | grep -q dnd";
+      interval = 5;
+      format = "{}";
+      tooltip = true;
+      on-click = bin "notif-dnd";
+    };
+
+    # ── 插件：录屏指示（仅录制时显示，点击停止）──
+    "custom/recording" = {
+      exec = bin "waybar-recording";
+      return-type = "json";
+      exec-if = "pgrep -f wf-recorder";
+      interval = 2;
+      format = "{}";
+      tooltip = true;
+      on-click = bin "record-toggle";
+    };
   }
   // lib.optionalAttrs (agentUsageCmd != null) {
     "custom/agent-usage" = {

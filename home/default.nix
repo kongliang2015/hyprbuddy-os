@@ -16,7 +16,7 @@ let
     if usageEnabled then "${import ../lib/agent-usage.nix { inherit pkgs; }}" else null;
 
   waybar = import ../lib/waybar.nix {
-    inherit lib;
+    inherit lib home;
     battery = distro.hardware.battery;
     inherit agentUsageCmd;
   };

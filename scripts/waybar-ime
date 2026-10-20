@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# waybar custom/ime：输出输入法状态（JSON）。点击由 waybar 调 fcitx5-remote -t 切换。
+set -uo pipefail
+if ! command -v fcitx5-remote >/dev/null 2>&1; then
+  echo '{"text": "", "class": "disabled", "tooltip": "fcitx5 未安装"}'
+  exit 0
+fi
+case "$(fcitx5-remote 2>/dev/null || echo 0)" in
+  2) echo '{"text": "中", "class": "active", "tooltip": "输入法：中文（点击切换）"}' ;;
+  *) echo '{"text": "英", "class": "inactive", "tooltip": "输入法：英文（点击切换）"}' ;;
+esac
