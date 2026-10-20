@@ -41,7 +41,7 @@ lib.mkIf cfg.desktop.enable {
     '';
   });
   # 会话名对应 wayland-sessions/hyprland.desktop 的文件名
-  services.displayManager.defaultSession = "hyprland";
+  services.displayManager.defaultSession = "hyprland-uwsm";
 
   # GTK / Qt 统一暗色主题
   qt = {
