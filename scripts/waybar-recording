@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# waybar custom/recording：录屏中显示红点。配合 exec-if（pgrep -f wf-recorder）使用。
-echo '{"text": "", "class": "active", "tooltip": "录屏中（点击停止）"}'

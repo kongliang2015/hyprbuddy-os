@@ -8,7 +8,6 @@ let
   # 注意变量名不能叫 waybar：会遮蔽下面 with pkgs 里的 pkgs.waybar。
   waybarCfg = import ../../lib/waybar.nix {
     inherit lib;
-    home = config.users.users.${cfg.user.name}.home;
     battery = cfg.hardware.battery;
     agentUsageCmd = cfg.desktop.waybarAgentCmd;
   };

@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# waybar custom/dnd：勿扰开启时显示图标。配合 exec-if（makoctl mode | grep -q dnd）使用。
-echo '{"text": "", "class": "enabled", "tooltip": "勿扰已开启（点击关闭）"}'

@@ -130,12 +130,6 @@ window#waybar > box {
 #memory { color: #${WB_MEM}; }
 #battery { color: #${WB_BAT}; }
 #pulseaudio { color: #${WB_PULSE}; }
-/* 插件模块：媒体/输入法/勿扰/录屏 */
-#mpris { color: #${WB_FG}; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
-#custom-ime { color: #${WB_WS}; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
-#custom-ime.active { color: #${WB_PULSE}; }
-#custom-dnd { color: #${WB_URGENT}; padding: 0 6px; margin: 4px 2px; }
-#custom-recording { color: #${WB_URGENT}; padding: 0 6px; margin: 4px 2px; }
 #custom-agent-usage { color: #${WB_AGENT}; padding: 0 6px; }
 CSS
 # 在跑就重启（换肤生效），没跑就拉起（登录后 CSS 被旧缓存打断等场景）。
