@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<actions>
+<action>
+	<icon>utilities-terminal</icon>
+	<name>Open Terminal Here</name>
+	<submenu></submenu>
+	<unique-id>1792491151667548-1</unique-id>
+	<command>kitty --directory %f</command>
+	<description>在选中目录打开 kitty 终端（原 exo-open 已随 Thunar 4.20 移除）</description>
+	<range></range>
+	<patterns>*</patterns>
+	<startup-notify/>
+	<directories/>
+</action>
+</actions>
