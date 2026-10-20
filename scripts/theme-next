@@ -132,6 +132,36 @@ CSS
   setsid waybar >/dev/null 2>&1 < /dev/null 200>&- &   # 200>&- 防止子进程继承锁 fd
 ) 200>"$RUNTIME/theme-next/waybar.lock"
 
+# ── fuzzel 启动器（替换 [colors] 段，其余保持仓库配置） ──
+# fuzzel 即用即读配置，无需重启。fuzzel.ini 默认是 store 软链，摘链后写常规文件。
+FUZZEL="$XDG_CONFIG_HOME/fuzzel/fuzzel.ini"
+if [ -f "$FUZZEL" ]; then
+  if [ -L "$FUZZEL" ]; then FSRC=$(readlink -f "$FUZZEL"); else FSRC="$FUZZEL"; fi
+  mkdir -p "$XDG_CONFIG_HOME/fuzzel"
+  # 先写临时文件，非空才替换（store 中间链接未就绪等异常时不留 0 字节配置）
+  awk -v bg="${WB_BG}ff" -v fg="${WB_FG}ff" -v mtc="${WB_WSAFG}ff" \
+      -v sel="${WB_WSABG}ff" -v seltxt="${WB_FG}ff" -v selmtc="${WB_PULSE}ff" \
+      -v border="${WB_WSAFG}ff" '
+    /^\[colors\]/ { inblk=1
+      print "[colors]"
+      print "background=" bg
+      print "text=" fg
+      print "match=" mtc
+      print "selection=" sel
+      print "selection-text=" seltxt
+      print "selection-match=" selmtc
+      print "border=" border
+      next }
+    /^\[/ { inblk=0 }
+    !inblk { print }
+  ' "$FSRC" > "$FUZZEL.tmp" 2>/dev/null || true
+  if [ -s "$FUZZEL.tmp" ]; then
+    mv -f "$FUZZEL.tmp" "$FUZZEL"
+  else
+    rm -f "$FUZZEL.tmp"
+  fi
+fi
+
 # ── Kitty（include 持久化 + 实时 set-colors） ───
 mkdir -p "$XDG_CONFIG_HOME/kitty"
 cat > "$XDG_CONFIG_HOME/kitty/theme.inc.conf" <<KITTY
