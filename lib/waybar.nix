@@ -55,7 +55,13 @@ in
       ++ optional (agentUsageCmd != null) "custom/agent-usage"
       ++ [ "clock" ];
 
-    "hyprland/workspaces" = { disable-scroll = true; show-special = true; };
+    # persistent-workspaces: 空桌面/锁屏解锁后 1-4 也常驻显示，不再消失
+    "hyprland/workspaces" = {
+      disable-scroll = true;
+      show-special = true;
+      persistent-workspaces = { "*" = 4; };
+    };
+
     pulseaudio = { format = "{volume}%"; format-muted = "MUTE"; };
     network = { format-wifi = "WIFI {essid}"; format-ethernet = "ETH"; };
     cpu = { format = "CPU {usage}%"; };
