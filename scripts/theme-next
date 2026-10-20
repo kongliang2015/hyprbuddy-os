@@ -15,10 +15,10 @@ WALL="$HOME/Pictures/wallpapers"
 
 mkdir -p "$STATE_DIR"
 
-# 确保 hyprpaper 守护进程在运行（VM 里它可能提前退出，导致壁纸指令静默失败）
-ensure_hyprpaper() {
-  if ! pgrep -x hyprpaper >/dev/null 2>&1; then
-    setsid hyprpaper >/dev/null 2>&1 < /dev/null &
+# 确保 swww 壁纸守护进程在运行（hyprpaper 在本 VM 因 GBM 分配失败段错误，已弃用）
+ensure_swww() {
+  if ! pgrep -x swww-daemon >/dev/null 2>&1; then
+    setsid swww-daemon >/dev/null 2>&1 < /dev/null &
     sleep 0.6
   fi
 }
@@ -65,13 +65,11 @@ if command -v hyprctl >/dev/null 2>&1; then
   hyprctl keyword general:col.inactive_border "rgba(${HI}aa)" 2>/dev/null
 fi
 
-# ── 壁纸（先确保 hyprpaper 在运行） ─────────────
+# ── 壁纸（先确保 swww 守护在运行） ─────────────
 IMG="$WALL/$WALLPAPER"
-if [ -f "$IMG" ] && command -v hyprctl >/dev/null 2>&1; then
-  ensure_hyprpaper
-  hyprctl hyprpaper preload "$IMG" 2>/dev/null
-  sleep 0.2
-  hyprctl hyprpaper wallpaper ",$IMG" 2>/dev/null
+if [ -f "$IMG" ] && command -v swww >/dev/null 2>&1; then
+  ensure_swww
+  swww img "$IMG" 2>/dev/null
 fi
 
 # ── Waybar（CSS 变量覆盖 + 重启） ───────────────

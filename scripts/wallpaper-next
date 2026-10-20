@@ -9,5 +9,10 @@ i=$(cat "$state" 2>/dev/null || echo -1)
 i=$(( (i + 1) % ${#imgs[@]} ))
 echo "$i" > "$state"
 img="${imgs[$i]}"
-hyprctl hyprpaper preload "$img" >/dev/null 2>&1
-hyprctl hyprpaper wallpaper ",$img" >/dev/null 2>&1
+if command -v swww >/dev/null 2>&1; then
+  pgrep -x swww-daemon >/dev/null 2>&1 || {
+    setsid swww-daemon >/dev/null 2>&1 < /dev/null &
+    sleep 0.6
+  }
+  swww img "$img" >/dev/null 2>&1
+fi
