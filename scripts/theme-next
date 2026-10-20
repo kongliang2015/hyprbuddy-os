@@ -93,7 +93,7 @@ rm -f "$XDG_CONFIG_HOME/waybar/style.css"
 rm -f "$XDG_CONFIG_HOME/waybar/theme.css"
 cat > "$XDG_CONFIG_HOME/waybar/style.css" <<CSS
 * {
-  font-family: "Noto Sans CJK SC", sans-serif;
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC", sans-serif;
   font-size: 13px;
   color: #${WB_FG};
   border: none;
@@ -107,9 +107,24 @@ window#waybar > box {
   margin: 0 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
-#workspaces button { padding: 0 6px; color: #${WB_WS}; border-radius: 8px; }
+/* workspaces：胶囊 + hover */
+#workspaces button { padding: 0 8px; margin: 2px 1px; color: #${WB_WS}; border-radius: 8px; }
+#workspaces button:hover { color: #${WB_WSAFG}; background: #${WB_WSABG}; }
 #workspaces button.active { color: #${WB_WSAFG}; background: #${WB_WSABG}; }
 #workspaces button.urgent { color: #${WB_URGENT}; }
+/* 中间窗口标题：独立胶囊 */
+#window { background: #${WB_BG}; border-radius: 10px; padding: 0 12px; color: #${WB_WS}; }
+/* 分组胶囊（与 Hyprland rounding=10 对齐） */
+#group-hardware, #group-media, #group-clock {
+  background: #${WB_WSABG};
+  border: 1px solid #${WB_WSAFG};
+  border-radius: 10px;
+  padding: 0 8px;
+  margin: 4px 3px;
+}
+#group-hardware:hover, #group-media:hover, #group-clock:hover { background: #${WB_WS}; }
+#network, #tray { border: 1px solid #${WB_WSAFG}; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
+#network:hover { background: #${WB_WSABG}; }
 #clock { color: #${WB_CLOCK}; }
 #cpu { color: #${WB_CPU}; }
 #memory { color: #${WB_MEM}; }
