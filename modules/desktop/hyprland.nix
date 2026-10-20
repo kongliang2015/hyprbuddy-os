@@ -30,6 +30,13 @@ lib.mkIf cfg.desktop.enable {
   # 而 TTY 直接 `Hyprland` 正常，故用 SDDM。greeter 保持默认 X11，在 NVIDIA 上更稳。
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.theme = cfg.desktop.theme;
+  # 修复 SDDM 0.21 (Qt6) 主题回退：主题校验要求 $out/bin/sddm-greeter，
+  # 但包只产出 sddm-greeter-qt6；给包装层补符号链接后 elarun 等主题才会生效。
+  services.displayManager.sddm.package = pkgs.kdePackages.sddm.overrideAttrs (old: {
+    buildCommand = (old.buildCommand or "") + ''
+      ln -sf sddm-greeter-qt6 $out/bin/sddm-greeter
+    '';
+  });
   # 会话名对应 wayland-sessions/hyprland.desktop 的文件名
   services.displayManager.defaultSession = "hyprland";
 
