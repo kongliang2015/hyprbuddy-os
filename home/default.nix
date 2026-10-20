@@ -17,6 +17,7 @@ let
 
   waybar = import ../lib/waybar.nix {
     inherit lib;
+    home = home;
     battery = distro.hardware.battery;
     inherit agentUsageCmd;
   };

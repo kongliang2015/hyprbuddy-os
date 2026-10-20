@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# theme-next: 在若干内置主题间循环切换桌面配色
+#   theme-next          切换到下一套（默认动作）
+#   theme-next restore  应用已保存的主题（登录时由 exec-once 调用，不前进索引）
+#
+# 覆盖范围：Hyprland 边框/窗口色（hyprctl 实时）+ 壁纸 + Waybar（CSS 变量覆盖）
+#           + Kitty（include 持久化 + 实时 set-colors）+ hyprlock 锁屏。
+set -uo pipefail
+
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
+STATE_DIR="$RUNTIME/theme-next"
+STATE="$STATE_DIR/idx"
+WALL="$HOME/Pictures/wallpapers"
+
+mkdir -p "$STATE_DIR"
+
+# 主题表字段：
+# name|wallpaper|ha1|ha2|hi
+# |wb_bg|wb_fg|wb_ws|wb_wsafg|wb_wsabg|wb_urgent|wb_clock|wb_cpu|wb_mem|wb_bat|wb_pulse|wb_agent
+# |k_bg|k_fg|k_cursor|k0..k15(16)
+THEMES=(
+"Kanagawa|01-kanagawa.png|7E9CD8|957FB8|54546D|16161D|DCD7BA|54546D|DCD7BA|2A2A37|FF5D62|7AA89F|76946A|DCA561|957FB8|7E9CD8|957FB8|1F1F28|DCD7BA|DCD7BA|1F1F28|C34043|76946A|C0A36E|7E9CD8|957FB8|6A9589|C5C9C5|717C7C|C34043|76946A|C0A36E|7E9CD8|957FB8|6A9589|DCD7BA"
+"Tokyo Night|02-tokyo-night.png|7AA2F7|BB9AF7|565F89|16161E|C0CAF5|565F89|7AA2F7|1F2335|F7768E|7DCFFF|9ECE6A|E0AF68|BB9AF7|2AC3DE|BB9AF7|1A1B26|C0CAF5|C0CAF5|15161E|F7768E|9ECE6A|E0AF68|7AA2F7|BB9AF7|7DCFFF|A9B1D6|414868|F7768E|9ECE6A|E0AF68|7AA2F7|BB9AF7|7DCFFF|C0CAF5"
+"Catppuccin Mocha|03-catppuccin-mocha.png|89B4FA|CBA6F7|6C7086|1E1E2E|CDD6F4|6C7086|CDD6F4|313244|F38BA8|89DCEB|A6E3A1|F9E2AF|CBA6F7|94E2D5|CBA6F7|1E1E2E|CDD6F4|F5E0DC|45475A|F38BA8|A6E3A1|F9E2AF|89B4FA|CBA6F7|94E2D5|BAC2DE|585B70|F38BA8|A6E3A1|F9E2AF|89B4FA|CBA6F7|94E2D5|CDD6F4"
+"Rose Pine|04-rose-pine.png|9CCFD8|C4A7E7|6E6A86|191724|E0DEF4|6E6A86|E0DEF4|2A283E|EB6F92|9CCFD8|31748F|F6C177|C4A7E7|EBBCBA|C4A7E7|191724|E0DEF4|E0DEF4|191724|EB6F92|31748F|F6C177|9CCFD8|C4A7E7|EBBCBA|908CA4|6E6A86|EB6F92|31748F|F6C177|9CCFD8|C4A7E7|EBBCBA|E0DEF4"
+"Nord|05-nord.png|81A1C1|B48EAD|4C566A|2E3440|D8DEE9|4C566A|D8DEE9|3B4252|BF616A|88C0D0|A3BE8C|EBCB8B|B48EAD|8FBCBB|B48EAD|2E3440|D8DEE9|D8DEE9|2E3440|BF616A|A3BE8C|EBCB8B|81A1C1|B48EAD|8FBCBB|E5E9F0|4C566A|BF616A|A3BE8C|EBCB8B|81A1C1|B48EAD|8FBCBB|ECEFF4"
+)
+
+N=${#THEMES[@]}
+
+get_idx() {
+  local i=0
+  [ -f "$STATE" ] && i=$(cat "$STATE" 2>/dev/null || echo 0)
+  case "$i" in (*[!0-9]*) i=0 ;; esac
+  [ "$i" -ge "$N" ] && i=0
+  echo "$i"
+}
+
+cur_idx=$(get_idx)
+if [ "${1:-next}" = "restore" ]; then
+  idx=$cur_idx
+else
+  idx=$(( (cur_idx + 1) % N ))
+  echo "$idx" > "$STATE"
+fi
+
+IFS='|' read -r NAME WALLPAPER HA1 HA2 HI \
+  WB_BG WB_FG WB_WS WB_WSAFG WB_WSABG WB_URGENT WB_CLOCK WB_CPU WB_MEM WB_BAT WB_PULSE WB_AGENT \
+  K_BG K_FG K_CURSOR \
+  K0 K1 K2 K3 K4 K5 K6 K7 K8 K9 K10 K11 K12 K13 K14 K15 <<< "${THEMES[$idx]}"
+
+# ── Hyprland 边框（实时，无需重建） ──────────────
+if command -v hyprctl >/dev/null 2>&1; then
+  [ "${1:-next}" = "restore" ] && sleep 1
+  hyprctl keyword general:col.active_border "rgba(${HA1}ee) rgba(${HA2}ee) 45deg" 2>/dev/null
+  hyprctl keyword general:col.inactive_border "rgba(${HI}aa)" 2>/dev/null
+fi
+
+# ── 壁纸 ────────────────────────────────────────
+IMG="$WALL/$WALLPAPER"
+if [ -f "$IMG" ] && command -v hyprctl >/dev/null 2>&1; then
+  hyprctl hyprpaper preload "$IMG" 2>/dev/null
+  hyprctl hyprpaper wallpaper ",$IMG" 2>/dev/null
+fi
+
+# ── Waybar（CSS 变量覆盖 + 重启） ───────────────
+mkdir -p "$XDG_CONFIG_HOME/waybar"
+cat > "$XDG_CONFIG_HOME/waybar/theme.css" <<CSS
+@import url("/etc/xdg/waybar/style.css");
+:root {
+  --wb-bg: #${WB_BG};
+  --wb-fg: #${WB_FG};
+  --wb-ws: #${WB_WS};
+  --wb-wsafg: #${WB_WSAFG};
+  --wb-wsabg: #${WB_WSABG};
+  --wb-urgent: #${WB_URGENT};
+  --wb-clock: #${WB_CLOCK};
+  --wb-cpu: #${WB_CPU};
+  --wb-mem: #${WB_MEM};
+  --wb-bat: #${WB_BAT};
+  --wb-pulse: #${WB_PULSE};
+  --wb-agent: #${WB_AGENT};
+}
+CSS
+if pgrep -x waybar >/dev/null 2>&1; then
+  pkill -x waybar 2>/dev/null
+  sleep 0.4
+  setsid waybar >/dev/null 2>&1 < /dev/null &
+fi
+
+# ── Kitty（include 持久化 + 实时 set-colors） ───
+mkdir -p "$XDG_CONFIG_HOME/kitty"
+cat > "$XDG_CONFIG_HOME/kitty/theme.inc.conf" <<KITTY
+foreground #${K_FG}
+background #${K_BG}
+cursor #${K_CURSOR}
+cursor_text_color #${K_BG}
+selection_background #${K_FG}
+selection_foreground #${K_BG}
+color0  #${K0}
+color1  #${K1}
+color2  #${K2}
+color3  #${K3}
+color4  #${K4}
+color5  #${K5}
+color6  #${K6}
+color7  #${K7}
+color8  #${K8}
+color9  #${K9}
+color10 #${K10}
+color11 #${K11}
+color12 #${K12}
+color13 #${K13}
+color14 #${K14}
+color15 #${K15}
+KITTY
+if command -v kitty >/dev/null 2>&1; then
+  kitty @ set-colors -a \
+    background=#${K_BG} foreground=#${K_FG} cursor=#${K_CURSOR} \
+    color0=#${K0} color1=#${K1} color2=#${K2} color3=#${K3} color4=#${K4} color5=#${K5} color6=#${K6} color7=#${K7} \
+    color8=#${K8} color9=#${K9} color10=#${K10} color11=#${K11} color12=#${K12} color13=#${K13} color14=#${K14} color15=#${K15} \
+    2>/dev/null || true
+fi
+
+# ── hyprlock 锁屏 ───────────────────────────────
+mkdir -p "$XDG_CONFIG_HOME/hypr"
+cat > "$XDG_CONFIG_HOME/hypr/theme-hyprlock.conf" <<LOCK
+background {
+    color = rgba(${WB_BG}ff)
+}
+label {
+    color = rgba(${WB_FG}ff)
+}
+input-field {
+    inner_color = rgba(${WB_BG}e6)
+    outer_color = rgba(${WB_AGENT}ff)
+    font_color = rgba(${WB_FG}ff)
+    dots_color = rgba(${WB_FG}ff)
+}
+LOCK
+
+command -v notify-send >/dev/null 2>&1 && notify-send -a theme-next "主题 -> $NAME" 2>/dev/null || true
+
+echo "theme: $NAME ($((idx+1))/$N)"
