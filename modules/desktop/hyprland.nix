@@ -2,6 +2,7 @@
 { config, lib, pkgs, ... }:
 let
   cfg = config.distro;
+  sddmTheme = pkgs.where-is-my-sddm-theme.override { variants = [ "qt6" ]; };
 
   # Waybar 配置由 lib/waybar.nix 统一生成，用户级配置（home/default.nix）复用同一份。
   # 注意变量名不能叫 waybar：会遮蔽下面 with pkgs 里的 pkgs.waybar。
@@ -29,7 +30,8 @@ lib.mkIf cfg.desktop.enable {
   # LightDM 启动 Wayland 会话时会把 seat/输入设备交接搞坏（键鼠全死），
   # 而 TTY 直接 `Hyprland` 正常，故用 SDDM。greeter 保持默认 X11，在 NVIDIA 上更稳。
   services.displayManager.sddm.enable = true;
-  services.displayManager.sddm.theme = cfg.desktop.theme;
+  services.displayManager.sddm.theme = "${sddmTheme}/share/sddm/themes/where_is_my_sddm_theme";
+  services.displayManager.sddm.extraPackages = [ sddmTheme ];
   # 修复 SDDM 0.21 (Qt6) 主题回退：主题校验要求 $out/bin/sddm-greeter，
   # 但包只产出 sddm-greeter-qt6；给包装层补符号链接后 elarun 等主题才会生效。
   services.displayManager.sddm.package = pkgs.kdePackages.sddm.overrideAttrs (old: {
