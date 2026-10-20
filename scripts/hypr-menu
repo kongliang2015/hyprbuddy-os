@@ -2,57 +2,66 @@
 # Hyprland 超级菜单（Super+Space）
 # 通用多层菜单：每一层（非根）自动注入「← 返回上级菜单」，Esc 返回上一级；
 # 根菜单注入「✕ 退出菜单」。
+# 图标用 Nerd Font 字形（本机图标主题是精简版，无 apps 图标可用）。
 set -uo pipefail
 
 fmenu() {
-  fuzzel --dmenu --lines 16 --width 36 --prompt "${1:-  }"
+  fuzzel --dmenu --lines 10 --minimal-lines --width 34 \
+         --namespace hypr-menu --anchor center \
+         --placeholder '输入筛选…' --prompt "${1:-  }" \
+         --mesg 'Enter 执行 · Esc 返回/退出'
 }
 
 # ── 菜单项辅助：输出 "标签<TAB>类型<TAB>值" ──────────────
 act() { printf '%s\tact\t%s\n' "$1" "$2"; }
 sub() { printf '%s\tsub\t%s\n' "$1" "$2"; }
 
+# ── 状态探测（菜单项实时显示开关）────────────────────────
+night_state() { [ -f "${XDG_RUNTIME_DIR:-/tmp}/hyprsunset.on" ] && printf '✓ 开' || printf '关'; }
+dnd_state()   { makoctl mode 2>/dev/null | grep -q dnd && printf '✓ 开' || printf '关'; }
+
 # ── 菜单树 ──────────────────────────────────────────────
 menu_entries() {
   case "$1" in
     root)
-      sub '应用'        apps
-      sub '系统工具'    tools
-      sub '外观'        appearance
-      sub '会话'        session
-      act '快捷键参考'  '@HOME@/.local/bin/show-keybinds'
+      sub '  应用'            apps
+      act '  区域截图'        'hyprshot -m region'
+      sub '  系统工具'         tools
+      sub '  外观'           appearance
+      sub '  会话'             session
+      act '  快捷键参考'      '@HOME@/.local/bin/show-keybinds'
       ;;
     apps)
-      act '应用启动器'        'fuzzel'
-      act '终端 (kitty)'      'kitty'
-      act '文件管理器'        'thunar'
-      act '浏览器'            'firefox'
-      act '系统监视器 (btop)' 'kitty -e btop'
+      act '  应用启动器'    'fuzzel'
+      act '  终端 (kitty)'    'kitty'
+      act '  文件管理器'    'thunar'
+      act '  浏览器'         'firefox'
+      act '  系统监视器'     'kitty -e btop'
       ;;
     tools)
-      sub '截图'              screenshot
-      act '取色器'            'hyprpicker -a'
-      act '剪贴板历史'        'cliphist list | fuzzel --dmenu | cliphist decode | wl-copy'
-      act '开始/停止录屏'     '@HOME@/.local/bin/record-toggle'
+      sub '  截图'          screenshot
+      act '  取色器'          'hyprpicker -a'
+      act '  剪贴板历史'      'cliphist list | fuzzel --dmenu | cliphist decode | wl-copy'
+      act '  开始/停止录屏'  '@HOME@/.local/bin/record-toggle'
       ;;
     screenshot)
-      act '区域截图'          'hyprshot -m region'
-      act '整屏截图'          'hyprshot -m output'
-      act '截图标注'          '@HOME@/.local/bin/screenshot-annotate'
+      act '  区域截图'        'hyprshot -m region'
+      act '  整屏截图'        'hyprshot -m output'
+      act '  截图标注'      '@HOME@/.local/bin/screenshot-annotate'
       ;;
     appearance)
-      act '夜间模式开关'      '@HOME@/.local/bin/night-mode'
-      act '下一张壁纸'        '@HOME@/.local/bin/wallpaper-next'
-      act '切换主题'        '@HOME@/.local/bin/theme-next'
-      act '重新加载壁纸'      '__reload_wallpaper__'
-      act '重载 Hyprland'     'hyprctl reload'
+      act "  夜间模式        [$(night_state)]" '@HOME@/.local/bin/night-mode'
+      act '  下一张壁纸'       '@HOME@/.local/bin/wallpaper-next'
+      act '  切换主题'       '@HOME@/.local/bin/theme-next'
+      act '  重新加载壁纸'  '__reload_wallpaper__'
+      act '  重载 Hyprland' 'hyprctl reload'
       ;;
     session)
-      act '锁屏'              'hyprlock'
-      act '通知勿扰开关'      '@HOME@/.local/bin/notif-dnd'
-      act '注销'              'hyprctl dispatch exit'
-      act '重启'              '__reboot__'
-      act '关机'              '__poweroff__'
+      act '  锁屏'            'hyprlock'
+      act "  通知勿扰        [$(dnd_state)]" '@HOME@/.local/bin/notif-dnd'
+      act '  注销'             'hyprctl dispatch exit'
+      act '  重启'         '__reboot__'
+      act '  关机'           '__poweroff__'
       ;;
   esac
 }
@@ -72,8 +81,8 @@ menu_prompt() {
 run_action() {
   case "$1" in
     __reload_wallpaper__)
-      pkill hyprpaper 2>/dev/null
-      setsid hyprpaper >/dev/null 2>&1 < /dev/null &
+      # awww/swww 链路：重设当前主题壁纸（含守护兜底）
+      "@HOME@/.local/bin/theme-next" restore >/dev/null 2>&1 &
       ;;
     __reboot__)
       [ "$(printf 'No\nYes' | fmenu 'Restart? ')" = Yes ] && systemctl reboot
@@ -99,15 +108,15 @@ run_menu() {
       labels+=("${e%%$'\t'*}")
     done
     if [ -n "$parent" ]; then
-      labels+=('← 返回上级菜单')
+      labels+=('  返回上级菜单')
     else
-      labels+=('✕ 退出菜单')
+      labels+=('  退出菜单')
     fi
 
     local choice
     choice=$(printf '%s\n' "${labels[@]}" | fmenu "$(menu_prompt "$id")") || return 0
 
-    if [ "$choice" = '← 返回上级菜单' ] || [ "$choice" = '✕ 退出菜单' ]; then
+    if [ "$choice" = '  返回上级菜单' ] || [ "$choice" = '  退出菜单' ]; then
       return 0
     fi
 
