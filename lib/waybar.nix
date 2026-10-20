@@ -4,7 +4,7 @@
 # 注意：GTK 的 CSS 不支持 :root 和 var() 自定义属性（报 "Invalid name of pseudo-class"
 # 会让 Waybar 直接拒绝启动），所以配色全部写具体颜色值。换肤由 theme-next 把整份
 # CSS（同样只有具体颜色值）重写到 ~/.config/waybar/style.css。
-{ lib, home ? "/home/nixos", battery ? false, agentUsageCmd ? null }:
+{ lib, battery ? false, agentUsageCmd ? null }:
 let
   inherit (lib) optional optionalString;
 
