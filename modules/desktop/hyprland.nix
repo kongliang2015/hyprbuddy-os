@@ -87,7 +87,7 @@ lib.mkIf cfg.desktop.enable {
     kitty         # Wayland 终端（Super+Return）
     fuzzel        # 应用启动器（Super+D / Super+Space）
     hyprlock      # 锁屏（Super+L）
-    swww          # 壁纸守护（swww-daemon）
+    swww          # 壁纸守护（26.05 更名 awww，二进制 awww-daemon）
     mako          # 通知守护进程
     hyprshot      # 截图（Print）
     grim          # 截图后端

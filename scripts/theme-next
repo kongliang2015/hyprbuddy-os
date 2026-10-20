@@ -15,12 +15,25 @@ WALL="$HOME/Pictures/wallpapers"
 
 mkdir -p "$STATE_DIR"
 
-# 确保 swww 壁纸守护进程在运行（hyprpaper 在本 VM 因 GBM 分配失败段错误，已弃用）
+# 壁纸守护：hyprpaper 在本 VM 因 GBM 分配失败段错误已弃用；
+# nixpkgs 26.05 起 swww 包更名 awww（二进制 awww / awww-daemon），此处做两者兼容
+if command -v awww >/dev/null 2>&1; then
+  WP=awww WPD=awww-daemon
+elif command -v swww >/dev/null 2>&1; then
+  WP=swww WPD=swww-daemon
+else
+  WP= WPD=
+fi
 ensure_swww() {
-  if ! pgrep -x swww-daemon >/dev/null 2>&1; then
-    setsid swww-daemon >/dev/null 2>&1 < /dev/null &
-    sleep 0.6
-  fi
+  [ -z "$WPD" ] && return 0
+  pgrep -f "$WPD" >/dev/null 2>&1 && return 0
+  setsid "$WPD" >/dev/null 2>&1 < /dev/null &
+  local _i
+  for _i in 1 2 3 4 5 6 7 8 9 10; do
+    sleep 0.3
+    pgrep -f "$WPD" >/dev/null 2>&1 && return 0
+  done
+  return 0
 }
 
 # 主题表字段：
@@ -67,9 +80,9 @@ fi
 
 # ── 壁纸（先确保 swww 守护在运行） ─────────────
 IMG="$WALL/$WALLPAPER"
-if [ -f "$IMG" ] && command -v swww >/dev/null 2>&1; then
+if [ -f "$IMG" ] && [ -n "$WP" ]; then
   ensure_swww
-  swww img "$IMG" 2>/dev/null
+  "$WP" img "$IMG" 2>/dev/null
 fi
 
 # ── Waybar（CSS 变量覆盖 + 重启） ───────────────
