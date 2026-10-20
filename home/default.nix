@@ -47,6 +47,7 @@ let
     "kitty/kitty.conf" = read ./kitty/kitty.conf;
     "mako/config" = read ./mako/config;
     "swayosd/style.css" = read ./swayosd/style.css;
+    "Thunar/uca.xml" = read ./thunar/uca.xml;
   };
 
   scriptNames = builtins.attrNames (builtins.readDir ../scripts);
