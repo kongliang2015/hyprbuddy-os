@@ -67,6 +67,21 @@ lib.mkIf cfg.desktop.enable {
     withUWSM = true;
   };
 
+  # XDG 桌面门户：跨应用的截图/录屏(screencast)/文件选择器等标准接口。
+  # xdg-desktop-portal-hyprland(hyprwm 官方) 提供 ScreenCast/Screenshot/GlobalShortcuts；
+  # gtk 门户兜底 FileChooser 等其余接口（Hyprland wiki 推荐组合）。
+  # 不配置时 Firefox 窗口共享、系统文件选择等会静默失败。
+  # NixOS 的 programs.hyprland 不会自动启用 portal，需显式声明。
+  xdg.portal = {
+    enable = true;
+    extraPortals = with pkgs; [
+      xdg-desktop-portal-hyprland
+      xdg-desktop-portal-gtk
+    ];
+    # 会话内逐接口先试 hyprland 门户，未实现的接口（如 FileChooser）落到 gtk
+    config.common.default = [ "hyprland" "gtk" ];
+  };
+
   # hyprlock 锁屏需要 PAM 服务来校验密码
   security.pam.services.hyprlock = { };
 
