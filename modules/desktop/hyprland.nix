@@ -64,6 +64,7 @@ lib.mkIf cfg.desktop.enable {
   programs.hyprland = {
     enable = true;
     xwayland.enable = true;
+    withUWSM = true;
   };
 
   # hyprlock 锁屏需要 PAM 服务来校验密码
