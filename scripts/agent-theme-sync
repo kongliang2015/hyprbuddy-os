@@ -1,15 +1,45 @@
 #!/usr/bin/env bash
-# 让 agent 的明暗主题跟随系统：只改 theme 字段，保留其余设置。
+# agent-theme-sync: 让已安装 agent 的界面主题跟随系统（dark/light）。
+# 由 theme-next 在每次切换/restore 时调用；也可手动执行。
+# 用法: agent-theme-sync [dark|light]  （默认 dark）
 set -euo pipefail
+mode="${1:-dark}"
 
-f="${HOME}/.claude/settings.json"
-mkdir -p "${HOME}/.claude"
+# json merge：jq 优先，缺失时用 python3（settings 文件必须保留既有键）
+merge() {
+  local f="$1" key="$2" val="$3" tmp
+  if command -v jq >/dev/null 2>&1; then
+    tmp=$(mktemp)
+    jq --arg k "$key" --arg v "$val" '. + {($k): $v}' "$f" >"$tmp" && mv "$tmp" "$f"
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - "$f" "$key" "$val" <<'PY'
+import json, sys
+f, key, val = sys.argv[1], sys.argv[2], sys.argv[3]
+d = json.load(open(f))
+d[key] = val
+json.dump(d, open(f, "w"), indent=2)
+PY
+  else
+    return 1
+  fi
+}
 
-if command -v jq >/dev/null 2>&1 && [ -s "$f" ]; then
-  tmp=$(mktemp)
-  jq '. + {theme: "dark"}' "$f" > "$tmp" && mv "$tmp" "$f"
-else
-  printf '{\n  "theme": "dark"\n}\n' > "$f"
+# Claude Code：theme 为内置值（dark/light 等）
+if command -v claude >/dev/null 2>&1; then
+  f="$HOME/.claude/settings.json"
+  mkdir -p "$(dirname "$f")"
+  [ -s "$f" ] || echo '{}' >"$f"
+  merge "$f" theme "$mode"
 fi
 
-echo "claude theme -> dark"
+# OpenCode：opencode.json 的 theme 键已废弃（官方自动迁移到 tui.json），
+# 正确落点是 tui.json 顶层 theme 字段（string，主题名，schema 无枚举；
+# 明暗主题名按实际安装的主题填）。tui.json 是纯 JSON，可安全合并。
+if command -v opencode >/dev/null 2>&1; then
+  f="$HOME/.config/opencode/tui.json"
+  mkdir -p "$(dirname "$f")"
+  [ -s "$f" ] || echo '{}' >"$f"
+  merge "$f" theme "$mode"
+fi
+
+# CodeBuddy：settings.json 暂无 theme 字段（官方支持情况未确认），跳过

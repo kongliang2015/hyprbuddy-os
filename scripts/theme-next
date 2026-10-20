@@ -260,6 +260,9 @@ cat > "$XDG_CONFIG_HOME/hypr/theme-hyprlock.conf" <<LOCK
 \$hl_bgpath = ${HOME}/Pictures/wallpapers/${WALLPAPER}
 LOCK
 
+# agent 主题跟随（agent 层未启用时脚本不存在，静默跳过）
+[ -x "@HOME@/.local/bin/agent-theme-sync" ] && "@HOME@/.local/bin/agent-theme-sync" dark >/dev/null 2>&1 || true
+
 command -v notify-send >/dev/null 2>&1 && notify-send -a theme-next "主题 -> $NAME" 2>/dev/null || true
 
 echo "theme: $NAME ($((idx+1))/$N)"

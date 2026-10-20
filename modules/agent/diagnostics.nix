@@ -51,7 +51,12 @@ lib.mkIf (cfg.enable && cfg.diagnostics) {
   # 只读监听：coredump 写入即触发一次分析
   systemd.paths.coredump-watch = {
     wantedBy = [ "multi-user.target" ];
-    pathConfig.PathChanged = "/var/lib/systemd/coredump";
+    pathConfig = {
+      PathChanged = "/var/lib/systemd/coredump";
+      # systemd.path 默认触发同名 service（coredump-watch），而分析单元叫
+      # coredump-analyze；不指定 Unit= 时事件会去拉起不存在的单元，链路断裂。
+      Unit = "coredump-analyze.service";
+    };
   };
 
   systemd.services.coredump-analyze = {

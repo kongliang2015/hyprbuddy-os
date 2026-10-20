@@ -49,7 +49,13 @@ let
     "Thunar/uca.xml" = read ./thunar/uca.xml;
   };
 
-  scriptNames = builtins.attrNames (builtins.readDir ../scripts);
+  # agent 层脚本随 distro.agent.enable 开关安装（agent-usage 由 lib/ 生成，不在此列）
+  scriptNames = let
+    all = builtins.attrNames (builtins.readDir ../scripts);
+    agentOnly = [ "agent-menu" "agent-apply" "agent-theme-sync" ];
+  in
+    if agentEnabled then all
+    else builtins.filter (n: !(builtins.elem n agentOnly)) all;
 
   entries =
     lib.mapAttrsToList (name: text: {
