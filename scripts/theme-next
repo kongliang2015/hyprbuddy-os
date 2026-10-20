@@ -15,27 +15,6 @@ WALL="$HOME/Pictures/wallpapers"
 
 mkdir -p "$STATE_DIR"
 
-# 壁纸守护：hyprpaper 在本 VM 因 GBM 分配失败段错误已弃用；
-# nixpkgs 26.05 起 swww 包更名 awww（二进制 awww / awww-daemon），此处做两者兼容
-if command -v awww >/dev/null 2>&1; then
-  WP=awww WPD=awww-daemon
-elif command -v swww >/dev/null 2>&1; then
-  WP=swww WPD=swww-daemon
-else
-  WP= WPD=
-fi
-ensure_swww() {
-  [ -z "$WPD" ] && return 0
-  pgrep -f "$WPD" >/dev/null 2>&1 && return 0
-  setsid "$WPD" >/dev/null 2>&1 < /dev/null &
-  local _i
-  for _i in 1 2 3 4 5 6 7 8 9 10; do
-    sleep 0.3
-    pgrep -f "$WPD" >/dev/null 2>&1 && return 0
-  done
-  return 0
-}
-
 # 主题表字段：
 # name|wallpaper|ha1|ha2|hi
 # |wb_bg|wb_fg|wb_ws|wb_wsafg|wb_wsabg|wb_urgent|wb_clock|wb_cpu|wb_mem|wb_bat|wb_pulse|wb_agent
@@ -78,11 +57,11 @@ if command -v hyprctl >/dev/null 2>&1; then
   hyprctl keyword general:col.inactive_border "rgba(${HI}aa)" 2>/dev/null
 fi
 
-# ── 壁纸（先确保 swww 守护在运行） ─────────────
+# ── 壁纸（hyprpaper 已在 exec-once 启动，直接下发） ──
 IMG="$WALL/$WALLPAPER"
-if [ -f "$IMG" ] && [ -n "$WP" ]; then
-  ensure_swww
-  "$WP" img "$IMG" 2>/dev/null
+if [ -f "$IMG" ] && command -v hyprctl >/dev/null 2>&1; then
+  hyprctl hyprpaper preload "$IMG" 2>/dev/null
+  hyprctl hyprpaper wallpaper ",$IMG" 2>/dev/null
 fi
 
 # ── Waybar（整份重写 style.css + 重启） ─────────

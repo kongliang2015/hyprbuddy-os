@@ -41,6 +41,7 @@ let
     "hypr/extra.conf" = extraHypr;
     "hypr/hypridle.conf" = read ./hypr/hypridle.conf;
     "hypr/hyprlock.conf" = read ./hypr/hyprlock.conf;
+    "hypr/hyprpaper.conf" = read ./hypr/hyprpaper.conf;
     "waybar/config" = builtins.toJSON waybar.config;
     "waybar/style.css" = waybar.css;
     "fuzzel/fuzzel.ini" = read ./fuzzel/fuzzel.ini;
