@@ -1,10 +1,13 @@
 # 示例 host：QEMU virtio 虚拟机，用于验证非 NVIDIA 路径。
-{ config, ... }:
+{ config, pkgs, ... }:
 {
   imports = [ ./hardware-configuration.nix ];
 
   networking.hostName = "vm-virtio";
   system.stateVersion = "25.11";
+
+  # virtio-gpu 不响应内核 video=，用 SDDM Xsetup 的 xrandr 强制 greeter 分辨率。
+  services.displayManager.sddm.setupScript = "${pkgs.xorg.xrandr}/bin/xrandr --output Virtual-1 --mode 1920x1080 || true";
 
   distro = {
     gpu.vendor = "virtio";
