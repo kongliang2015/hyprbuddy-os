@@ -9,10 +9,16 @@ i=$(cat "$state" 2>/dev/null || echo -1)
 i=$(( (i + 1) % ${#imgs[@]} ))
 echo "$i" > "$state"
 img="${imgs[$i]}"
-if command -v swww >/dev/null 2>&1; then
-  pgrep -x swww-daemon >/dev/null 2>&1 || {
-    setsid swww-daemon >/dev/null 2>&1 < /dev/null &
-    sleep 0.6
-  }
-  swww img "$img" >/dev/null 2>&1
+# nixpkgs 26.05 起 swww 更名 awww，做两者兼容
+if command -v awww >/dev/null 2>&1; then
+  wp=awww wpd=awww-daemon
+elif command -v swww >/dev/null 2>&1; then
+  wp=swww wpd=swww-daemon
+else
+  exit 0
 fi
+pgrep -f "$wpd" >/dev/null 2>&1 || {
+  setsid "$wpd" >/dev/null 2>&1 < /dev/null &
+  sleep 1
+}
+"$wp" img "$img" >/dev/null 2>&1
