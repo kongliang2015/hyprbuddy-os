@@ -37,8 +37,9 @@ done
 }
 
 echo "==> 生成用户级配置（host: $HOST）"
+mkdir -p "$HOME/.local/share"
 out="$(nix --extra-experimental-features 'nix-command flakes' \
-  build --no-link --print-out-paths "path:$here#$HOST")"
+  build --out-link "$HOME/.local/share/hyprland-nixos-home" --print-out-paths "path:$here#$HOST")"
 
 if [ "$ASSUME_YES" -ne 1 ]; then
   printf '\n将把 %s 下的文件链接到 ~/.config 与 ~/.local/bin（已存在的真实文件会先备份）。继续？[y/N] ' "$out"
