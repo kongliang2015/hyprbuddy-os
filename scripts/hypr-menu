@@ -43,6 +43,7 @@ menu_entries() {
     appearance)
       act '夜间模式开关'      '@HOME@/.local/bin/night-mode'
       act '下一张壁纸'        '@HOME@/.local/bin/wallpaper-next'
+      act '切换主题'        'theme-next'
       act '重新加载壁纸'      '__reload_wallpaper__'
       act '重载 Hyprland'     'hyprctl reload'
       ;;
