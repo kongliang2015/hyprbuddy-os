@@ -70,6 +70,17 @@ lib.mkIf cfg.desktop.enable {
   # hyprlock 锁屏需要 PAM 服务来校验密码
   security.pam.services.hyprlock = { };
 
+  # polkit 认证代理（GUI 提权）
+  systemd.user.services.polkit-gnome = {
+    description = "Polkit GNOME Authentication Agent";
+    wantedBy = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      Restart = "on-failure";
+    };
+  };
+
   environment.systemPackages = with pkgs; [
     # ── Hyprland 桌面套件 ────────────────────────────────
     waybar        # 顶部状态栏
@@ -97,6 +108,8 @@ lib.mkIf cfg.desktop.enable {
     swappy        # 截图标注
     hyprpicker    # 屏幕取色
     libnotify     # notify-send
+    thunar        # 文件管理器（Super+E）
+    polkit_gnome  # polkit 认证代理（GUI 提权）
   ];
 
   # 系统级 Waybar 配置（Tokyo Night / Kanagawa 风格），放在 /etc/xdg/waybar。
