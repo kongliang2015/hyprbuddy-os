@@ -85,30 +85,52 @@ if [ -f "$IMG" ] && [ -n "$WP" ]; then
   "$WP" img "$IMG" 2>/dev/null
 fi
 
-# ── Waybar（CSS 变量覆盖 + 重启） ───────────────
+# ── Waybar（整份重写 style.css + 重启） ─────────
+# GTK CSS 不支持 :root / var()，必须写具体颜色值。
+# style.css 默认是指向 store 的软链，先摘掉再写常规文件。
 mkdir -p "$XDG_CONFIG_HOME/waybar"
-cat > "$XDG_CONFIG_HOME/waybar/theme.css" <<CSS
-@import url("/etc/xdg/waybar/style.css");
-:root {
-  --wb-bg: #${WB_BG};
-  --wb-fg: #${WB_FG};
-  --wb-ws: #${WB_WS};
-  --wb-wsafg: #${WB_WSAFG};
-  --wb-wsabg: #${WB_WSABG};
-  --wb-urgent: #${WB_URGENT};
-  --wb-clock: #${WB_CLOCK};
-  --wb-cpu: #${WB_CPU};
-  --wb-mem: #${WB_MEM};
-  --wb-bat: #${WB_BAT};
-  --wb-pulse: #${WB_PULSE};
-  --wb-agent: #${WB_AGENT};
+rm -f "$XDG_CONFIG_HOME/waybar/style.css"
+rm -f "$XDG_CONFIG_HOME/waybar/theme.css"
+cat > "$XDG_CONFIG_HOME/waybar/style.css" <<CSS
+* {
+  font-family: "Noto Sans CJK SC", sans-serif;
+  font-size: 13px;
+  color: #${WB_FG};
+  border: none;
+  border-radius: 0;
 }
+window#waybar { background: transparent; }
+window#waybar > box {
+  background: #${WB_BG};
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin: 0 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+#workspaces button { padding: 0 6px; color: #${WB_WS}; border-radius: 8px; }
+#workspaces button.active { color: #${WB_WSAFG}; background: #${WB_WSABG}; }
+#workspaces button.urgent { color: #${WB_URGENT}; }
+#clock { color: #${WB_CLOCK}; }
+#cpu { color: #${WB_CPU}; }
+#memory { color: #${WB_MEM}; }
+#battery { color: #${WB_BAT}; }
+#pulseaudio { color: #${WB_PULSE}; }
+#custom-agent-usage { color: #${WB_AGENT}; padding: 0 6px; }
 CSS
-if pgrep -x waybar >/dev/null 2>&1; then
-  pkill -x waybar 2>/dev/null
-  sleep 0.4
-  setsid waybar >/dev/null 2>&1 < /dev/null &
-fi
+# 在跑就重启（换肤生效），没跑就拉起（登录后 CSS 被旧缓存打断等场景）。
+# 注意匹配方式：NixOS 包装的 waybar 进程 comm 是 ".waybar-wrapped"，
+# pgrep -x waybar 永远匹配不上（旧实例杀不掉会堆叠），须用对 comm 子串匹配的
+# 无标志 pgrep/pkill waybar。
+# flock 串行化：exec-once 的 restore 与配置自动 reload 触发的 restore 可能并发，
+# 不加锁会 pkill/setsid 交错导致状态栏堆叠出多份。
+(
+  flock -x 200
+  if pgrep waybar >/dev/null 2>&1; then
+    pkill waybar 2>/dev/null
+    sleep 0.4
+  fi
+  setsid waybar >/dev/null 2>&1 < /dev/null 200>&- &   # 200>&- 防止子进程继承锁 fd
+) 200>"$RUNTIME/theme-next/waybar.lock"
 
 # ── Kitty（include 持久化 + 实时 set-colors） ───
 mkdir -p "$XDG_CONFIG_HOME/kitty"
