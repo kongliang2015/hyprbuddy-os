@@ -31,6 +31,7 @@ let
       "bind = , XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
     ]
     ++ (if distro.hypervisor == "vmware" then [ "monitor=,1920x1080@60,auto,1" "bind = $mainMod, RETURN, exec, env LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe kitty" ] else [ "bind = $mainMod, RETURN, exec, kitty" ])
+    ++ (if distro.hypervisor == "vmware" then [ ] else [ "bind = $mainMod, L, exec, hyprlock" ])
     ++ optional agentEnabled
       "bind = $mainMod SHIFT CTRL, A, exec, ${home}/.local/bin/agent-menu"
   ) + "
@@ -39,7 +40,7 @@ let
   textFiles = {
     "hypr/hyprland.conf" = read ./hypr/hyprland.conf;
     "hypr/extra.conf" = extraHypr;
-    "hypr/hypridle.conf" = read ./hypr/hypridle.conf;
+    "hypr/hypridle.conf" = if distro.hypervisor == "vmware" then "" else read ./hypr/hypridle.conf;
     "hypr/hyprlock.conf" = read ./hypr/hyprlock.conf;
     "waybar/config" = builtins.toJSON waybar.config;
     "waybar/style.css" = waybar.css;
