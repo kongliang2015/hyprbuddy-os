@@ -71,6 +71,16 @@
           { system.nixos.versionSuffix = versionSuffix; }
         ];
       }).config.system.build.isoImage;
+
+      # live + install 一体盘：直接进入 Hyprland 桌面，并保留安装器
+      mkLiveIso = system: (lib.nixosSystem {
+        inherit system;
+        modules = [
+          "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+          ./installer/live-iso-config.nix
+          { system.nixos.versionSuffix = versionSuffix; }
+        ];
+      }).config.system.build.isoImage;
     in
     {
       nixosConfigurations = lib.genAttrs hosts mkHost;
@@ -78,7 +88,7 @@
       packages = lib.mapAttrs
         (system: names:
           lib.genAttrs names homePkg
-          // lib.optionalAttrs (system == isoSystem) { iso = mkIso system; })
+          // lib.optionalAttrs (system == isoSystem) { iso = mkIso system; liveIso = mkLiveIso system; })
         hostsBySystem;
 
       # nixosConfigurations 不会被 `nix flake check` 自动检查，显式放进 checks
