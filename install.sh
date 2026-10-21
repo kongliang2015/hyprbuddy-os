@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 部署用户级配置：由 flake 的 homeConfigs.<host> 生成配置树，再软链进 ~/.config 与 ~/.local/bin。
+# 部署用户级配置：由 flake 的 homeConfigs.<host> 生成配置树，再软链进 ~/.config、~/.local/bin 与 ~/.codebuddy/skills。
 #
 # 不再拷贝 + sed：配置文件是 Nix store 里的产物，主机差异（电池/背光/agent）在构建期决定。
 set -euo pipefail
@@ -42,7 +42,7 @@ out="$(nix --extra-experimental-features 'nix-command flakes' \
   build --out-link "$HOME/.local/share/hyprland-nixos-home" --print-out-paths "path:$here#$HOST")"
 
 if [ "$ASSUME_YES" -ne 1 ]; then
-  printf '\n将把 %s 下的文件链接到 ~/.config 与 ~/.local/bin（已存在的真实文件会先备份）。继续？[y/N] ' "$out"
+  printf '\n将把 %s 下的文件链接到 ~/.config、~/.local/bin 与 ~/.codebuddy/skills（已存在的真实文件会先备份）。继续？[y/N] ' "$out"
   read -r ans
   [ "$ans" = y ] || [ "$ans" = Y ] || { echo "已取消"; exit 0; }
 fi
@@ -54,6 +54,14 @@ echo "==> 链接配置"
 while IFS= read -r rel; do
   case "$rel" in
     bin/*) dst="$HOME/.local/bin/${rel#bin/}" ;;
+    skills/*)
+      dst="$HOME/.codebuddy/skills/${rel#skills/}"
+      if [ -d "$HOME/.claude" ]; then
+        mkdir -p "$HOME/.claude/skills/$(dirname "${rel#skills/}")"
+        ln -sfn "$out/$rel" "$HOME/.claude/skills/${rel#skills/}"
+        echo "  .claude/skills/${rel#skills/} -> $out/$rel"
+      fi
+      ;;
     *)     dst="$HOME/.config/$rel" ;;
   esac
   mkdir -p "$(dirname "$dst")"

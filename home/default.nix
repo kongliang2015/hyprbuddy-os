@@ -73,5 +73,20 @@ let
         executable = true;
       };
     }) scriptNames;
+  # agent skills（skills/<name>/…）：install.sh 链接到 ~/.codebuddy/skills/
+  skillsDir = ../skills;
+  skillEntries = lib.concatLists (
+    lib.mapAttrsToList
+      (skill: _:
+        lib.mapAttrsToList
+          (file: _:
+            { name = "skills/${skill}/${file}";
+              path = pkgs.writeTextFile {
+                name = "skill-${skill}-${file}";
+                text = read (skillsDir + "/${skill}/${file}");
+              };
+            })
+          (builtins.readDir (skillsDir + "/${skill}")))
+      (lib.filterAttrs (_: t: t == "directory") (builtins.readDir skillsDir)));
 in
-pkgs.linkFarm "user-config-${hostName}" entries
+pkgs.linkFarm "user-config-${hostName}" (entries ++ skillEntries)
