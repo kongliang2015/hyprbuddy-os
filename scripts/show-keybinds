@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# @command: show-keybinds
+# @summary: 显示当前 Hyprland 快捷键（浮动 kitty）
+# @category: runtime
+# @usage: show-keybinds
+# @effect: 打开浮动 kitty 窗口
 # 显示当前 Hyprland 所有快捷键（从 hyprctl binds 动态生成，带中文说明），
 # 在浮动 kitty 弹窗中查看。
 set -uo pipefail

@@ -139,3 +139,5 @@ pkgs.runCommand "hyprland-nixos-commands" { } ''
 - 不解析 `--help` 输出（各脚本格式不一，脆弱）
 - 不做 shell 补全生成
 - 不把 agent 禁用时的脚本从清单剔除——用 `category: agent` + `available: false` 标注
+
+> 状态：阶段 A 已实施（脚本头部 + 生成器 + 分发 + 包装）。阶段 B（hypr-check 一致性校验）待做。

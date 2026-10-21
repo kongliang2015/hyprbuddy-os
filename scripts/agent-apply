@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# @command: agent-apply
+# @summary: 改动唯一入口：求值 → 构建 → 打印需用户执行的 sudo 命令
+# @category: workflow
+# @usage: agent-apply [host]
+# @effect: 运行 nix eval 与 nixos-rebuild build（不改系统）
+# @doc: workflow.md
 # agent 改动的唯一入口：改 models/hosts 后先验证求值，再构建，最后打印应用命令。
 set -euo pipefail
 

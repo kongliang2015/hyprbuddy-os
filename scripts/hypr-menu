@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# @command: hypr-menu
+# @summary: Super+Space 系统菜单（应用/截图/外观/会话/快捷键）
+# @category: runtime
+# @usage: hypr-menu
+# @effect: 打开 fuzzel 菜单并执行所选动作
+# @interactive: true
 # Hyprland 超级菜单（Super+Space）
 # 通用多层菜单：每一层（非根）自动注入「← 返回上级菜单」，Esc 返回上一级；
 # 根菜单注入「✕ 退出菜单」。

@@ -54,6 +54,7 @@ echo "==> 链接配置"
 while IFS= read -r rel; do
   case "$rel" in
     bin/*) dst="$HOME/.local/bin/${rel#bin/}" ;;
+    share/*) dst="$HOME/.local/share/${rel#share/}" ;;
     skills/*)
       dst="$HOME/.codebuddy/skills/${rel#skills/}"
       if [ -d "$HOME/.claude" ]; then

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# @command: record-toggle
+# @summary: 屏幕录制开始/停止（wf-recorder，保存到 ~/Videos）
+# @category: runtime
+# @usage: record-toggle
+# @effect: 写 ~/Videos 视频文件
 # 开始/停止屏幕录制（wf-recorder），文件保存到 ~/Videos
 if pgrep -x wf-recorder >/dev/null 2>&1; then
   pkill -INT -x wf-recorder

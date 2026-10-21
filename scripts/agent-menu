@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# @command: agent-menu
+# @summary: agent 选择器（Super+Shift+Ctrl+A），只列出已安装的 agent
+# @category: runtime
+# @usage: agent-menu
+# @effect: 打开 fuzzel 菜单，按选择启动 agent
+# @interactive: true
+# @doc: agent.md
 # agent 选择器：Super+Shift+Ctrl+A
 # 只列出 PATH 里真实存在的 agent，避免选中后 command not found。
 set -euo pipefail

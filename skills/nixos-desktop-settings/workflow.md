@@ -2,6 +2,8 @@
 
 ## 四步流程
 
+入口自查：`agent-commands list` 列出全部命令；`agent-commands show <name>` 查看参数、副作用、是否需 sudo / 是否交互。不确定时先查再动手。
+
 1. **改仓库**：
    - 用户级 dotfiles → `home/`
    - host 差异 → `hosts/<host>/default.nix`（只写 `distro.*`）

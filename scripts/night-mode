@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# @command: night-mode
+# @summary: 夜间模式：4000K 暖色与正常色温切换（hyprsunset）
+# @category: runtime
+# @usage: night-mode
+# @effect: 切换 hyprsunset 色温
 # 夜间模式：在 4000K 暖色与正常色温之间切换（依赖 hyprsunset 守护进程）
 state="${XDG_RUNTIME_DIR:-/tmp}/hyprsunset.on"
 if [ -f "$state" ]; then

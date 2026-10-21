@@ -24,7 +24,7 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 | 系统组件/服务/驱动 | 改 `modules/` 或 `hosts/<host>/` → agent-apply → 交用户 `sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>` |
 | agent 能力 | `modules/agent/` + `lib/agent-usage.nix` + `scripts/agent-*`（受 `distro.agent.*`） |
 | 硬件差异 / 新 host | `hosts/<name>/default.nix` 只写 `distro.*`（选项见 `modules/options.nix`） |
-| 不确定入口/报错 | `scripts/hypr-check` → `troubleshooting.md` → `git log --oneline -10` |
+| 不确定入口/报错 | `agent-commands --json`（或 `list` / `show <name>`）→ `scripts/hypr-check` → `troubleshooting.md` → `git log --oneline -10` |
 | 崩溃/段错误/core dump | 调用 diagnose-crash 技能（启用自动分析时先读 ~/.local/state/agent/coredump-report.md） |
 
 ## 专题指南
@@ -55,6 +55,7 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 | "换壁纸" | 运行 `wallpaper-next` |
 | "夜间模式/勿扰/录屏/区域截图标注" | `night-mode` / `notif-dnd` / `record-toggle` / `screenshot-annotate` |
 | "现在有哪些快捷键" | `show-keybinds`（浮动 kitty）或 `docs/KEYBINDS.md` |
+| "这台机器能做什么 / 有哪些命令" | `agent-commands list`（机器可读用 `--json`） |
 | "这台新机器是 N 卡" | `hosts/<name>/default.nix` 设 `distro.gpu.vendor = "nvidia"` |
 | "waybar 显示 agent 用量" | `hosts/<host>` 设 `distro.agent.enable/usage = true` |
 | "桌面报错/状态栏没了/中文变方块" | `scripts/hypr-check` → `troubleshooting.md` |
@@ -65,3 +66,4 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 
 - `diagnose-crash`：崩溃 / 段错误 / core dump 分析（本机启用自动诊断时先读
   `~/.local/state/agent/coredump-report.md`）
+- `agent-commands`：机器可读命令清单（`--json` / `list` / `show <name>` / `--category`）

@@ -132,6 +132,12 @@ lib.mkIf cfg.desktop.enable {
   environment.etc = {
     "xdg/waybar/config".text = builtins.toJSON waybarCfg.config;
     "xdg/waybar/style.css".text = waybarCfg.css;
+    "xdg/hyprland-nixos/commands.json".source = import ../../lib/commands.nix {
+      inherit pkgs lib;
+      hostName = config.networking.hostName;
+      version = config.distro.version;
+      agentEnabled = config.distro.agent.enable;
+    };
   };
 
   # 在纯窗口管理器会话中自动启动 fcitx5。

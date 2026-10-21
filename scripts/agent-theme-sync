@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# @command: agent-theme-sync
+# @summary: 按 dark/light 同步 claude/opencode 主题配置（幂等）
+# @category: agent
+# @usage: agent-theme-sync [dark|light]
+# @effect: 写 ~/.claude/settings.json 与 ~/.config/opencode/tui.json
+# @doc: agent.md
 # agent-theme-sync: 让已安装 agent 的界面主题跟随系统（dark/light）。
 # 由 theme-next 在每次切换/restore 时调用；也可手动执行。
 # 用法: agent-theme-sync [dark|light]  （默认 dark）

@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# @command: theme-next
+# @summary: 在 5 套内置主题间循环切换
+# @category: runtime
+# @usage: theme-next [restore]
+# @arg restore: 应用已保存主题（登录时调用，不前进索引）
+# @effect: 重写 ~/.config/waybar/style.css；替换 mako/fuzzel/swayosd 颜色；重启 waybar/mako/swayosd
+# @doc: theming.md
 # theme-next: 在若干内置主题间循环切换桌面配色
 #   theme-next          切换到下一套（默认动作）
 #   theme-next restore  应用已保存的主题（登录时由 exec-once 调用，不前进索引）

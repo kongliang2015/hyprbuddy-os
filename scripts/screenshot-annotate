@@ -1,3 +1,9 @@
 #!/usr/bin/env bash
+# @command: screenshot-annotate
+# @summary: 区域截图并交给 swappy 标注
+# @category: runtime
+# @usage: screenshot-annotate
+# @effect: 生成截图文件/剪贴板
+# @interactive: true
 # 区域截图并交给 swappy 标注（保存/复制由 swappy 处理）
 grim -g "$(slurp)" - | swappy -f -
