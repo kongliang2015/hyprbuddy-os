@@ -11,6 +11,14 @@
     desktop.extraSessions = [ ];
     user.name = "nixos";
     hardware.battery = false;
+    # 验证 agent-usage：开启 agent 层（对齐 leonard，排除 claude-code 防构建期拉取失败）
+    agent = {
+      enable = true;
+      agents = [ "opencode" "codebuddy" ];
+      usage = true;
+      diagnostics = false;
+      localModels = false;
+    };
   };
 
   # 测试用：注入宿主机 SSH 公钥，避免 boot/switch 后丢失免密登录。
