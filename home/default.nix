@@ -75,7 +75,7 @@ let
         text = read (../scripts + "/${name}");
         executable = true;
       };
-    }) scriptNames;
+    }) scriptNames ++ lib.optional (distro.hypervisor == "vmware") { name = "bin/kitty"; path = pkgs.writeShellScript "kitty-software-egl" (builtins.readFile ./kitty-egl.sh); };
   # agent skills（skills/<name>/…）：install.sh 链接到 ~/.codebuddy/skills/
   skillsDir = ../skills;
   skillEntries = lib.concatLists (
