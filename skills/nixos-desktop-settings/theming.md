@@ -19,6 +19,16 @@
 - waybar 重启用 flock 串行化（防止 exec-once 与自动重载并发重复 spawn）；子进程需 `200>&-` 关闭 fd
 - waybar 是整份重写，新增样式无需改脚本；mako / fuzzel / swayosd 是**按键替换**，新增颜色键必须同步
 
+## 主题预览（theme-picker）
+
+Omarchy 风格的预览选择器：kitty 内 fzf 浏览主题列表，右侧用 `kitten icat` 实时渲染
+该主题的壁纸，Enter 应用整套主题，Esc 取消。
+
+- 入口：Super+Space → 外观 → 主题预览（浮动 kitty 窗口，class=theme-picker）
+- 数据源：`theme-next --print-themes`（idx/名称/壁纸单一事实源）
+- 选择后按索引应用：`theme-next <idx>`（写状态并应用全套）
+- 依赖：fzf（modules/base.nix）与 kitten（kitty 包自带）；须在 kitty 内运行
+
 ## 壁纸
 
 - 守护进程：`awww-daemon`（nixpkgs 26.05 将 swww 更名为 awww）

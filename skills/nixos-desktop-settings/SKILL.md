@@ -52,6 +52,7 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 | "10 分钟无操作锁屏" | `home/hypr/hypridle.conf` |
 | "终端字号改 13" | `home/kitty/kitty.conf` |
 | "换个主题" | 运行 `theme-next`（5 套循环；`restore` 仅供登录） |
+| "想先看看各主题效果再选" | 运行 `theme-picker`（须在 kitty 内；菜单：外观 → 主题预览） |
 | "换壁纸" | 运行 `wallpaper-next` |
 | "夜间模式/勿扰/录屏/区域截图标注" | `night-mode` / `notif-dnd` / `record-toggle` / `screenshot-annotate` |
 | "现在有哪些快捷键" | `show-keybinds`（浮动 kitty）或 `docs/KEYBINDS.md` |

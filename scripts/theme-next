@@ -16,7 +16,9 @@ set -uo pipefail
 
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
-STATE_DIR="$RUNTIME/theme-next"
+# 索引持久化：XDG_RUNTIME_DIR 是 tmpfs，重启即失，登录时 restore 会退回 idx=0；
+# 改存 XDG_STATE_HOME，restore 才能恢复上次选择的主题
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/theme-next"
 STATE="$STATE_DIR/idx"
 WALL="$HOME/Pictures/wallpapers"
 
@@ -57,6 +59,7 @@ THEMES=(
 
 N=${#THEMES[@]}
 
+
 get_idx() {
   local i=0
   [ -f "$STATE" ] && i=$(cat "$STATE" 2>/dev/null || echo 0)
@@ -66,8 +69,28 @@ get_idx() {
 }
 
 cur_idx=$(get_idx)
-if [ "${1:-next}" = "restore" ]; then
+
+# 输出主题清单（主题预览选择器的数据源）：
+#   idx<TAB>名称<TAB>壁纸<TAB>色板(逗号分隔5色)<TAB>当前标记
+if [ "${1:-}" = "--print-themes" ]; then
+  i=0
+  for t in "${THEMES[@]}"; do
+    IFS='|' read -r NAME WALLPAPER HA1 HA2 _ WB_BG WB_FG _ _ _ WB_URGENT _ <<< "$t"
+    tag=""
+    [ "$i" = "$cur_idx" ] && tag="← 当前"
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+      "$i" "$NAME" "$WALL/$WALLPAPER" "$WB_BG,$WB_FG,$HA1,$HA2,$WB_URGENT" "$tag"
+    i=$((i + 1))
+  done
+  exit 0
+fi
+req="${1:-next}"
+if [ "$req" = "restore" ]; then
   idx=$cur_idx
+elif [[ "$req" =~ ^[0-9]+$ ]] && [ "$req" -lt "$N" ]; then
+  # 直接指定主题（主题预览选择器使用）
+  idx=$req
+  echo "$idx" > "$STATE"
 else
   idx=$(( (cur_idx + 1) % N ))
   echo "$idx" > "$STATE"

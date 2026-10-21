@@ -59,6 +59,7 @@ menu_entries() {
       act "  夜间模式        [$(night_state)]" '@HOME@/.local/bin/night-mode'
       act '  下一张壁纸'       '@HOME@/.local/bin/wallpaper-next'
       act '  切换主题'       '@HOME@/.local/bin/theme-next'
+      act '  主题预览'       'kitty --class theme-picker --title 主题预览 -e @HOME@/.local/bin/theme-picker'
       act '  重新加载壁纸'  '__reload_wallpaper__'
       act '  重载 Hyprland' 'hyprctl reload'
       ;;
