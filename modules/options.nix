@@ -88,6 +88,17 @@ in
       };
     };
 
+    polkitAgent = mkOption {
+      type = types.enum [ "qt" "hyprtoolkit" ];
+      default = "qt";
+      description = ''
+        polkit 认证代理实现。qt = 26.05 stable 的 hyprpolkitagent 0.1.3（Qt，
+        配色受 Adwaita 影响、无法跟随主题）；hyprtoolkit = 从 nixpkgs-unstable 取
+        0.2.0，认证框颜色由 ~/.config/hypr/hyprtoolkit.conf 决定，可由 theme-next
+        按当前主题重写。
+      '';
+    };
+
     hypervisor = mkOption { type = types.enum [ "none" "vmware" "qemu" ]; default = "none"; description = "虚拟化平台：vmware 时启用软件 EGL 等兼容设置"; };
     hardware = {
       battery = mkOption { type = types.bool; default = false; };

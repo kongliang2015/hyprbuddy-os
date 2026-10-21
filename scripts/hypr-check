@@ -105,6 +105,24 @@ if [ -f "$ovr" ]; then
   esac
 fi
 
+# 6) hyprtoolkit 配色（hyprpolkitagent 0.2.0 的认证框读它）
+htk="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/hyprtoolkit.conf"
+if [ -f "$htk" ]; then
+  if [ ! -s "$htk" ]; then
+    warn "hyprtoolkit.conf 是空文件：$htk（认证框会退回默认灰）"
+  else
+    miss=""
+    for k in background base text accent; do
+      grep -qE "^[[:space:]]*$k[[:space:]]*=" "$htk" || miss="$miss $k"
+    done
+    if [ -n "$miss" ]; then
+      warn "hyprtoolkit.conf 缺少键：$miss（认证框配色会不完整）"
+    else
+      info "hyprtoolkit 配色就绪（认证框跟随主题）"
+    fi
+  fi
+fi
+
 if [ "$status" -eq 0 ]; then
   echo "  - 自检通过"
 fi

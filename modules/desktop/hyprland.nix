@@ -1,8 +1,13 @@
 # Hyprland 桌面栈：SDDM 登录、Hyprland 会话、fcitx5、Qt/GTK 主题、系统级 Waybar。
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, unstablePkgs, ... }:
 let
   cfg = config.distro;
   sddmTheme = pkgs.catppuccin-sddm;
+  # polkit 认证代理：hyprtoolkit 实现（0.2.0，来自 nixpkgs-unstable）的配色
+  # 读 ~/.config/hypr/hyprtoolkit.conf，可由 theme-next 按主题重写；
+  # qt 实现（0.1.3，stable）配色跟随 Adwaita，无法跟随主题。
+  polkitAgent =
+    if cfg.polkitAgent == "hyprtoolkit" then unstablePkgs.hyprpolkitagent else pkgs.hyprpolkitagent;
 
   # Waybar 配置由 lib/waybar.nix 统一生成，用户级配置（home/default.nix）复用同一份。
   # 注意变量名不能叫 waybar：会遮蔽下面 with pkgs 里的 pkgs.waybar。
@@ -91,7 +96,7 @@ lib.mkIf cfg.desktop.enable {
     wantedBy = [ "graphical-session.target" ];
     partOf = [ "graphical-session.target" ];
     serviceConfig = {
-      ExecStart = "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
+      ExecStart = "${polkitAgent}/libexec/hyprpolkitagent";
       Restart = "on-failure";
     };
   };
@@ -124,7 +129,7 @@ lib.mkIf cfg.desktop.enable {
     hyprpicker    # 屏幕取色
     libnotify     # notify-send
     thunar        # 文件管理器（Super+E）
-    hyprpolkitagent  # polkit 认证代理（hyprwm 官方，替代 polkit_gnome）
+    polkitAgent      # polkit 认证代理（实现由 distro.polkitAgent 选择）
   ];
 
   # 系统级 Waybar 配置（Tokyo Night / Kanagawa 风格），放在 /etc/xdg/waybar。

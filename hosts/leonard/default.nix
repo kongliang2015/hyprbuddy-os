@@ -18,6 +18,8 @@
       };
     };
     desktop.extraSessions = [ "xfce" "windowmaker" ];
+    # polkit 认证框跟随桌面主题：hyprtoolkit 实现（0.2.0，取 nixpkgs-unstable）
+    polkitAgent = "hyprtoolkit";
     agent = {
       enable = true;
       # claude-code 的二进制从 downloads.claude.ai 拉取，本机网络不可达（构建期失败）；

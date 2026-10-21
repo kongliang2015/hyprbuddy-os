@@ -60,3 +60,17 @@ Omarchy 风格的预览选择器：kitty 内 fzf 浏览主题列表，右侧用 
 - 提权：优先 pkexec + hyprpolkitagent（无终端窗口），SDDM_THEME_SUDO_MODE=kitty 可强制回退
 - 安全：id 只接受枚举白名单内的值；写入失败或取消时原配置不动；
   `hypr-check` 会校验 override 指向的主题存在，避免登录页黑屏
+
+## polkit 认证框（hyprpolkitagent）
+
+- polkitd 是 freedesktop 的系统授权服务，本身没有 UI；有界面的是认证代理 hyprpolkitagent
+- 实现由 `distro.polkitAgent`（modules/options.nix）选择：
+  - `qt`（默认）= stable 的 0.1.3，Qt6 + hyprland-qt-support，颜色来自 QQuickSystemPalette → Adwaita，**无法跟随主题**
+  - `hyprtoolkit` = 0.2.0（来自 flake 的 `nixpkgs-unstable` 输入），认证框由 hyprtoolkit 渲染，
+    颜色读 `~/.config/hypr/hyprtoolkit.conf`
+- theme-next 每次切换都会重写该文件（background / base / alternate_base / text / bright_text /
+  accent / accent_secondary / rounding_large / rounding_small / font_*），颜色格式 `rgba(rrggbbaa)`；
+  agent 在每次弹窗前重读，**切主题不需要重启代理**
+- 回滚：`distro.polkitAgent = "qt"` 后 `sudo nixos-rebuild switch`
+- 前提：flake 里要有 `nixpkgs-unstable` 输入（清华镜像 nixexprs），只为这一个包服务；
+  升级 `nix flake update` 后要回归一次认证框

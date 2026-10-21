@@ -5,7 +5,13 @@
   # 由 flake.lock 锁定 narHash，内容漂移会导致校验失败而不是静默变化。
   inputs.nixpkgs.url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-26.05/nixexprs.tar.xz";
 
-  outputs = { self, nixpkgs }:
+  # 个别组件需要比 stable 新的版本（hyprpolkitagent 0.2.0 = hyprtoolkit 实现，
+  # 认证框配色可由 ~/.config/hypr/hyprtoolkit.conf 跟随主题），从 unstable 通道取。
+  # 只引用单个包，二进制走清华镜像缓存，系统其余部分仍用 26.05。
+  inputs.nixpkgs-unstable.url = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/nixos-unstable/nixexprs.tar.xz";
+  inputs.nixpkgs-unstable.flake = false;
+
+  outputs = { self, nixpkgs, nixpkgs-unstable }:
     let
       lib = nixpkgs.lib;
 
@@ -30,6 +36,14 @@
 
       mkHost = name: lib.nixosSystem {
         system = systemFor name;
+        # unstable 只按需用于个别组件（distro.polkitAgent）。
+        # 通道 tarball 没有 flake.nix，按路径 import 取包集；惰性求值不波及其它 host。
+        specialArgs = {
+          unstablePkgs = import nixpkgs-unstable {
+            system = systemFor name;
+            config.allowUnfree = true;
+          };
+        };
         modules = [
           ./modules/default.nix
           ./hosts/${name}/default.nix
