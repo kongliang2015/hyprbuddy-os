@@ -25,6 +25,7 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 | agent 能力 | `modules/agent/` + `lib/agent-usage.nix` + `scripts/agent-*`（受 `distro.agent.*`） |
 | 硬件差异 / 新 host | `hosts/<name>/default.nix` 只写 `distro.*`（选项见 `modules/options.nix`） |
 | 不确定入口/报错 | `scripts/hypr-check` → `troubleshooting.md` → `git log --oneline -10` |
+| 崩溃/段错误/core dump | 调用 diagnose-crash 技能（启用自动分析时先读 ~/.local/state/agent/coredump-report.md） |
 
 ## 专题指南
 
@@ -59,3 +60,8 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 | "桌面报错/状态栏没了/中文变方块" | `scripts/hypr-check` → `troubleshooting.md` |
 | "回到上一个系统版本" | 交用户 `sudo nixos-rebuild --rollback` |
 | "用户级配置改了没生效" | `./install.sh --host <host> --yes`（备份到 `~/.config.bak-*`） |
+
+## 相关技能
+
+- `diagnose-crash`：崩溃 / 段错误 / core dump 分析（本机启用自动诊断时先读
+  `~/.local/state/agent/coredump-report.md`）
