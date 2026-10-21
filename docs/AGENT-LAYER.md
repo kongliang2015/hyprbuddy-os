@@ -116,7 +116,7 @@ agent 层默认关闭，三个 agent 脚本随 `agent.enable` 安装（`home/def
   `sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>`
 - 用户级：`./install.sh --host <host> --yes`
 - 自检：`scripts/hypr-check`（configerrors + 规则语法 lint + lua 优先检测），`install.sh` 末尾自动运行
-- 工作流固化：skill `nixos-desktop-settings`（flake 流；channel 时代引用已全部清除）
+- 工作流固化：skill `nixos-desktop-settings`（flake 流；skill 已收编进仓库 skills/，由 install.sh 链接到 ~/.codebuddy/skills/；channel 时代引用已全部清除）
 
 **关键约束**：
 - agent 不执行 sudo（需密码）；系统级改动一律构建验证后交用户执行

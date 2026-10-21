@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# @command: theme-preview-capture
+# @summary: 在当前桌面逐主题截屏：截图 → 切下一套主题 → 等 10s → 循环
+# @category: runtime
+# @usage: theme-preview-capture
+# @effect: 依次切换全部 5 套主题（每套等 10s）；截图存 theme-previews/；结束后恢复最初主题
+# @interactive: true
+# 要求：桌面上已有要展示的窗口（如 btop），脚本不新开窗口、不切换工作区。
+set -uo pipefail
+
+die() { notify-send -a theme-preview-capture "主题截图" "$1" 2>/dev/null || echo "错误: $1" >&2; exit 1; }
+command -v hyprctl >/dev/null 2>&1 || die "需要 Hyprland 会话（hyprctl）"
+command -v grim >/dev/null 2>&1 || die "需要 grim"
+
+TN="$(command -v theme-next || printf '%s' "$HOME/.local/bin/theme-next")"
+[ -x "$TN" ] || die "找不到 theme-next"
+
+out_dir="$HOME/.local/share/hyprland-nixos/theme-previews"
+mkdir -p "$out_dir"
+
+N=5
+rows=$("$TN" --print-themes)
+[ -n "$rows" ] || die "主题清单为空"
+
+# 起始主题 = 状态里的当前主题（--print-themes 中带 ← 当前 的行）
+cur=$(printf '%s\n' "$rows" | awk -F'\t' '$5 ~ /当前/ {print $1}')
+cur=${cur:-0}
+
+snap() { grim "$out_dir/preview-$1.png" 2>/dev/null || die "grim 截屏失败"; }
+
+idx=$cur
+i=0
+echo "==> 截图 [$((i+1))/$N]：idx=$idx"
+snap "$idx"
+i=$((i + 1))
+while [ "$i" -lt "$N" ]; do
+  "$TN" >/dev/null 2>&1          # 切到下一套
+  idx=$(( (idx + 1) % N ))
+  echo "==> 已切换主题，等待 10s…（下一张 idx=$idx）"
+  sleep 10
+  echo "==> 截图 [$((i+1))/$N]：idx=$idx"
+  snap "$idx"
+  i=$((i + 1))
+done
+
+# 结束：回到最初主题
+echo "==> 恢复最初主题 idx=$cur"
+"$TN" "$cur" >/dev/null 2>&1
+echo "==> 全部完成：$out_dir"

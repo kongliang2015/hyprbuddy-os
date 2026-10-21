@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# @command: hypr-menu
+# @summary: Super+Space 系统菜单（应用/截图/外观/会话/快捷键）
+# @category: runtime
+# @usage: hypr-menu
+# @effect: 打开 fuzzel 菜单并执行所选动作
+# @interactive: true
 # Hyprland 超级菜单（Super+Space）
 # 通用多层菜单：每一层（非根）自动注入「← 返回上级菜单」，Esc 返回上一级；
 # 根菜单注入「✕ 退出菜单」。
@@ -53,6 +59,7 @@ menu_entries() {
       act "  夜间模式        [$(night_state)]" '@HOME@/.local/bin/night-mode'
       act '  下一张壁纸'       '@HOME@/.local/bin/wallpaper-next'
       act '  切换主题'       '@HOME@/.local/bin/theme-next'
+      act '  主题预览'       'kitty --class theme-picker --title 主题预览 -e @HOME@/.local/bin/theme-picker'
       act '  重新加载壁纸'  '__reload_wallpaper__'
       act '  重载 Hyprland' 'hyprctl reload'
       ;;

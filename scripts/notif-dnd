@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# @command: notif-dnd
+# @summary: 切换 mako 勿扰模式
+# @category: runtime
+# @usage: notif-dnd
+# @effect: makoctl mode 切换 dnd
+# @doc: bar-notify.md
 # 切换 mako 勿扰模式（Do Not Disturb）
 if makoctl mode 2>/dev/null | grep -qx 'dnd'; then
   makoctl mode -r dnd

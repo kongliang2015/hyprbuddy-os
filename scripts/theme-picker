@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# @command: theme-picker
+# @summary: 主题预览与选择（桌面平铺截图预览，Omarchy 风格）
+# @category: runtime
+# @usage: theme-picker [--list | --preview <idx>]
+# @effect: 选择后应用整套主题（waybar/mako/fuzzel/swayosd/壁纸/边框）
+# @interactive: true
+# 主题预览：kitty 内 fzf 浏览主题列表（当前主题带 ← 当前 标记），
+# 右侧显示该主题下桌面（终端/浏览器/文件管理器平铺）的实拍截图，Enter 应用。
+# 截图由 theme-preview-capture 生成；未生成的主题回退显示壁纸。
+set -uo pipefail
+
+die() { notify-send -a theme-picker "主题预览" "$1" 2>/dev/null || echo "错误: $1" >&2; exit 1; }
+
+TN="$(command -v theme-next || printf '%s' "$HOME/.local/bin/theme-next")"
+[ -x "$TN" ] || die "找不到 theme-next"
+command -v fzf >/dev/null 2>&1 || die "需要 fzf：请先 sudo nixos-rebuild switch --flake .#$(hostname)（modules/base.nix 已含）"
+command -v kitten >/dev/null 2>&1 || die "需要 kitten（kitty 包自带）"
+
+rows=$("$TN" --print-themes)
+[ -n "$rows" ] || die "主题清单为空"
+shot_dir="$HOME/.local/share/hyprland-nixos/theme-previews"
+
+# --list：输出原始清单
+if [ "${1:-}" = "--list" ]; then
+  printf '%s\n' "$rows"
+  exit 0
+fi
+
+# --preview <idx>：把该主题的桌面截图铺满预览窗格（fzf 预览窗格调用）
+if [ "${1:-}" = "--preview" ]; then
+  idx="${2:?}"
+  row=$(printf '%s\n' "$rows" | grep -E "^${idx}$(printf '\t')" || true)
+  [ -n "$row" ] || exit 0
+  IFS=$'\t' read -r _ name wall _ <<< "$row"
+  cols="${FZF_PREVIEW_COLUMNS:-80}"
+  lines="${FZF_PREVIEW_LINES:-30}"
+
+  shot="$shot_dir/preview-$idx.png"
+  if [ -f "$shot" ]; then
+    # 截图铺满整个预览窗格。注意：fzf 预览命令的 stdout 是管道（非 tty），
+    # 但 kitty 图形协议转义序列可透传渲染，故不能用 [-t 1] 判断。
+    kitten icat --clear --transfer-mode=memory --stdin=no \
+      --place="${cols}x${lines}@0x0" --scale-up "$shot" 2>/dev/null || true
+    exit 0
+  fi
+
+  # 回退：尚无桌面截图时显示壁纸 + 生成提示
+  printf '该主题还没有桌面截图。生成：theme-preview-capture %s\n\n' "$idx"
+  kitten icat --clear --transfer-mode=memory --stdin=no \
+    --place="${cols}x${lines}@0x3" --scale-up "$wall" 2>/dev/null || true
+  exit 0
+fi
+
+# 主流程：fzf 选择
+choice=$(printf '%s\n' "$rows" | fzf \
+  --delimiter='\t' --with-nth=2,5 \
+  --layout=reverse --info=inline \
+  --prompt='主题> ' --header='Enter 应用 · Esc 取消 · 当前主题带 ← 当前' \
+  --preview "$0 --preview {1}" \
+  --preview-window=right:60%:border-left)
+[ -n "$choice" ] || exit 0
+
+idx=${choice%%$'\t'*}
+exec "$TN" "$idx"

@@ -54,8 +54,12 @@
     "https://mirrors.ustc.edu.cn/nix-channels/store"
   ];
 
+  # ~/.local/bin 进 PATH：agent-commands / theme-next / hypr-check 等技能入口可裸命令调用
+  environment.localBinInPath = true;
+
   environment.systemPackages = with pkgs; [
     # 个人 CLI（git/vim/wget/curl/htop）在 Home Manager 里
     nodejs_22  # 运行时保留系统级，供所有用户/服务使用
+    fzf        # theme-picker 主题预览选择（终端内）
   ];
 }

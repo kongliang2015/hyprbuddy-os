@@ -1,4 +1,5 @@
-# agent 层：用量观测。汇总 Claude Code 会话日志的 token 用量，注入 Waybar。
+# agent 层：用量观测。汇总 codebuddy / claude / opencode 三源会话日志的
+# token 用量（/cost 口径），注入 Waybar。脚本实现在 lib/agent-usage.nix。
 { config, lib, pkgs, ... }:
 let
   cfg = config.distro.agent;

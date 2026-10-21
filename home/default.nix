@@ -7,7 +7,8 @@
 let
   inherit (lib) concatStringsSep optional optionals;
 
-  sub = s: lib.replaceStrings [ "@HOME@" ] [ home ] s;
+  # @HOME@ -> 家目录；@JQ@ -> store 里的 jq（agent-commands 免依赖系统 PATH）
+  sub = s: lib.replaceStrings [ "@HOME@" "@JQ@" ] [ home "${pkgs.jq}/bin/jq" ] s;
   read = path: sub (builtins.readFile path);
 
   agentEnabled = distro.agent.enable;
@@ -75,5 +76,25 @@ let
         executable = true;
       };
     }) scriptNames;
+  # agent skills（skills/<name>/…）：install.sh 链接到 ~/.codebuddy/skills/
+  skillsDir = ../skills;
+  skillEntries = lib.concatLists (
+    lib.mapAttrsToList
+      (skill: _:
+        lib.mapAttrsToList
+          (file: _:
+            { name = "skills/${skill}/${file}";
+              path = pkgs.writeTextFile {
+                name = "skill-${skill}-${file}";
+                text = read (skillsDir + "/${skill}/${file}");
+              };
+            })
+          (builtins.readDir (skillsDir + "/${skill}")))
+      (lib.filterAttrs (_: t: t == "directory") (builtins.readDir skillsDir)));
+  # 机器可读命令清单（由 scripts/ 头部 @command 元数据生成）
+  commandsJson = import ../lib/commands.nix {
+    inherit pkgs lib hostName agentEnabled;
+    version = distro.version;
+  };
 in
-pkgs.linkFarm "user-config-${hostName}" entries
+pkgs.linkFarm "user-config-${hostName}" (entries ++ skillEntries ++ [ { name = "share/hyprland-nixos/commands.json"; path = commandsJson; } ])
