@@ -8,6 +8,10 @@
 # agent 改动的唯一入口：改 models/hosts 后先验证求值，再构建，最后打印应用命令。
 set -euo pipefail
 
+# 不假设用户系统已开启 flakes 实验特性：NIX_CONFIG 对 nix 与
+# nixos-rebuild 内部调用同时生效。
+export NIX_CONFIG="experimental-features = nix-command flakes"
+
 repo="${HYPRLAND_NIXOS_REPO:-$HOME/hyprland-nixos}"
 host="${1:-$(hostname)}"
 

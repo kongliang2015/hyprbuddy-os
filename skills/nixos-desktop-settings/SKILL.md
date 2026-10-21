@@ -55,6 +55,7 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 | "换壁纸" | 运行 `wallpaper-next` |
 | "夜间模式/勿扰/录屏/区域截图标注" | `night-mode` / `notif-dnd` / `record-toggle` / `screenshot-annotate` |
 | "现在有哪些快捷键" | `show-keybinds`（浮动 kitty）或 `docs/KEYBINDS.md` |
+| "系统崩了 / 段错误 / 分析 core dump" | `diagnose-crash` 技能（先读 `~/.local/state/agent/coredump-report.md`） |
 | "这台机器能做什么 / 有哪些命令" | `agent-commands list`（机器可读用 `--json`） |
 | "这台新机器是 N 卡" | `hosts/<name>/default.nix` 设 `distro.gpu.vendor = "nvidia"` |
 | "waybar 显示 agent 用量" | `hosts/<host>` 设 `distro.agent.enable/usage = true` |

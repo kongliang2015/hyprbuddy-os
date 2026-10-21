@@ -41,12 +41,18 @@ case "${1:---list}" in
   --category)
     cat_name="${2:?用法: agent-commands --category <runtime|workflow|check|agent|system>}"
     need_jq
-    "$JQ" -r --arg c "$cat_name" '.commands[] | select(.category == $c) | [.name, .summary] | @tsv' "$(locate)"
+    out=$("$JQ" -r --arg c "$cat_name" '.commands[] | select(.category == $c) | [.name, .summary] | @tsv' "$(locate)")
+    [ -n "$out" ] || { echo "错误: 没有 category=$cat_name 的命令" >&2; exit 1; }
+    printf '%s
+' "$out"
     ;;
   show)
     name="${2:?用法: agent-commands show <name>}"
     need_jq
-    "$JQ" --arg n "$name" '.commands[] | select(.name == $n)' "$(locate)"
+    out=$("$JQ" --arg n "$name" '.commands[] | select(.name == $n)' "$(locate)")
+    [ -n "$out" ] || { echo "错误: 清单里没有命令 $name（agent-commands list 查看全部）" >&2; exit 1; }
+    printf '%s
+' "$out"
     ;;
   workflows)
     need_jq

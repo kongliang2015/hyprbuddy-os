@@ -17,7 +17,8 @@
 
        ./install.sh --host <host> --yes
 
-   行为：`nix build .#<host>` → 软链到 `~/.config`、`~/.local/bin`、`~/.codebuddy/skills`；
+   行为：`nix build .#<host>` → 软链到 `~/.config`、`~/.local/bin`、`~/.codebuddy/skills`、
+   `~/.local/share/hyprland-nixos/commands.json`（`~/.claude` 存在时同步 `~/.claude/skills`）；
    已存在的真实文件备份到 `~/.config.bak-<时间戳>/`；复制 `wallpapers/` 到 `~/Pictures/wallpapers`；末尾自动跑 `hypr-check`
 4. **系统级应用（用户执行）**：
 

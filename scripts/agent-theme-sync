@@ -35,7 +35,7 @@ if command -v claude >/dev/null 2>&1; then
   f="$HOME/.claude/settings.json"
   mkdir -p "$(dirname "$f")"
   [ -s "$f" ] || echo '{}' >"$f"
-  merge "$f" theme "$mode"
+  merge "$f" theme "$mode" || echo "警告: 同步 $f 失败（无 jq/python3？）" >&2
 fi
 
 # OpenCode：opencode.json 的 theme 键已废弃（官方自动迁移到 tui.json），
@@ -45,7 +45,7 @@ if command -v opencode >/dev/null 2>&1; then
   f="$HOME/.config/opencode/tui.json"
   mkdir -p "$(dirname "$f")"
   [ -s "$f" ] || echo '{}' >"$f"
-  merge "$f" theme "$mode"
+  merge "$f" theme "$mode" || echo "警告: 同步 $f 失败（无 jq/python3？）" >&2
 fi
 
 # CodeBuddy：settings.json 暂无 theme 字段（官方支持情况未确认），跳过

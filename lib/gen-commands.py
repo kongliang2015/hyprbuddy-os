@@ -30,7 +30,7 @@ for name in sorted(os.listdir(scripts_dir)):
                 if line.strip():
                     break  # 头部块结束
                 continue
-            line = line.rstrip("\n")
+            line = line.rstrip("\r\n")
             am = ARG.match(line)
             if am:
                 args.append({"name": am.group(1).strip(), "desc": am.group(2).strip()})
