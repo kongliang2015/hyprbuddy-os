@@ -34,7 +34,7 @@ hyprland-nixos/
 │   └── _template/       # 模板（不参与构建）
 ├── home/                # hypr / waybar / fuzzel / kitty / mako / swayosd / Thunar + default.nix
 ├── lib/                 # waybar.nix / agent-usage.nix
-├── scripts/             # agent-apply / hypr-check / theme-next / hypr-menu / ...
+├── scripts/             # agent-apply / agent-commands / hypr-check / theme-next / hypr-menu / ...
 ├── skills/              # agent 技能：nixos-desktop-settings / diagnose-crash
 ├── installer/           # iso-config.nix（安装盘）/ live-iso-config.nix（live+install 一体盘）/ install.sh
 ├── wallpapers/
@@ -70,6 +70,7 @@ hyprland-nixos/
 - 包与脚本：agent-menu（Super+Shift+Ctrl+A）/ agent-apply（求值→构建→交用户 switch）/ agent-theme-sync
 - agent-usage：codebuddy / claude / opencode 三数据源，/cost 口径统计当日 output tokens
 - diagnostics：coredump-watch + coredump-analyze（本地模型分析，需 localModels = true）
+- agent-commands：机器可读命令清单（`--json` / `list` / `show <name>` / `--category`）；由 scripts/ 头部元数据在构建期生成，缺 @summary 直接构建失败，hypr-check 含一致性校验
 
 ### 技能（skills/，随 install.sh 部署）
 - `nixos-desktop-settings`：路由器（铁律 / 决策树 / 18 条示例表）+ 6 篇专题指南
@@ -173,6 +174,7 @@ agent 或自动化改动走统一入口 `scripts/agent-apply <host>`：`git diff
 - 改系统能力 → 改 modules/，再 sudo nixos-rebuild switch --flake .#<host>
 - 改机器参数 → 改 hosts/<host>/default.nix（只写 distro.*）
 - 改技能 → 改 skills/，install.sh 会自动重新链接（新增技能目录零代码改动）
+- 不确定入口 → agent-commands list（或 --json）查询命令、参数、副作用、是否需 sudo
 - 完整工作流与示例见技能 `nixos-desktop-settings`（docs/SKILL-REDESIGN.md 为设计说明）
 
 ## 安装到新机器
