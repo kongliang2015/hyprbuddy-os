@@ -89,7 +89,7 @@ SKILL.md 保留窄描述——不引入 Omarchy 式「任何 ~/.config 编辑都
 ## 6. 阶段计划
 
 - **阶段 1**：拆出 6 个文件 + 示例表（现有单文件内容不丢失）
-- **阶段 2**（可选）：`diagnose-crash` 技能，对接 `modules/agent/diagnostics.nix`（coredump-watch / coredump-analyze）
+- **阶段 2**（已实施）：`diagnose-crash` 技能，对接 `modules/agent/diagnostics.nix`（coredump-watch / coredump-analyze）
 
 ## 7. 与 Omarchy skill 的对比结论（决定不照搬的原因）
 
