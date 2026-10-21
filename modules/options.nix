@@ -88,6 +88,7 @@ in
       };
     };
 
+    hypervisor = mkOption { type = types.enum [ "none" "vmware" "qemu" ]; default = "none"; description = "虚拟化平台：vmware 时启用软件 EGL 等兼容设置"; };
     hardware = {
       battery = mkOption { type = types.bool; default = false; };
       backlight = mkOption { type = types.bool; default = false; };

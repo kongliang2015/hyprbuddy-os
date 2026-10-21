@@ -30,6 +30,7 @@ let
       "bind = , XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
       "bind = , XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
     ]
+    ++ (if distro.hypervisor == "vmware" then [ "monitor=,1920x1080@60,auto,1" "bind = $mainMod, RETURN, exec, env LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe kitty" ] else [ "bind = $mainMod, RETURN, exec, kitty" ])
     ++ optional agentEnabled
       "bind = $mainMod SHIFT CTRL, A, exec, ${home}/.local/bin/agent-menu"
   ) + "

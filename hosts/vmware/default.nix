@@ -18,6 +18,7 @@
 
   distro = {
     user.name = "leonard";
+    hypervisor = "vmware";
 
     boot.loader = "grub";
     boot.windowsEntry = false;
