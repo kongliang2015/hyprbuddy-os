@@ -140,4 +140,4 @@ pkgs.runCommand "hyprland-nixos-commands" { } ''
 - 不做 shell 补全生成
 - 不把 agent 禁用时的脚本从清单剔除——用 `category: agent` + `available: false` 标注
 
-> 状态：阶段 A 已实施（脚本头部 + 生成器 + 分发 + 包装）。阶段 B（hypr-check 一致性校验）待做。
+> 状态：阶段 A/B 均已实施（脚本头部 + 生成器 + 分发 + 包装 + hypr-check 第 4 项一致性校验）。

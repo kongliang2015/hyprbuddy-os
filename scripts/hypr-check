@@ -53,6 +53,37 @@ if [ -f "$conf" ]; then
   [ -z "$old_wr$old_lr" ] && info "windowrule/layerrule 语法符合 0.55"
 fi
 
+# 4) 命令清单一致性（manifest vs 已部署脚本）
+JQ="@JQ@"
+[ -x "$JQ" ] || JQ="$(command -v jq || true)"
+manifest=""
+for f in "$HOME/.local/share/hyprland-nixos/commands.json" "/etc/xdg/hyprland-nixos/commands.json"; do
+  [ -f "$f" ] && { manifest="$f"; break; }
+done
+if [ -z "$manifest" ]; then
+  info "未找到 commands.json，跳过清单一致性检查（先运行 ./install.sh）"
+elif [ -z "$JQ" ]; then
+  info "无 jq，跳过清单一致性检查"
+else
+  listed=$("$JQ" -r '.commands | length' "$manifest" 2>/dev/null || echo 0)
+  total=$("$JQ" -r '.generated.scripts_total // 0' "$manifest" 2>/dev/null || echo 0)
+  src=$("$JQ" -r '.generated.scripts_source // "?"' "$manifest" 2>/dev/null || echo '?')
+  if [ "$total" -gt 0 ] && [ "$listed" != "$total" ]; then
+    warn "commands.json 条目数($listed) 与生成时脚本数($total) 不一致（可能被手工修改）"
+  fi
+  missing=""
+  while IFS= read -r n; do
+    [ -n "$n" ] || continue
+    [ -x "$HOME/.local/bin/$n" ] || missing="$missing $n"
+  done < <("$JQ" -r '.commands[] | select(.available) | .name' "$manifest" 2>/dev/null)
+  if [ -n "$missing" ]; then
+    warn "清单标记可用但未部署：$missing"
+    echo "      修复：./install.sh --host <host> --yes"
+  else
+    info "清单与已部署命令一致（$listed 个，指纹 ${src}）"
+  fi
+fi
+
 if [ "$status" -eq 0 ]; then
   echo "  - 自检通过"
 fi

@@ -63,7 +63,7 @@ hyprland-nixos/
 - fuzzel：应用启动器 + Super+Space 系统菜单（分组信息架构）+ 快捷键参考
 - mako：毛玻璃样式 + urgency 分级（low 短超时 / critical 常驻）+ 勿扰模式；颜色随主题
 - theme-next：5 套主题热切换，联动 waybar / fuzzel / mako / swayosd / 壁纸；登录时 restore
-- hypr-check：配置自检（Lua 优先 / hyprctl configerrors / 0.55 规则语法 lint），install.sh 末尾自动运行
+- hypr-check：配置自检（Lua 优先 / hyprctl configerrors / 0.55 规则语法 lint / 命令清单一致性），install.sh 末尾自动运行
 - 其他：SwayOSD / hypridle / 夜间模式 / 录屏 / 截图标注 / 壁纸轮换（awww）
 
 ### Agent 层（modules/agent/ + lib/agent-usage.nix）

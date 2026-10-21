@@ -74,7 +74,14 @@ if errors:
 
 payload = {
     "schema": 1,
-    "generated": {"host": host, "version": version, "agent_enabled": agent_enabled},
+    "generated": {
+        "host": host,
+        "version": version,
+        "agent_enabled": agent_enabled,
+        # 构建指纹：scripts/ 在 store 中的名字（内容变化即变化），用于诊断部署偏斜
+        "scripts_source": os.path.basename(os.path.normpath(scripts_dir)),
+        "scripts_total": len(commands),
+    },
     "commands": commands,
     "workflows": [
         {

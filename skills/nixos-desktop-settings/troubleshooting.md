@@ -4,8 +4,9 @@
 
     scripts/hypr-check
 
-三项检查：① 0.55 的 Lua 优先（存在 `hyprland.lua` 时 `.conf` 被忽略）
+四项检查：① 0.55 的 Lua 优先（存在 `hyprland.lua` 时 `.conf` 被忽略）
 ② `hyprctl configerrors`（需会话内）③ 规则语法 lint（缺 `match:` 前缀会静默失效）
+④ 命令清单一致性（清单标记可用的命令是否都已部署）
 
 ## 状态栏不显示
 
