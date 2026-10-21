@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+# @command: sddm-theme
+# @summary: 查看/切换 SDDM 登录界面主题（运行时 override，下次注销生效）
+# @category: runtime
+# @usage: sddm-theme [list | current | set <id> | reset | --json]
+# @effect: 写 /etc/sddm.conf.d/50-sddm-theme.conf（polkit 弹窗提权，回退 sudo+kitty）
+# @doc: theming.md
+# SDDM 登录界面主题切换。
+#
+# 为什么要 override 文件：/etc/sddm.conf.d/00-nixos.conf 由 NixOS 托管，
+# 每次 nixos-rebuild switch 都会重写 Current=，直接改它会被覆盖。
+# sddm 按字典序读 conf.d 里的 *.conf，后者覆盖前者，所以写 50-sddm-theme.conf
+# 既能压过声明式默认值，又能跨重建保留。
+#
+# SDDM 只在 greeter 启动时读配置，因此切换后不重启 sddm，注销/重启即生效。
+set -uo pipefail
+
+CONF_DIR=/etc/sddm.conf.d
+BASE_CONF="$CONF_DIR/00-nixos.conf"
+OVERRIDE="$CONF_DIR/50-sddm-theme.conf"
+
+die() { echo "错误: $1" >&2; notify-send -a sddm-theme "SDDM 主题" "$1" 2>/dev/null || true; exit 1; }
+note() { notify-send -a sddm-theme "SDDM 主题" "$1" 2>/dev/null || echo "$1"; }
+
+theme_dir() {
+  local d
+  d=$(sed -n 's/^[[:space:]]*ThemeDir[[:space:]]*=[[:space:]]*//p' "$BASE_CONF" 2>/dev/null | tail -1)
+  printf '%s' "${d:-/run/current-system/sw/share/sddm/themes}"
+}
+
+conf_current() { # conf_current <文件>：读该文件的 [Theme] Current
+  [ -f "$1" ] || return 0
+  sed -n 's/^[[:space:]]*Current[[:space:]]*=[[:space:]]*//p' "$1" 2>/dev/null | tail -1
+}
+
+current() { local c; c=$(conf_current "$OVERRIDE"); printf '%s' "${c:-$(conf_current "$BASE_CONF")}"; }
+
+resolve() { # 相对名 → 绝对路径（ThemeDir 下）
+  case "$1" in
+    "") : ;;
+    /*) printf '%s' "$1" ;;
+    *)  printf '%s/%s' "$(theme_dir)" "$1" ;;
+  esac
+}
+
+describe() { # 主题目录 → 显示名（metadata.desktop 的 Name=，缺失则用目录名）
+  local n
+  n=$(sed -n 's/^Name=//p' "$1/metadata.desktop" 2>/dev/null | head -1)
+  printf '%s' "${n:-$(basename "$1")}"
+}
+
+enumerate() { # 输出 id<TAB>显示名<TAB>绝对路径
+  local dir cur p id seen=$'\n'
+  dir=$(theme_dir)
+  if [ -d "$dir" ]; then
+    for p in "$dir"/*; do
+      [ -d "$p" ] && [ -f "$p/Main.qml" ] || continue
+      id=$(basename "$p")
+      printf '%s\t%s\t%s\n' "$id" "$(describe "$p")" "$p"
+      seen+="$p"$'\n'
+    done
+  fi
+  # Current 可能指向 ThemeDir 之外的绝对路径（如 catppuccin 的 store 路径）
+  for cur in "$(conf_current "$BASE_CONF")" "$(conf_current "$OVERRIDE")"; do
+    case "$cur" in /*) ;; *) continue ;; esac
+    [ -f "$cur/Main.qml" ] || continue
+    case "$seen" in *"$cur"$'\n'*) continue ;; esac
+    printf '%s\t%s\t%s\n' "$(basename "$cur")" "$(describe "$cur")" "$cur"
+    seen+="$cur"$'\n'
+  done
+}
+
+# 提权执行：脚本自身不直接 sudo。
+# 优先 pkexec（polkit 代理弹出原生密码框，无终端窗口）；代理不可用时回退 kitty + sudo。
+polkit_ready() {
+  command -v pkexec >/dev/null 2>&1 || return 1
+  if ! systemctl --user is-active --quiet hyprpolkitagent 2>/dev/null; then
+    systemctl --user start hyprpolkitagent >/dev/null 2>&1 || true
+    sleep 0.4
+  fi
+  systemctl --user is-active --quiet hyprpolkitagent 2>/dev/null
+}
+
+run_sudo() { # run_sudo <动作描述> <命令> [参数...]
+  local what=$1; shift
+  local prog line a helper esc
+  prog=$(command -v "$1" 2>/dev/null) || die "找不到命令：$1"
+  line="pkexec $*"
+
+  if [ "${SDDM_THEME_PRINT_ONLY:-0}" = 1 ]; then
+    echo "$line"
+    return 0
+  fi
+
+  # 1) polkit：无终端窗口，密码框由 hyprpolkitagent 渲染
+  if [ "${SDDM_THEME_SUDO_MODE:-auto}" != kitty ] && polkit_ready; then
+    pkexec "$prog" "${@:2}" && return 0
+    die "鉴权未通过或已取消，配置未改动"
+  fi
+
+  # 2) 回退：kitty 里跑 sudo，手动输密码
+  line="sudo"
+  for a in "$@"; do line+=" $(printf '%q' "$a")"; done
+
+  command -v kitty >/dev/null 2>&1 \
+    || die "无法提权：polkit 代理不可用且没有 kitty。手动执行：$line"
+
+  esc=$(printf '%s' "$what" | sed "s/'/\\\\''/g")
+  helper=$(mktemp --suffix=.sh) || die "mktemp 失败"
+  {
+    echo '#!/usr/bin/env bash'
+    printf 'echo "==> %s"\n' "$esc"
+    echo 'echo'
+    printf '%s || { echo; echo "未生效（已取消或失败），配置未改动。"; read -n1 -s -p "按任意键关闭"; exit 1; }\n' "$line"
+    echo 'echo'
+    printf 'echo "已生效：%s（下次注销生效）"\n' "$esc"
+    echo 'read -n1 -s -p "按任意键关闭"'
+  } > "$helper"
+  chmod +x "$helper"
+
+  kitty --class sddm-theme-apply --title "SDDM 登录界面主题" -e "$helper"
+  rm -f "$helper"
+}
+
+cmd_list() {
+  local id name path cur
+  cur=$(resolve "$(current)")
+  while IFS=$'\t' read -r id name path; do
+    [ -n "$id" ] || continue
+    if [ "$path" = "$cur" ]; then
+      printf '%s\t%s\t%s\t✓ 当前\n' "$id" "$name" "$path"
+    else
+      printf '%s\t%s\t%s\t\n' "$id" "$name" "$path"
+    fi
+  done < <(enumerate)
+}
+
+cmd_current() {
+  local c; c=$(resolve "$(current)")
+  [ -n "$c" ] || die "读不到当前主题（检查 $BASE_CONF）"
+  printf '%s\t%s\n' "$(basename "$c")" "$(describe "$c")"
+}
+
+cmd_json() {
+  local id name path cur first=1
+  cur=$(resolve "$(current)")
+  printf '{"current":"%s","override":%s,"themes":[' \
+    "$cur" "$([ -f "$OVERRIDE" ] && echo true || echo false)"
+  while IFS=$'\t' read -r id name path; do
+    [ -n "$id" ] || continue
+    [ "$first" = 1 ] || printf ','
+    first=0
+    printf '{"id":"%s","name":"%s","path":"%s","current":%s}' \
+      "$id" "$(printf '%s' "$name" | tr -d '"')" "$path" \
+      "$([ "$path" = "$cur" ] && echo true || echo false)"
+  done < <(enumerate)
+  printf ']}\n'
+}
+
+cmd_set() {
+  local want=${1:-} id name path sel_path="" sel_name="" tmp
+  [ -n "$want" ] || die "缺少主题 id（sddm-theme list 查看）"
+
+  while IFS=$'\t' read -r id name path; do
+    [ "$id" = "$want" ] && { sel_path=$path; sel_name=$name; }
+  done < <(enumerate)
+  [ -n "$sel_path" ] \
+    || die "没有主题 \"$want\"（可用：$(enumerate | cut -f1 | paste -sd' ')）"
+
+  tmp=$(mktemp) || die "mktemp 失败"
+  printf '[Theme]\nCurrent=%s\n' "$sel_path" > "$tmp"
+  chmod 644 "$tmp"
+
+  run_sudo "登录界面 → $sel_name" install -Dm644 "$tmp" "$OVERRIDE"
+  rm -f "$tmp"
+  [ "${SDDM_THEME_PRINT_ONLY:-0}" = 1 ] && return 0
+
+  [ "$(resolve "$(conf_current "$OVERRIDE")")" = "$sel_path" ] \
+    || die "写入未生效（可能取消了密码输入）"
+  note "登录界面主题 → $sel_name（下次注销生效）"
+}
+
+cmd_reset() {
+  if [ ! -f "$OVERRIDE" ]; then
+    note "已经是默认主题（没有 override）"
+    return 0
+  fi
+  run_sudo "恢复默认主题" rm -f "$OVERRIDE"
+  [ "${SDDM_THEME_PRINT_ONLY:-0}" = 1 ] && return 0
+  [ -f "$OVERRIDE" ] && die "override 仍存在（可能取消了密码输入）"
+  note "已恢复默认：$(basename "$(resolve "$(current)")")"
+}
+
+case "${1:-list}" in
+  list)    cmd_list ;;
+  current) cmd_current ;;
+  set)     shift; cmd_set "${1:-}" ;;
+  reset)   cmd_reset ;;
+  --json|json) cmd_json ;;
+  -h|--help)
+    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+  *) die "未知参数：$1（list | current | set <id> | reset | --json）" ;;
+esac

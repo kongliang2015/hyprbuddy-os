@@ -40,3 +40,23 @@ Omarchy 风格的预览选择器：kitty 内 fzf 浏览主题列表，右侧用 
 
 主题切换后应同时变化：waybar、fuzzel、mako、swayosd、壁纸、hyprland 兜底边框。
 验证：`grep -m1 color ~/.config/waybar/style.css` 与 mako 颜色键是否同步更新。
+
+## SDDM 登录界面主题
+
+    sddm-theme list        # 已安装主题（id / 显示名 / 路径，当前项带 ✓）
+    sddm-theme current     # 当前生效主题
+    sddm-theme set <id>    # 切换（polkit 原生密码框；代理不可用时回退 sudo+kitty）
+    sddm-theme reset       # 删除 override，回到声明式默认
+    sddm-theme --json      # 机器可读（菜单/脚本消费）
+
+- 入口：Super+Space → 外观 → 登录界面主题，当前项带 ✓，末项可恢复默认
+- 原理：`/etc/sddm.conf.d/00-nixos.conf` 由 NixOS 托管，重建会重写 `Current=`；
+  切换写的是 `/etc/sddm.conf.d/50-sddm-theme.conf`，conf.d 按字典序后者覆盖前者，
+  所以 `nixos-rebuild switch` 不会冲掉运行时的选择
+- 生效时机：SDDM 只在 greeter 启动时读配置 —— **注销/重启后**才看得到，无需重启 sddm
+- 主题来源：`ThemeDir` 下含 `Main.qml` 的目录 + `Current` 指向的目录外绝对路径（catppuccin）
+- 换 catppuccin 的 flavor/accent 不在这里：那是构建期参数（`modules/desktop/hyprland.nix:5`），
+  需要 `nixos-rebuild`；本命令只切换"已安装主题"
+- 提权：优先 pkexec + hyprpolkitagent（无终端窗口），SDDM_THEME_SUDO_MODE=kitty 可强制回退
+- 安全：id 只接受枚举白名单内的值；写入失败或取消时原配置不动；
+  `hypr-check` 会校验 override 指向的主题存在，避免登录页黑屏

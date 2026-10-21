@@ -84,6 +84,27 @@ else
   fi
 fi
 
+# 5) SDDM 运行时主题 override（写错会让登录界面起不来）
+ovr=/etc/sddm.conf.d/50-sddm-theme.conf
+if [ -f "$ovr" ]; then
+  ovr_cur=$(sed -n 's/^[[:space:]]*Current[[:space:]]*=[[:space:]]*//p' "$ovr" 2>/dev/null | tail -1)
+  case "$ovr_cur" in
+    "")
+      warn "SDDM override 存在但缺少 Current 键：$ovr"
+      ;;
+    /*)
+      if [ -f "$ovr_cur/Main.qml" ]; then
+        info "SDDM 登录主题 override 有效：$(basename "$ovr_cur")"
+      else
+        warn "SDDM override 指向无效主题：$ovr_cur（登录界面可能黑屏，执行 sddm-theme reset）"
+      fi
+      ;;
+    *)
+      info "SDDM 登录主题 override：$ovr_cur（ThemeDir 内）"
+      ;;
+  esac
+fi
+
 if [ "$status" -eq 0 ]; then
   echo "  - 自检通过"
 fi
