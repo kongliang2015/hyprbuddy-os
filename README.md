@@ -1,6 +1,6 @@
 # NixOS Hyprland 桌面配置（Kanagawa 默认 · aarch64 / vm-virtio）
 
-flake 化的 Hyprland 桌面骨架：SDDM → Hyprland（uwsm 托管）→ Waybar / fuzzel / mako / hyprlock / awww / SwayOSD，默认 Kanagawa 配色，内置 7 套主题可热切换。按 host 选择架构与 GPU；本分支在 aarch64 KVM 虚机（QEMU virtio）上完成构建、启动、桌面验证与 live 镜像验证。
+flake 化的 Hyprland 桌面骨架：SDDM → Hyprland（uwsm 托管）→ Waybar / fuzzel / mako / hyprlock / awww / SwayOSD，默认 Kanagawa 配色，内置 8 套主题可热切换。按 host 选择架构与 GPU；本分支在 aarch64 KVM 虚机（QEMU virtio）上完成构建、启动、桌面验证与 live 镜像验证。
 
 ## 环境
 
@@ -62,7 +62,7 @@ hyprland-nixos/
 - Waybar：胶囊分组样式 + Nerd Font 图标 + 工作区 1-4 常驻；agent 用量模块（custom/agent-usage）
 - fuzzel：应用启动器 + Super+Space 系统菜单（分组信息架构）+ 快捷键参考
 - mako：毛玻璃样式 + urgency 分级（low 短超时 / critical 常驻）+ 勿扰模式；颜色随主题
-- theme-next：7 套主题热切换，联动 waybar / fuzzel / mako / swayosd / 壁纸；登录时 restore
+- theme-next：8 套主题热切换，联动 waybar / fuzzel / mako / swayosd / 壁纸；登录时 restore
 - theme-picker：主题预览选择器（kitty 内 fzf + 壁纸实时预览，Omarchy 风格），菜单「外观 → 主题预览」
 - hypr-check：配置自检（Lua 优先 / hyprctl configerrors / 0.55 规则语法 lint / 命令清单一致性），install.sh 末尾自动运行
 - 其他：SwayOSD / hypridle / 夜间模式 / 录屏 / 截图标注 / 壁纸轮换（awww）
@@ -197,7 +197,7 @@ installer 镜像启动后以 root 登录，分区并挂载到 /mnt，然后执�
 
 ## 主题
 
-内置 7 套主题，`theme-next` 循环切换（Super+Shift+T），`theme-next restore` 在登录时应用已保存主题，联动 waybar / fuzzel / mako / swayosd / 壁纸。默认 Kanagawa：背景 #1F1F28 / #16161D，前景 #DCD7BA，强调 #7E9CD8 / #957FB8，绿 #76946A，黄 #DCA561，红 #FF5D62，青 #7AA89F，粉 #D27E99，橙 #FFA066。
+内置 8 套主题，`theme-next` 循环切换（Super+Shift+T），`theme-next restore` 在登录时应用已保存主题，联动 waybar / fuzzel / mako / swayosd / 壁纸。默认 Kanagawa：背景 #1F1F28 / #16161D，前景 #DCD7BA，强调 #7E9CD8 / #957FB8，绿 #76946A，黄 #DCA561，红 #FF5D62，青 #7AA89F，粉 #D27E99，橙 #FFA066。
 
 ## 为什么用 SDDM 而不是 LightDM
 

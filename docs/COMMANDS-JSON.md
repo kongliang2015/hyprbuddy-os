@@ -22,7 +22,7 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
 ```bash
 #!/usr/bin/env bash
 # @command: theme-next
-# @summary: 在 7 套内置主题间循环切换
+# @summary: 在 8 套内置主题间循环切换
 # @category: runtime
 # @usage: theme-next [restore]
 # @arg restore: 应用已保存主题（登录时调用，不前进索引）
@@ -52,7 +52,7 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
     {
       "name": "theme-next",
       "path": "~/.local/bin/theme-next",
-      "summary": "在 7 套内置主题间循环切换",
+      "summary": "在 8 套内置主题间循环切换",
       "category": "runtime",
       "usage": "theme-next [restore]",
       "args": [ { "name": "restore", "desc": "应用已保存主题" } ],

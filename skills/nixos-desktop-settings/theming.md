@@ -7,9 +7,11 @@
     theme-next <idx>      # 应用指定主题（theme-picker 使用）
 
 内置主题（顺序即索引）：Kanagawa / Tokyo Night / Catppuccin Mocha / Rose Pine / Nord /
-WorkBuddy / WorkBuddy Dark。WorkBuddy 两套取自 workbuddy.cn 官网设计令牌（薄荷绿
+WorkBuddy / WorkBuddy Dark / HyprBuddy。WorkBuddy 两套取自 workbuddy.cn 官网设计令牌（薄荷绿
 #00C29A、白面 #FFF、文字 #1A1A1A、暗部 #0A0A0A + #28B894→#3B82F6 渐变），浅色那套会让
 `agent-theme-sync` 收到 light——脚本按 waybar 背景色亮度自动判定，无独立字段。
+HyprBuddy 是变形金刚赛博坦金属风：枪灰钢面 #12161B + 能量青 #35E0FF + 汽车人红 #E03A2F，
+边框跑 能量青→红 渐变，警戒黄 #F5B301 与霸天虎紫 #9B5CFF 作模块色。
 
 ## theme-next 改写的文件
 

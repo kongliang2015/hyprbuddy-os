@@ -42,7 +42,7 @@ WorkBuddy 实测：`#00C29A` 主色、`#009273` 深主色、`#FFF` 面、`#1A1A1
       -alpha off -depth 8 -define png:color-type=2 wallpapers/08-<slug>.png
     identify -format '%wx%h %[channels] %[bit-depth]bit mean=%[fx:int(mean*255)]\n' wallpapers/08-<slug>.png
 
-- 命名 `NN-<slug>.png`，序号接现有最大值（当前到 09）。
+- 命名 `NN-<slug>.png`，序号接现有最大值（当前到 10）。
 - **必须 2560×1440、8bit、3 通道（无 alpha）** —— 带透明通道会让 awww 出黑屏/花屏。
 - 用 mean 自检方向：浅色应 >200，深色 <60。
 - 壁纸会被 `wallpaper-next` 一起轮播，命名带主题前缀便于辨认。
