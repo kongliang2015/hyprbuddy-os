@@ -71,22 +71,30 @@ in
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   # 把发行版 dotfiles 软链进 live 用户目录（等价 install.sh 的部署步骤）
+  # 把发行版 dotfiles 软链进 live 用户目录（等价 install.sh 的部署步骤）。
+  # 必须逐文件链接、目录保持真实可写——theme-next/wallpaper-next 会改写
+  # waybar/fuzzel/mako/kitty/hypr 下的配置，整目录链到只读 store 会导致
+  # 主题/壁纸切换全部失败（"只读文件系统"）。
+  # share/（commands.json + 主题预览图）与 bin/ 同理逐文件链接。
   system.activationScripts.liveConfig = lib.stringAfter [ "users" ] ''
     cfg=${userConfig}
-    mkdir -p /home/live/.config /home/live/.local
-    for d in hypr waybar fuzzel kitty mako swayosd Thunar; do
-      if [ -e "$cfg/$d" ]; then
-        ln -sfn "$cfg/$d" /home/live/.config/$d
-      fi
+    mkdir -p /home/live/.config /home/live/.local/bin /home/live/.local/share
+    cd $cfg
+    find . \( -type f -o -type l \) | while read -r rel; do
+      rel=''${rel#./}
+      case "$rel" in
+        bin/*)   dst=/home/live/.local/bin/''${rel#bin/} ;;
+        share/*) dst=/home/live/.local/share/''${rel#share/} ;;
+        *)       dst=/home/live/.config/$rel ;;
+      esac
+      mkdir -p "$(dirname "$dst")"
+      ln -sfn "$cfg/$rel" "$dst"
     done
-    if [ -e "$cfg/bin" ]; then
-      ln -sfn "$cfg/bin" /home/live/.local/bin
-    fi
-    # share/hyprland-nixos（commands.json + 主题预览图）——theme-picker 预览用
-    if [ -e "$cfg/share/hyprland-nixos" ]; then
-      mkdir -p /home/live/.local/share
-      ln -sfn "$cfg/share/hyprland-nixos" /home/live/.local/share/hyprland-nixos
-    fi
+    cd /home/live
+    # 壁纸：theme-next/wallpaper-next 依赖 ~/Pictures/wallpapers（安装器
+    # 会拷贝，live 环境此前漏了，导致切壁纸/主题壁纸一直黑屏）
+    mkdir -p /home/live/Pictures/wallpapers
+    cp -f ${srcPkg}/share/hyprland-nixos/wallpapers/*.png /home/live/Pictures/wallpapers/ 2>/dev/null || true
     chown -R live:users /home/live
   '';
   # 安装 CD 模块用 mkOverride 500 强制关掉了 fontconfig（导致 /etc/fonts 整个缺失，中文豆腐块）——这里恢复
