@@ -3,7 +3,7 @@
 # @summary: 在当前桌面逐主题截屏：截图 → 切下一套主题 → 等 10s → 循环
 # @category: runtime
 # @usage: theme-preview-capture
-# @effect: 依次切换全部 5 套主题（每套等 10s）；截图存 theme-previews/；结束后恢复最初主题
+# @effect: 依次切换全部内置主题（每套等 10s）；截图存 theme-previews/；结束后恢复最初主题
 # @interactive: true
 # 要求：桌面上已有要展示的窗口（如 btop），脚本不新开窗口、不切换工作区。
 set -uo pipefail
@@ -18,9 +18,10 @@ TN="$(command -v theme-next || printf '%s' "$HOME/.local/bin/theme-next")"
 out_dir="$HOME/.local/share/hyprland-nixos/theme-previews"
 mkdir -p "$out_dir"
 
-N=5
 rows=$("$TN" --print-themes)
 [ -n "$rows" ] || die "主题清单为空"
+# 主题总数取自 theme-next 的清单，新增主题不必改这里
+N=$(printf '%s\n' "$rows" | grep -c .)
 
 # 起始主题 = 状态里的当前主题（--print-themes 中带 ← 当前 的行）
 cur=$(printf '%s\n' "$rows" | awk -F'\t' '$5 ~ /当前/ {print $1}')

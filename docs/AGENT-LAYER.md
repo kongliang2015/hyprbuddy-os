@@ -74,7 +74,7 @@ agent 层默认关闭，三个 agent 脚本随 `agent.enable` 安装（`home/def
 
 **状态**：已实现并实测（幂等、保留其他键）。
 
-**已知限制**：CodeBuddy 的 settings.json 暂无 theme 字段，未覆盖；当前 5 套主题全为暗色，传固定 dark。
+**已知限制**：CodeBuddy 的 settings.json 暂无 theme 字段，未覆盖。dark/light 由 `theme-next` 按主题表里 waybar 背景色亮度自动判定（浅色主题如 WorkBuddy 传 light）。
 
 ### 层 3：诊断层
 
