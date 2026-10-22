@@ -31,7 +31,12 @@ in
   # 发行版开关：开启桌面 + 虚机显卡（验证虚机写死 virtio）
   distro.desktop.enable = true;
   distro.gpu.vendor = "virtio";
-  distro.agent.enable = false;
+  # agent 层：live 环境只装 codebuddy + opencode（诊断关：无本地 ollama；
+  # usage 开：waybar 显示 agent 用量）。ISO 体积 +~300M。
+  distro.agent.enable = true;
+  distro.agent.agents = [ "codebuddy" "opencode" ];
+  distro.agent.diagnostics = false;
+  distro.agent.usage = true;
   distro.user.name = "live";
   distro.user.extraGroups = [ "networkmanager" "wheel" ];
 
