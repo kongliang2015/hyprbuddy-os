@@ -82,6 +82,11 @@ in
     if [ -e "$cfg/bin" ]; then
       ln -sfn "$cfg/bin" /home/live/.local/bin
     fi
+    # share/hyprland-nixos（commands.json + 主题预览图）——theme-picker 预览用
+    if [ -e "$cfg/share/hyprland-nixos" ]; then
+      mkdir -p /home/live/.local/share
+      ln -sfn "$cfg/share/hyprland-nixos" /home/live/.local/share/hyprland-nixos
+    fi
     chown -R live:users /home/live
   '';
   # 安装 CD 模块用 mkOverride 500 强制关掉了 fontconfig（导致 /etc/fonts 整个缺失，中文豆腐块）——这里恢复
