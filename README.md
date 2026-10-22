@@ -38,7 +38,7 @@ hyprland-nixos/
 ├── skills/              # agent 技能：nixos-desktop-settings / diagnose-crash
 ├── installer/           # iso-config.nix（安装盘）/ live-iso-config.nix（live+install 一体盘）/ install.sh
 ├── wallpapers/
-└── docs/                # KEYBINDS / TROUBLESHOOTING / ROADMAP / ARCHITECTURE-REVIEW / IMPLEMENTATION-PLAN / AGENT-LAYER / SKILL-REDESIGN
+└── docs/                # KEYBINDS / TROUBLESHOOTING / ROADMAP / ARCHITECTURE-REVIEW / IMPLEMENTATION-PLAN / AGENT-LAYER / SKILL-REDESIGN / themes/（每套主题的配色说明）
 ```
 
 ## 设计文档

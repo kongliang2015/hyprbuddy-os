@@ -100,8 +100,23 @@ hyprtoolkit 认证框配色，全部由脚本按 WB_*/HA* 用 `mixhex` 算出来
   `skills/nixos-desktop-settings/{SKILL,theming}.md` 需要一起改，否则下一个人会被误导。
 - 新建 skill 目录后必须重跑 `install.sh`，`~/.codebuddy/skills` 才会出现软链。
 
-## 6. 验收清单
+## 6. 主题说明文件（每套一份，别省）
 
+主题表只有一行 36 字段，读不出「哪个色是干什么的」。每套主题配
+`docs/themes/<名称>.md`，这是人看的设计说明，也是将来复盘/微调的唯一依据：
+
+- 索引号、切换命令、壁纸与预览图路径
+- **角色配色表**：色值 → 角色 → 实际落点（waybar 底 / kitty 光标 / polkit accent …）
+- kitty ANSI 16 色表
+- 壁纸：内容描述、生成方式、尺寸/格式/mean 自检结果
+- 一句「派生配色由 theme-next 的 mixhex 算出，不要手填」
+
+范例：`docs/themes/HyprBuddy.md`。只做主题不改脚本时，这份文件也要跟着更新。
+新建后同步 `docs/themes/README.md` 的索引表（索引/主题/主面/强调色/链接）。
+
+## 7. 验收清单
+
+- [ ] `docs/themes/<名称>.md` 已写（角色配色 + 壁纸信息）
 - [ ] 主题表每行 36 字段
 - [ ] 壁纸 2560×1440 / 8bit / 无 alpha，mean 方向正确
 - [ ] `--print-themes` 有该行且壁纸存在
