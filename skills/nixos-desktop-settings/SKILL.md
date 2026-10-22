@@ -51,7 +51,8 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 | "通知 3 秒消失、紧急常驻" | `home/mako/config`（新增颜色键须同步 `scripts/theme-next`） |
 | "10 分钟无操作锁屏" | `home/hypr/hypridle.conf` |
 | "终端字号改 13" | `home/kitty/kitty.conf` |
-| "换个主题" | 运行 `theme-next`（5 套循环；`restore` 仅供登录） |
+| "换个主题" | 运行 `theme-next`（循环切换；`restore` 仅供登录） |
+| "照 X 官网风格做套新主题" | 技能 `theme-create`（取色 → 生成壁纸 → 追加主题表 → 部署） |
 | "想先看看各主题效果再选" | 运行 `theme-picker`（须在 kitty 内；菜单：外观 → 主题预览） |
 | "换壁纸" | 运行 `wallpaper-next` |
 | "夜间模式/勿扰/录屏/区域截图标注" | `night-mode` / `notif-dnd` / `record-toggle` / `screenshot-annotate` |
@@ -69,3 +70,4 @@ hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
 - `diagnose-crash`：崩溃 / 段错误 / core dump 分析（本机启用自动诊断时先读
   `~/.local/state/agent/coredump-report.md`）
 - `agent-commands`：机器可读命令清单（`--json` / `list` / `show <name>` / `--category`）
+- `theme-create`：照某网站/品牌风格做一套新主题（取色 → 壁纸 → 主题表 → 接入主题预览）
