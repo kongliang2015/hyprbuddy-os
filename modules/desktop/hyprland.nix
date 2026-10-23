@@ -116,6 +116,7 @@ lib.mkIf cfg.desktop.enable {
     brightnessctl # 屏幕亮度
     playerctl     # 媒体控制
     btop          # 系统监视器（Super+Space 菜单里调用）
+    fastfetch     # 系统信息展示
     # ── 低难度增强特性 ───────────────────────────────────
     swayosd       # 音量/亮度屏幕 OSD
     cliphist      # 剪贴板历史
