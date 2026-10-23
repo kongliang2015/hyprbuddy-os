@@ -375,6 +375,8 @@ if [ $(( (16#${WB_BG:0:2} * 299 + 16#${WB_BG:2:2} * 587 + 16#${WB_BG:4:2} * 114)
 fi
 [ -x "@HOME@/.local/bin/agent-theme-sync" ] && "@HOME@/.local/bin/agent-theme-sync" "$AGENT_MODE" >/dev/null 2>&1 || true
 
-command -v notify-send >/dev/null 2>&1 && notify-send -a theme-next "主题 -> $NAME" 2>/dev/null || true
+# restore（登录 exec-once + 配置重载 exec 各触发一次）不弹通知，避免同一
+# 主题重复弹窗；手动切换主题才提示。
+command -v notify-send >/dev/null 2>&1 && [ "$req" != "restore" ] && notify-send -a theme-next "主题 -> $NAME" 2>/dev/null || true
 
 echo "theme: $NAME ($((idx+1))/$N)"
