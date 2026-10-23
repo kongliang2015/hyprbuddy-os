@@ -39,6 +39,18 @@ in
             会自动带上对应变体的包；其余取值需自行提供 themePackages。
           '';
         };
+        themePackages = mkOption {
+          type = types.listOf types.package;
+          default = [ ];
+          example = lib.literalExpression ''
+            [ (pkgs.adi1090x-plymouth-themes.override { selected_themes = [ "colorful" ]; }) ]
+          '';
+          description = ''
+            额外提供 Plymouth 主题的包，每个包需有
+            $out/share/plymouth/themes/<主题名>/<主题名>.plymouth。
+            theme 取 <主题名> 即可选中；catppuccin-<variant> 会自动带包，无需在此重复。
+          '';
+        };
         debug = mkOption {
           type = types.bool;
           default = false;

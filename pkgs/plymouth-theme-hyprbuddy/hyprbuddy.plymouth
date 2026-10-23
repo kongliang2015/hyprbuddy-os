@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=HyprBuddy
+Description=HyprBuddy splash with colorful progress bar
+ModuleName=script
+
+[script]
+ImageDir=@THEME_DIR@
+ScriptFile=@THEME_DIR@/hyprbuddy.script

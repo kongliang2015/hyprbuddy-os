@@ -53,6 +53,7 @@
             nixpkgs.overlays = [
               (final: _prev: {
                 codebuddy = final.callPackage ./pkgs/codebuddy { };
+                plymouth-theme-hyprbuddy = final.callPackage ./pkgs/plymouth-theme-hyprbuddy { };
               })
             ];
           }

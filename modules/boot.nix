@@ -27,8 +27,10 @@ in
   boot.plymouth = lib.mkIf ply.enable {
     enable = true;
     theme = ply.theme;
+    # 自动包（catppuccin-<variant>）+ host 传入的自定义主题包
     themePackages = lib.optional (lib.hasPrefix "catppuccin-" ply.theme)
-      (pkgs.catppuccin-plymouth.override { variant = plyCatppuccinVariant; });
+      (pkgs.catppuccin-plymouth.override { variant = plyCatppuccinVariant; })
+      ++ ply.themePackages;
   };
   # 开动画时把 console 输出彻底压掉：内核 console 0 级（连 ACPI 报错都不打），
   # systemd 也不往 console 写任务状态行；initrd 脚本不啰嗦。否则这些文字会在

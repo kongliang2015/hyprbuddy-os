@@ -1,0 +1,87 @@
+# HyprBuddy Plymouth 主题：静态主图 + 彩色进度条
+# 引擎必须是 script：two-step / breeze 只能改配色，做不了动画。
+
+# 背景纯黑
+Window.SetBackgroundTopColor (0, 0, 0);
+Window.SetBackgroundBottomColor (0, 0, 0);
+
+screen.width = Window.GetWidth ();
+screen.height = Window.GetHeight ();
+
+# ── 主图：居中，最宽 55% 屏宽 / 最高 45% 屏高 ──────────
+logo.image = Image ("splash.png");
+logo.scale = Math.Min ((screen.width * 0.55) / logo.image.GetWidth (),
+                       (screen.height * 0.52) / logo.image.GetHeight ());
+logo.image = logo.image.Scale (logo.image.GetWidth () * logo.scale,
+                               logo.image.GetHeight () * logo.scale);
+logo.sprite = Sprite (logo.image);
+logo.x = Window.GetX () + screen.width / 2 - logo.image.GetWidth () / 2;
+logo.y = Window.GetY () + screen.height * 0.40 - logo.image.GetHeight () / 2;
+logo.sprite.SetPosition (logo.x, logo.y, 10);
+
+# ── 进度条：轨道 + 彩色填充 ──────────────────────────
+bar.width = Math.Int (screen.width * 0.44);
+bar.height = 14;
+bar.x = Window.GetX () + screen.width / 2 - bar.width / 2;
+bar.y = Window.GetY () + screen.height * 0.72;
+
+bar.track.image = Image ("track.png");
+bar.track.image = bar.track.image.Scale (bar.width, bar.height);
+bar.track.sprite = Sprite (bar.track.image);
+bar.track.sprite.SetPosition (bar.x, bar.y, 20);
+
+# 填充用 Crop 而不是 Scale：缩放会把渐变挤扁
+bar.src = Image ("bar.png");
+bar.fill.image = bar.src.Crop (0, 0, 2, bar.src.GetHeight ());
+bar.fill.sprite = Sprite (bar.fill.image);
+bar.fill.sprite.SetPosition (bar.x, bar.y, 21);
+bar.fill.sprite.SetOpacity (0);
+
+# ── 光点：跟随填充末端并呼吸 ────────────────────────
+glow.image = Image ("glow.png");
+glow.sprite = Sprite (glow.image);
+glow.sprite.SetOpacity (0);
+
+progress = 0;
+t = 0;
+
+fun progress_callback (duration, value)
+  {
+    progress = value;
+    if (progress < 0) { progress = 0; }
+    if (progress > 1) { progress = 1; }
+  }
+
+Plymouth.SetBootProgressFunction (progress_callback);
+
+fun refresh_callback ()
+  {
+    t += 0.03;
+
+    # 轨道被缩放到 bar.width，填充也必须按屏幕像素算，否则两者宽度对不上
+    w = Math.Int (bar.width * progress);
+    if (w < 2) { w = 2; }
+    cw = Math.Int (bar.src.GetWidth () * progress);
+    if (cw < 2) { cw = 2; }
+
+    bar.fill.image = bar.src.Crop (0, 0, cw, bar.src.GetHeight ());
+    bar.fill.image = bar.fill.image.Scale (w, bar.height);
+    bar.fill.sprite.SetImage (bar.fill.image);
+    bar.fill.sprite.SetOpacity (1);
+
+    pulse = (Math.Cos (t * 3.6) + 1) / 2;
+    glow.x = bar.x + w - glow.image.GetWidth () / 2;
+    glow.y = bar.y + bar.height / 2 - glow.image.GetHeight () / 2;
+    glow.sprite.SetPosition (glow.x, glow.y, 30);
+    glow.sprite.SetOpacity (0.35 + 0.5 * pulse);
+  }
+
+Plymouth.SetRefreshFunction (refresh_callback);
+
+fun quit_callback ()
+  {
+    bar.fill.sprite.SetOpacity (1);
+    glow.sprite.SetOpacity (0);
+  }
+
+Plymouth.SetQuitFunction (quit_callback);

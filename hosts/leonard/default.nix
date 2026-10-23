@@ -1,6 +1,6 @@
 # 本机：GTX 1050 Ti（Pascal）/ 台式机 / 保留 XFCE + Window Maker。
 # 只写 distro.*，不直接写 NixOS 选项。
-{ ... }:
+{ pkgs, ... }:
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -11,7 +11,11 @@
     user.name = "leonard";
     boot.windowsEntry = true;   # ESP 上有 /EFI/Microsoft/Boot/bootmgfw.efi（nvme1n1 上的 Windows）
     # 开机动画：主题与 SDDM 的 catppuccin-mocha 对齐；NVIDIA 下若 KMS 交接黑屏就关掉
-    boot.plymouth.enable = true;
+    boot.plymouth = {
+      enable = true;
+      theme = "hyprbuddy";                       # 自定义 script 主题（彩色进度条）
+      themePackages = [ pkgs.plymouth-theme-hyprbuddy ];
+    };
     gpu = {
       vendor = "nvidia";
       nvidia = {
