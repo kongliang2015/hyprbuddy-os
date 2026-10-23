@@ -12,6 +12,9 @@
 
     boot.loader = "@BOOTLOADER@";
     boot.windowsEntry = @WINDOWS_ENTRY@;
+    # 开机动画默认开启（主题 catppuccin-mocha）；NVIDIA 会自动补早期 KMS。
+    # 不想要就把它改成 false。
+    boot.plymouth.enable = true;
 
     gpu = {
       vendor = "@GPU_VENDOR@";

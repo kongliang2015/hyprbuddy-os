@@ -32,6 +32,8 @@ in
   distro.desktop.enable = true;
   distro.gpu.vendor = "virtio";
   distro.agent.enable = false;
+  # live 盘也走 Plymouth：开机即有 splash，与安装后的系统观感一致
+  distro.boot.plymouth.enable = true;
   distro.user.name = "live";
   distro.user.extraGroups = [ "networkmanager" "wheel" ];
 
