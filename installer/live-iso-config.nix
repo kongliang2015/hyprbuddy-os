@@ -1,5 +1,5 @@
 # live + install 一体盘：启动直接进入 Hyprland 桌面（SDDM 自动登录 live 用户），
-# 同时保留 install-hyprland-nixos 安装器。基于 installation-cd-minimal 的
+# 同时保留 install-hyprbuddy 安装器。基于 installation-cd-minimal 的
 # squashfs + tmpfs overlay 机制，根可写。
 { pkgs, lib, config, ... }:
 
@@ -31,14 +31,14 @@ in
   # 发行版开关：开启桌面 + 虚机显卡（验证虚机写死 virtio）
   distro.desktop.enable = true;
   distro.gpu.vendor = "virtio";
-  # agent 层：live 环境只装 codebuddy + opencode（诊断关：无本地 ollama；
-  # usage 开：waybar 显示 agent 用量）。ISO 体积 +~300M。
-  distro.agent.enable = true;
-  distro.agent.agents = [ "codebuddy" "opencode" ];
-  distro.agent.diagnostics = false;
-  distro.agent.usage = true;
+  distro.agent.enable = false;
   distro.user.name = "live";
   distro.user.extraGroups = [ "networkmanager" "wheel" ];
+
+  # 发行版品牌：菜单前缀 + os-release（NAME/PRETTY_NAME）。
+  # 菜单条目名 = distroName + system.nixos.label；GRUB 字体无 CJK，用 ASCII。
+  system.nixos.distroName = lib.mkForce "HyprBuddy";
+  system.nixos.label = lib.mkForce "Live-generic-kernel";
 
   # live + install：保留安装器
   environment.systemPackages = with pkgs; [
@@ -46,15 +46,17 @@ in
     pciutils
     vim
     srcPkg
-    (writeShellScriptBin "install-hyprland-nixos" ''
+    (writeShellScriptBin "install-hyprbuddy" ''
       echo "repo: ${srcPkg}/share/hyprland-nixos" >&2
       exec ${srcPkg}/share/hyprland-nixos/installer/install.sh "$@"
     '')
   ];
 
   # 身份 / 主机名 / ISO 元信息
-  networking.hostName = lib.mkForce "hyprland-live";
-  image.baseName = lib.mkForce "hyprland-nixos-live";
+  networking.hostName = lib.mkForce "hyprbuddy-live";
+  # 输出文件名 → hyprbuddy-live.iso；卷标（stage-1 by-label 挂载用）≤32 字符
+  image.baseName = lib.mkForce "hyprbuddy-live";
+  isoImage.volumeID = lib.mkForce "hyprbuddy-live-26.05-aarch64";
   isoImage.squashfsCompression = "zstd -Xcompression-level 6";
   boot.zfs.forceImportRoot = lib.mkForce false;
 
@@ -76,30 +78,22 @@ in
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
   # 把发行版 dotfiles 软链进 live 用户目录（等价 install.sh 的部署步骤）
-  # 把发行版 dotfiles 软链进 live 用户目录（等价 install.sh 的部署步骤）。
-  # 必须逐文件链接、目录保持真实可写——theme-next/wallpaper-next 会改写
-  # waybar/fuzzel/mako/kitty/hypr 下的配置，整目录链到只读 store 会导致
-  # 主题/壁纸切换全部失败（"只读文件系统"）。
-  # share/（commands.json + 主题预览图）与 bin/ 同理逐文件链接。
   system.activationScripts.liveConfig = lib.stringAfter [ "users" ] ''
     cfg=${userConfig}
-    mkdir -p /home/live/.config /home/live/.local/bin /home/live/.local/share
-    cd $cfg
-    find . \( -type f -o -type l \) | while read -r rel; do
-      rel=''${rel#./}
-      case "$rel" in
-        bin/*)   dst=/home/live/.local/bin/''${rel#bin/} ;;
-        share/*) dst=/home/live/.local/share/''${rel#share/} ;;
-        *)       dst=/home/live/.config/$rel ;;
-      esac
-      mkdir -p "$(dirname "$dst")"
-      ln -sfn "$cfg/$rel" "$dst"
+    mkdir -p /home/live/.config /home/live/.local
+    for d in hypr waybar fuzzel kitty mako swayosd Thunar; do
+      if [ -e "$cfg/$d" ]; then
+        ln -sfn "$cfg/$d" /home/live/.config/$d
+      fi
     done
-    cd /home/live
-    # 壁纸：theme-next/wallpaper-next 依赖 ~/Pictures/wallpapers（安装器
-    # 会拷贝，live 环境此前漏了，导致切壁纸/主题壁纸一直黑屏）
-    mkdir -p /home/live/Pictures/wallpapers
-    cp -f ${srcPkg}/share/hyprland-nixos/wallpapers/*.png /home/live/Pictures/wallpapers/ 2>/dev/null || true
+    if [ -e "$cfg/bin" ]; then
+      ln -sfn "$cfg/bin" /home/live/.local/bin
+    fi
+    # share/hyprland-nixos（commands.json + 主题预览图）——theme-picker 预览用
+    if [ -e "$cfg/share/hyprland-nixos" ]; then
+      mkdir -p /home/live/.local/share
+      ln -sfn "$cfg/share/hyprland-nixos" /home/live/.local/share/hyprland-nixos
+    fi
     chown -R live:users /home/live
   '';
   # 安装 CD 模块用 mkOverride 500 强制关掉了 fontconfig（导致 /etc/fonts 整个缺失，中文豆腐块）——这里恢复
