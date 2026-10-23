@@ -1,5 +1,5 @@
 # live + install 一体盘：启动直接进入 Hyprland 桌面（SDDM 自动登录 live 用户），
-# 同时保留 install-hyprland-nixos 安装器。基于 installation-cd-minimal 的
+# 同时保留 install-hyprbuddy 安装器。基于 installation-cd-minimal 的
 # squashfs + tmpfs overlay 机制，根可写。
 { pkgs, lib, config, ... }:
 
@@ -35,21 +35,28 @@ in
   distro.user.name = "live";
   distro.user.extraGroups = [ "networkmanager" "wheel" ];
 
+  # 发行版品牌：菜单前缀 + os-release（NAME/PRETTY_NAME）。
+  # 菜单条目名 = distroName + system.nixos.label；GRUB 字体无 CJK，用 ASCII。
+  system.nixos.distroName = lib.mkForce "HyprBuddy";
+  system.nixos.label = lib.mkForce "Live-generic-kernel";
+
   # live + install：保留安装器
   environment.systemPackages = with pkgs; [
     git
     pciutils
     vim
     srcPkg
-    (writeShellScriptBin "install-hyprland-nixos" ''
+    (writeShellScriptBin "install-hyprbuddy" ''
       echo "repo: ${srcPkg}/share/hyprland-nixos" >&2
       exec ${srcPkg}/share/hyprland-nixos/installer/install.sh "$@"
     '')
   ];
 
   # 身份 / 主机名 / ISO 元信息
-  networking.hostName = lib.mkForce "hyprland-live";
-  image.baseName = lib.mkForce "hyprland-nixos-live";
+  networking.hostName = lib.mkForce "hyprbuddy-live";
+  # 输出文件名 → hyprbuddy-live.iso；卷标（stage-1 by-label 挂载用）≤32 字符
+  image.baseName = lib.mkForce "hyprbuddy-live";
+  isoImage.volumeID = lib.mkForce "hyprbuddy-live-26.05-aarch64";
   isoImage.squashfsCompression = "zstd -Xcompression-level 6";
   boot.zfs.forceImportRoot = lib.mkForce false;
 
@@ -81,6 +88,11 @@ in
     done
     if [ -e "$cfg/bin" ]; then
       ln -sfn "$cfg/bin" /home/live/.local/bin
+    fi
+    # share/hyprland-nixos（commands.json + 主题预览图）——theme-picker 预览用
+    if [ -e "$cfg/share/hyprland-nixos" ]; then
+      mkdir -p /home/live/.local/share
+      ln -sfn "$cfg/share/hyprland-nixos" /home/live/.local/share/hyprland-nixos
     fi
     chown -R live:users /home/live
   '';

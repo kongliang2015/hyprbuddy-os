@@ -77,6 +77,7 @@ menu_entries() {
       done < <(@HOME@/.local/bin/sddm-theme list 2>/dev/null)
       act '  恢复默认（删除 override）' '@HOME@/.local/bin/sddm-theme reset'
       ;;
+
     session)
       act '  锁屏'            'hyprlock'
       act "  通知勿扰        [$(dnd_state)]" '@HOME@/.local/bin/notif-dnd'

@@ -96,5 +96,16 @@ let
     inherit pkgs lib hostName agentEnabled;
     version = distro.version;
   };
+
+  # 主题预览图（assets/theme-previews/，theme-picker 的 fzf 预览用；
+  # 由 theme-preview-capture 在虚机捕获后入库，装机即带默认预览图）。
+  # 经 install.sh 的 share/* 映射落到 ~/.local/share/hyprland-nixos/。
+  previewDir = ../assets/theme-previews;
+  previewEntries = lib.mapAttrsToList
+    (name: _: {
+      name = "share/hyprland-nixos/theme-previews/${name}";
+      path = previewDir + "/${name}";
+    })
+    (builtins.readDir previewDir);
 in
-pkgs.linkFarm "user-config-${hostName}" (entries ++ skillEntries ++ [ { name = "share/hyprland-nixos/commands.json"; path = commandsJson; } ])
+pkgs.linkFarm "user-config-${hostName}" (entries ++ skillEntries ++ previewEntries ++ [ { name = "share/hyprland-nixos/commands.json"; path = commandsJson; } ])

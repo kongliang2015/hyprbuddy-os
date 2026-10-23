@@ -93,6 +93,10 @@
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
           ./installer/live-iso-config.nix
           { system.nixos.versionSuffix = versionSuffix; }
+          { nixpkgs.overlays = [ (final: _prev: {
+              # agent 层（live-iso-config 开了 codebuddy）需要仓库自带的包
+              codebuddy = final.callPackage ./pkgs/codebuddy { };
+            }) ]; }
         ];
       }).config.system.build.isoImage;
     in

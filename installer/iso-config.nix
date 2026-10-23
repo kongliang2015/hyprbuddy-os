@@ -28,10 +28,13 @@ in
 
   # 安装器需要直接拿到 root shell，不希望被 getty 登录拦住
   services.getty.autologinUser = lib.mkForce "root";
-  networking.hostName = lib.mkForce "hyprland-installer";
+  networking.hostName = lib.mkForce "hyprbuddy-installer";
+  system.nixos.distroName = lib.mkForce "HyprBuddy";
+  # 卷标（stage-1 by-label 挂载用）≤32 字符
+  isoImage.volumeID = lib.mkForce "hyprbuddy-installer-26.05";
 
   # 26.05 起 isoImage.isoName 改名为 image.fileName；文件名由 baseName + extension 组成
-  image.baseName = lib.mkForce "hyprland-nixos-installer";
+  image.baseName = lib.mkForce "hyprbuddy-installer";
   isoImage.squashfsCompression = "zstd -Xcompression-level 6";
 
   # 安装镜像不需要强制导入 ZFS pool

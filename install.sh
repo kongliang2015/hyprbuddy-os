@@ -54,7 +54,19 @@ echo "==> 链接配置"
 while IFS= read -r rel; do
   case "$rel" in
     bin/*) dst="$HOME/.local/bin/${rel#bin/}" ;;
-    share/*) dst="$HOME/.local/share/${rel#share/}" ;;
+    share/*)
+      dst="$HOME/.local/share/${rel#share/}"
+      # 主题预览图属用户数据：本地已用 theme-preview-capture 捕获（真实文件）
+      # 时不覆盖，仅在本机没有预览图时链接仓库内置的默认图。
+      case "$rel" in
+        *theme-previews/*)
+          if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+            echo "  保留本地预览图 ${dst#$HOME/}"
+            continue 2
+          fi
+          ;;
+      esac
+      ;;
     skills/*)
       dst="$HOME/.codebuddy/skills/${rel#skills/}"
       if [ -d "$HOME/.claude" ]; then
