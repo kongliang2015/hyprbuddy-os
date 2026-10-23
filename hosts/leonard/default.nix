@@ -10,6 +10,8 @@
   distro = {
     user.name = "leonard";
     boot.windowsEntry = true;   # ESP 上有 /EFI/Microsoft/Boot/bootmgfw.efi（nvme1n1 上的 Windows）
+    # 开机动画：主题与 SDDM 的 catppuccin-mocha 对齐；NVIDIA 下若 KMS 交接黑屏就关掉
+    boot.plymouth.enable = true;
     gpu = {
       vendor = "nvidia";
       nvidia = {

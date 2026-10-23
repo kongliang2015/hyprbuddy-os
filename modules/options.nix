@@ -22,6 +22,32 @@ in
         default = false;
         description = "是否在 systemd-boot 菜单加入 Windows 链式启动项";
       };
+      plymouth = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = ''
+            启用 Plymouth 开机动画。NVIDIA 专有驱动下 simpledrm → nvidia_drm 的 KMS
+            交接可能闪一下或短暂黑屏，出问题就把这项关掉。
+          '';
+        };
+        theme = mkOption {
+          type = types.str;
+          default = "catppuccin-mocha";
+          description = ''
+            Plymouth 主题名。catppuccin-<variant>（latte/frappe/macchiato/mocha）
+            会自动带上对应变体的包；其余取值需自行提供 themePackages。
+          '';
+        };
+        debug = mkOption {
+          type = types.bool;
+          default = false;
+          description = ''
+            打开 plymouthd 调试日志（内核参数 plymouth.debug，输出到
+            /var/log/plymouth-debug.log）。排查"有 splash 服务但看不到画面"时临时开。
+          '';
+        };
+      };
     };
 
     user = {
