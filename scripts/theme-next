@@ -16,6 +16,7 @@ set -uo pipefail
 
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
+mkdir -p "$RUNTIME/theme-next" 2>/dev/null || true   # waybar/osd flock 锁文件目录
 # 索引持久化：XDG_RUNTIME_DIR 是 tmpfs，重启即失，登录时 restore 会退回 idx=0；
 # 改存 XDG_STATE_HOME，restore 才能恢复上次选择的主题
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/theme-next"
@@ -45,6 +46,17 @@ ensure_swww() {
     pgrep -f "$WPD" >/dev/null 2>&1 && return 0
   done
   return 0
+}
+
+# mixhex <A> <B> <pct> → #RRGGBB，pct% 偏向 B（用于派生中间色）
+mixhex() {
+  local a=${1#\#} b=${2#\#} p=$3 i x y v out=""
+  for i in 0 2 4; do
+    x=$((16#${a:i:2})); y=$((16#${b:i:2}))
+    v=$(( (x * (100 - p) + y * p + 50) / 100 ))
+    printf -v out '%s%02X' "$out" "$v"
+  done
+  printf '#%s' "$out"
 }
 
 # 主题表字段：
