@@ -42,4 +42,12 @@ lib.mkIf (cfg.vendor == "nvidia") {
 
   # Wayland（Hyprland）+ NVIDIA 必需的 DRM modeset 参数
   boot.kernelParams = [ "nvidia-drm.modeset=1" ];
+
+  # Plymouth：把 nvidia 模块提前到 initrd（早期 KMS），让 KMS 在 plymouthd 启动前就绪。
+  # 否则 plymouth 先画在 simpledrm 上，nvidia-drm 加载时控制台切 dummy 设备，
+  # 已画好的 splash 会被抹掉（日志里的 "Console: switching to colour dummy device"）。
+  # 只放 KMS 必需的三个：nvidia.ko / nvidia-modeset / nvidia-drm。
+  # nvidia-uvm 只服务 CUDA（9 MB），与 plymouth 无关，放进 initrd 只会拖慢加载。
+  boot.initrd.kernelModules = lib.mkIf config.distro.boot.plymouth.enable
+    [ "nvidia" "nvidia_modeset" "nvidia_drm" ];
 }
