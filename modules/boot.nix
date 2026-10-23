@@ -8,6 +8,10 @@ let
 in
 {
   boot.loader.systemd-boot.enable = lib.mkIf (cfg.loader == "systemd-boot") true;
+  # ESP 只有 1 GiB，而 NVIDIA 早期 KMS 让每个世代的 initrd 涨到 ~194 MB，
+  # 攒几代就写满（曾出现 "No space left on device" 卡在装 bootloader）。
+  # 只保留最近 3 个菜单项，旧世代的 .efi 由 systemd-boot 安装器一并清理。
+  boot.loader.systemd-boot.configurationLimit = lib.mkIf (cfg.loader == "systemd-boot") 3;
   boot.loader.efi.canTouchEfiVariables = lib.mkIf (cfg.loader == "systemd-boot") true;
   boot.loader.grub.enable = lib.mkIf (cfg.loader == "grub") true;
   boot.loader.grub.device = lib.mkIf (cfg.loader == "grub") "nodev";
