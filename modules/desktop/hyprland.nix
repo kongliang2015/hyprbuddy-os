@@ -150,6 +150,15 @@ lib.mkIf cfg.desktop.enable {
   # 裸 pkgs.fcitx5 不含 libpinyin，会报 "Group Item pinyin ... is not valid" 并移除拼音。
   systemd.user.services.fcitx5 = {
     description = "Fcitx5 Input Method";
+    # 顺序：uwsm 会话里 WAYLAND_DISPLAY 由 wayland-session-waitenv.service 在
+    # graphical-session.target 之前导入进 systemd user 环境。不排这个序，fcitx5 起在
+    # 变量导入之前，进程环境里只有 DISPLAY，wayland 前端报
+    # "Failed to open wayland connection"，走 zwp_input_method 的原生 wayland 客户端
+    # （Chromium/Electron 等）就输不了中文。
+    # 不写 wayland-wm@<实例>.service：实例名取决于桌面文件（实测 Exec 为
+    # `uwsm start ... hyprland.desktop`，实例多半是 hyprland 而非 hyprland-uwsm），
+    # 名字写错时 After 会静默失效；waitenv 是无实例的固定单元名，语义也正好是"等变量"。
+    after = [ "wayland-session-waitenv.service" ];
     serviceConfig = {
       ExecStart = "${config.i18n.inputMethod.package}/bin/fcitx5";
       Restart = "on-failure";
