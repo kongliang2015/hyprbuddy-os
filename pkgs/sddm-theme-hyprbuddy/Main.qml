@@ -1,7 +1,8 @@
 // HyprBuddy SDDM 主题：深黑底 + 主视觉背景 + 霓虹青/品红渐变卡片。
 // 配色与 docs/themes/HyprBuddy.md 一致，Plymouth 同源（pkgs/plymouth-theme-hyprbuddy）。
-// 注意：SDDM 0.21 (Qt6) 的 SddmComponents 类型名为 TextBox/PasswordBox/ComboBox，
-// 且 textConstants 需自行实例化（不再是 greeter 上下文属性），SessionButton 已移除。
+// 注意：SDDM 0.21 (Qt6) 的 SddmComponents 已移除 SessionButton，TextBox/PasswordBox
+// 不暴露 onAccepted（无法回车登录），且 textConstants 需自行实例化。
+// 因此输入框用自定义 AuthField（TextInput），仅 Button/ComboBox/TextConstants 来自 SddmComponents。
 import QtQuick 2.15
 import SddmComponents 2.0
 
@@ -20,6 +21,33 @@ Rectangle {
 
     TextConstants { id: textConstants }
 
+    // 自定义输入框：支持回车（onAccepted），聚焦时青色描边
+    component AuthField: Rectangle {
+        id: field
+        property alias text: input.text
+        property alias input: input
+        property bool isPassword: false
+        signal accepted
+        height: 34
+        radius: 8
+        color: "#440D0F10"
+        border.color: input.activeFocus ? root.accent : root.border
+        border.width: 1
+        TextInput {
+            id: input
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            verticalAlignment: TextInput.AlignVCenter
+            font.pixelSize: 14
+            color: root.fg
+            selectionColor: root.accent
+            selectedTextColor: "#0A0C0D"
+            echoMode: field.isPassword ? TextInput.Password : TextInput.Normal
+            onAccepted: field.accepted()
+        }
+    }
+
     // 背景：HyprBuddy 主视觉（构建期从 wallpapers/10-hyprbuddy.png 缩放）
     Image {
         anchors.fill: parent
@@ -30,7 +58,7 @@ Rectangle {
     // 压暗背景，突出前景
     Rectangle { anchors.fill: parent; color: "#590A0C0D" }
 
-    // 时钟（自绘，避免依赖 SddmComponents.Clock 的属性差异）
+    // 时钟（自绘）
     Item {
         id: clock
         anchors.horizontalCenter: parent.horizontalCenter
@@ -92,30 +120,19 @@ Rectangle {
                     color: root.fg
                 }
 
-                TextBox {
+                AuthField {
                     id: user
                     width: parent.width
-                    height: 34
-                    font.pixelSize: 14
-                    textColor: root.fg
-                    color: "#440D0F10"
-                    borderColor: root.border
-                    focusColor: root.accent
                     text: userModel.lastUser
                     KeyNavigation.tab: password
+                    onAccepted: password.forceActiveFocus()
                 }
-                PasswordBox {
+                AuthField {
                     id: password
                     width: parent.width
-                    height: 34
-                    font.pixelSize: 14
-                    textColor: root.fg
-                    color: "#440D0F10"
-                    borderColor: root.border
-                    focusColor: root.accent
-                    tooltipEnabled: false
-                    onAccepted: sddm.login(user.text, password.text, sessionCombo.index)
+                    isPassword: true
                     KeyNavigation.tab: loginButton
+                    onAccepted: sddm.login(user.text, password.text, sessionCombo.index)
                 }
 
                 Text {
@@ -144,7 +161,7 @@ Rectangle {
 
     Connections {
         target: sddm
-        function onLoginFailed() { errorMsg.visible = true; password.text = ""; password.focus = true }
+        function onLoginFailed() { errorMsg.visible = true; password.text = ""; password.forceActiveFocus() }
     }
 
     // 底部：会话选择（左） + 电源（右）。SddmComponents 的 ComboBox 显示 sessionModel 的 name 角色
@@ -156,7 +173,7 @@ Rectangle {
         model: sessionModel
         index: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
         font.pixelSize: 13
-        textColor: root.fg
+        textColor: root.fgDim
         color: "#440D0F10"
         borderColor: root.border
         focusColor: root.accent
@@ -180,7 +197,7 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        if (user.text === "") user.focus = true
-        else password.focus = true
+        if (user.text === "") user.forceActiveFocus()
+        else password.forceActiveFocus()
     }
 }
