@@ -23,7 +23,12 @@
         open = false;
       };
     };
-    desktop.extraSessions = [ "xfce" "windowmaker" ];
+    desktop = {
+      extraSessions = [ "xfce" "windowmaker" ];
+      # HyprBuddy 配套 SDDM 登录界面：Plymouth 开屏 → 登录 → 桌面 同一套视觉
+      sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
+      theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名
+    };
     # polkit 认证框跟随桌面主题：hyprtoolkit 实现（0.2.0，取 nixpkgs-unstable）
     polkitAgent = "hyprtoolkit";
     agent = {
