@@ -31,7 +31,12 @@ in
   # 发行版开关：开启桌面 + 虚机显卡（验证虚机写死 virtio）
   distro.desktop.enable = true;
   distro.gpu.vendor = "virtio";
-  distro.agent.enable = false;
+  # agent 层：live 环境装 codebuddy + opencode，Waybar 显示当日用量。
+  # 诊断关闭（live 无本地 ollama）；实测对 ISO 体积影响约 +100 MB。
+  distro.agent.enable = true;
+  distro.agent.agents = [ "codebuddy" "opencode" ];
+  distro.agent.usage = true;
+  distro.agent.diagnostics = false;
   # live 盘也走 Plymouth：开机即有 splash，与安装后的系统观感一致
   distro.boot.plymouth.enable = true;
   distro.user.name = "live";
