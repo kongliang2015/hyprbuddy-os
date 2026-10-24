@@ -2,7 +2,9 @@
 { config, lib, pkgs, unstablePkgs, ... }:
 let
   cfg = config.distro;
-  sddmTheme = pkgs.catppuccin-sddm;
+  # SDDM 主题：host 可用 distro.desktop.sddmThemePackage 覆盖（theme 字段填包内目录名）
+  sddmTheme = if cfg.desktop.sddmThemePackage != null then cfg.desktop.sddmThemePackage else pkgs.catppuccin-sddm;
+  sddmThemeName = if cfg.desktop.sddmThemePackage != null then cfg.desktop.theme else "catppuccin-mocha-mauve";
   # polkit 认证代理：hyprtoolkit 实现（0.2.0，来自 nixpkgs-unstable）的配色
   # 读 ~/.config/hypr/hyprtoolkit.conf，可由 theme-next 按主题重写；
   # qt 实现（0.1.3，stable）配色跟随 Adwaita，无法跟随主题。
@@ -36,7 +38,7 @@ lib.mkIf cfg.desktop.enable {
   # 而 TTY 直接 `Hyprland` 正常，故用 SDDM。greeter 保持默认 X11，在 NVIDIA 上更稳。
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.enableHidpi = false;
-  services.displayManager.sddm.theme = "${sddmTheme}/share/sddm/themes/catppuccin-mocha-mauve";
+  services.displayManager.sddm.theme = "${sddmTheme}/share/sddm/themes/${sddmThemeName}";
   services.displayManager.sddm.extraPackages = [ sddmTheme ];
   # 修复 SDDM 0.21 (Qt6) 主题回退：主题校验要求 $out/bin/sddm-greeter，
   # 但包只产出 sddm-greeter-qt6；给包装层补符号链接后 elarun 等主题才会生效。
