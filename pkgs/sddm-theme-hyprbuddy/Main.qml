@@ -13,9 +13,9 @@ Rectangle {
     color: "#0A0C0D"
 
     // 布局参数
-    property real bgZoom: 0.75    // 背景缩小到 75%，右侧留黑（壁纸边缘羽化，与底色无缝）
-    property real bgShift: 0.15   // 背景左移量（占屏宽），logo 中心约在 22% 屏宽
-    property real cardShift: 0.20 // 登录卡片中心右移，约在 70% 屏宽
+    property real bgZoom: 0.75    // 背景缩小到 75%，四周留黑（打包时边缘已羽化，与底色无缝）
+    property real bgShift: 0.035  // 背景左移量（占屏宽），logo 中心 = bgZoom/2 - bgShift ≈ 34% 屏宽
+    property real cardShift: 0.15 // 登录卡片中心右移，约在 65% 屏宽
 
     property string accent: "#02F0FA"        // 霓虹青（主强调）
     property string accent2: "#E926F5"       // 品红（次强调）
@@ -70,7 +70,8 @@ Rectangle {
     Item {
         id: clock
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: -parent.width * root.bgShift
+        // 时钟对齐 logo 中心：logoCenter = (bgZoom/2 - bgShift) * W，相对屏幕中心偏移量再减 0.5W
+        anchors.horizontalCenterOffset: parent.width * (root.bgZoom / 2 - root.bgShift - 0.5)
         anchors.top: parent.top
         anchors.topMargin: parent.height * 0.07
         property var now: new Date()
