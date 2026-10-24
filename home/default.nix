@@ -13,8 +13,10 @@ let
 
   agentEnabled = distro.agent.enable;
   usageEnabled = agentEnabled && distro.agent.usage;
-  agentUsageCmd =
-    if usageEnabled then "${import ../lib/agent-usage.nix { inherit pkgs; }}" else null;
+  # agent-usage 既给 waybar 用（需要 store 路径字符串），也部署到 ~/.local/bin
+  # 供 fastfetch 的 command 模块调用（需要 package 类型）
+  agentUsage = if usageEnabled then import ../lib/agent-usage.nix { inherit pkgs; } else null;
+  agentUsageCmd = if agentUsage != null then "${agentUsage}" else null;
 
   waybar = import ../lib/waybar.nix {
     inherit lib;
@@ -50,9 +52,10 @@ let
     "mako/config" = read ./mako/config;
     "swayosd/style.css" = read ./swayosd/style.css;
     "Thunar/uca.xml" = read ./thunar/uca.xml;
+    "fastfetch/config.jsonc" = read ./fastfetch/config.jsonc;
   };
 
-  # agent 层脚本随 distro.agent.enable 开关安装（agent-usage 由 lib/ 生成，不在此列）
+  # agent 层脚本随 distro.agent.enable 开关安装（agent-usage 由 lib/ 生成，下面单独挂到 bin/）
   scriptNames = let
     all = builtins.attrNames (builtins.readDir ../scripts);
     agentOnly = [ "agent-menu" "agent-apply" "agent-theme-sync" ];
@@ -75,7 +78,10 @@ let
         text = read (../scripts + "/${name}");
         executable = true;
       };
-    }) scriptNames ++ lib.optional (distro.hypervisor == "vmware") { name = "bin/kitty"; path = pkgs.writeShellScript "kitty-software-egl" (builtins.readFile ./kitty-egl.sh); };
+    }) scriptNames
+    # agent-usage 由 lib/ 生成，部署到 PATH 供 fastfetch 的 command 模块调用
+    ++ lib.optional (agentUsage != null) { name = "bin/agent-usage"; path = agentUsage; }
+    ++ lib.optional (distro.hypervisor == "vmware") { name = "bin/kitty"; path = pkgs.writeShellScript "kitty-software-egl" (builtins.readFile ./kitty-egl.sh); };
   # agent skills（skills/<name>/…）：install.sh 链接到 ~/.codebuddy/skills/
   skillsDir = ../skills;
   skillEntries = lib.concatLists (

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
+  "logo": {
+    "type": "builtin",
+    "source": "NixOS",
+    "padding": { "right": 2 },
+    "color": { "1": "#7E9CD8", "2": "#957FB8" }
+  },
+  "display": {
+    "separator": ": ",
+    "color": {
+      "keys": "#7E9CD8",
+      "output": "#DCD7BA",
+      "separator": "#54546D"
+    }
+  },
+    "modules": [
+    { "type": "title" },
+    "separator",
+    { "type": "command", "key": "OS", "text": "sysinfo-os" },
+    "host",
+    "kernel",
+    "uptime",
+    "packages",
+    "shell",
+    "display",
+    "de",
+    "wm",
+    { "type": "command", "key": "Theme", "text": "echo 'Kanagawa (1/8)'" },
+    { "type": "command", "key": "Agent", "text": "command -v agent-usage >/dev/null 2>&1 && agent-usage --text || true" },
+    "icons",
+    "font",
+    "cursor",
+    "terminal",
+    "terminalfont",
+    "cpu",
+    "gpu",
+    "memory",
+    "swap",
+    "disk",
+    "localip",
+    "battery",
+    "poweradapter",
+    "locale"
+  ]
+}

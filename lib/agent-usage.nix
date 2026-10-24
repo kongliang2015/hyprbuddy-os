@@ -10,11 +10,19 @@ pkgs.writeShellScript "agent-usage" ''
   set -uo pipefail
   # 60s 结果缓存：waybar interval=60 下避免每分钟全量扫描日志
   cache="''${XDG_RUNTIME_DIR:-/tmp}/agent-usage.cache"
+  # --text 只输出 "text" 字段（fastfetch 的 command 模块用），默认输出 waybar 需要的完整 JSON
+  emit() {
+    if [ "''${1:-}" = "--text" ]; then
+      ${pkgs.jq}/bin/jq -r .text
+    else
+      cat
+    fi
+  }
   if [ -f "$cache" ] && [ "$(( $(date +%s) - $(stat -c %Y "$cache") ))" -lt 60 ]; then
-    cat "$cache"
+    emit "''${1:-}" < "$cache"
     exit 0
   fi
-  ${pkgs.python3}/bin/python3 <<'PY' | tee "$cache"
+  ${pkgs.python3}/bin/python3 <<'PY' | tee "$cache" | emit "''${1:-}"
 import datetime, glob, json, os, sqlite3
 
 today = datetime.date.today()
