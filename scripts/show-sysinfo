@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# @command: show-sysinfo
+# @summary: 系统信息弹窗（浮动 kitty 里跑 fastfetch，按内容自适应大小）
+# @category: runtime
+# @usage: show-sysinfo
+# @effect: 打开浮动 kitty 窗口显示 fastfetch 输出，Enter 关闭
+# @interactive: true
+# fastfetch 配置由 theme-next 按当前主题生成（配色随主题）。
+# 窗口尺寸先量一遍：在伪终端里跑 fastfetch（非 tty 时 logo 与信息会上下堆叠，布局失真），
+# 再用迷你终端回放 CSI 光标定位，取真实列宽/行数。
+set -uo pipefail
+
+if ! command -v fastfetch >/dev/null 2>&1; then
+  notify-send -a show-sysinfo "系统信息" "未安装 fastfetch" 2>/dev/null || echo "未安装 fastfetch" >&2
+  exit 1
+fi
+
+dims=$(python3 - <<'PY'
+import fcntl, os, pty, re, struct, termios, unicodedata
+
+# 在 200x60 伪终端里跑 fastfetch（非 tty 会把 logo 与信息上下堆叠，布局失真），
+# 然后按“迷你终端”回放输出：处理 CSI 光标移动（C 右移 / A 上移 / G 定位），
+# 得到真实占用的列宽与行数。
+m, s = pty.openpty()
+fcntl.ioctl(s, termios.TIOCSWINSZ, struct.pack("HHHH", 60, 200, 0, 0))
+pid = os.fork()
+if pid == 0:
+    os.setsid()
+    for fd in (0, 1, 2):
+        os.dup2(s, fd)
+    os.close(m)
+    os.execvp("fastfetch", ["fastfetch"])
+os.close(s)
+buf = b''
+while True:
+    try:
+        chunk = os.read(m, 65536)
+    except OSError:
+        break
+    if not chunk:
+        break
+    buf += chunk
+os.waitpid(pid, 0)
+
+text = buf.decode("utf-8", "ignore")
+csi = re.compile("\x1b\\[([0-9;?]*)([A-Za-z])")
+row = col = 0
+maxrow = maxcol = 0
+i = 0
+while i < len(text):
+    mm = csi.match(text, i)
+    if mm:
+        params, final = mm.group(1), mm.group(2)
+        num = int(params) if params.isdigit() else None
+        if final == "C":
+            col += num or 1
+        elif final == "A":
+            row = max(0, row - (num or 1))
+        elif final == "B":
+            row += num or 1
+        elif final == "G":
+            col = (num or 1) - 1
+        i = mm.end()
+        continue
+    ch = text[i]
+    if ch == "\r":
+        col = 0
+    elif ch == "\n":
+        row += 1
+    else:
+        col += 2 if unicodedata.east_asian_width(ch) in "WF" else 1
+        maxcol = max(maxcol, col)
+        maxrow = max(maxrow, row)
+    i += 1
+print(maxcol, maxrow + 1)
+PY
+)
+read -r cols rows <<< "${dims:-100 21}"
+cols=${cols:-100}
+rows=${rows:-21}
+
+# 高度=内容行数+1 行提示；不加多余空行
+exec kitty --class fastfetch-popup --title "系统信息" \
+  -o initial_window_width="${cols}c" -o initial_window_height="$((rows + 1))c" \
+  -e sh -c '
+    fastfetch
+    printf "按 Enter 关闭…"
+    read -r _
+  '

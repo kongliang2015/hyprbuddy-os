@@ -35,6 +35,7 @@ menu_entries() {
       sub '  系统工具'         tools
       sub '  外观'           appearance
       sub '  会话'             session
+      act '  系统信息'        '@HOME@/.local/bin/show-sysinfo'
       act '  快捷键参考'      '@HOME@/.local/bin/show-keybinds'
       ;;
     apps)
