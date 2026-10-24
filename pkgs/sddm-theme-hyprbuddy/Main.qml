@@ -13,8 +13,8 @@ Rectangle {
     color: "#0A0C0D"
 
     // 布局参数
-    property real bgZoom: 1.15    // 背景放大倍数：略大于 1 是为了保证左移后仍铺满右边缘
-    property real bgShift: 0.15   // 背景左移量（占屏宽），logo 中心约在 35% 屏宽
+    property real bgZoom: 0.75    // 背景缩小到 75%，右侧留黑（壁纸边缘羽化，与底色无缝）
+    property real bgShift: 0.15   // 背景左移量（占屏宽），logo 中心约在 22% 屏宽
     property real cardShift: 0.20 // 登录卡片中心右移，约在 70% 屏宽
 
     property string accent: "#02F0FA"        // 霓虹青（主强调）
