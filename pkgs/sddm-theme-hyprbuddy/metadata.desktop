@@ -1,0 +1,9 @@
+[SddmTheme]
+Name=HyprBuddy
+Description=HyprBuddy: 深黑底 + 霓虹青/品红渐变强调的登录界面
+Author=leonard
+License=MIT
+Type=sddm-theme
+Main=Main.qml
+ConfigFile=theme.conf
+Screenshot=
