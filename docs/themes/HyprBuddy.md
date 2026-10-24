@@ -3,7 +3,7 @@
 取自项目主视觉图（深黑底 + 霓虹青 / 品红 / 长春花紫）的深色主题。索引 **7**（主题表第 8 套）。
 
 - 切换：`theme-next 7` 或 Super+Space → 外观 → 主题预览
-- 壁纸：`wallpapers/10-hyprbuddy.png` → `~/Pictures/wallpapers/10-hyprbuddy.png`
+- 壁纸：`wallpapers/11-cybertron.png` → `~/Pictures/wallpapers/11-cybertron.png`（赛博坦星球 + 星云，配色与主题一致）
 - 预览图：`~/.local/share/hyprland-nixos/theme-previews/preview-7.png`
 
 ## 角色配色
@@ -43,12 +43,12 @@
 
 ## 壁纸
 
-- 文件：`10-hyprbuddy.png`
+- 文件：`11-cybertron.png`
 - 规格：2560×1440、8bit sRGB、3 通道（无 alpha）
-- 明暗自检：mean=8（深色图）
-- 内容：主视觉方形图居中等比放在纯黑画布上，四周 10% 羽化融入背景；
-  背后叠一层 10% 不透明度的霓虹青径向辉光，避免整片死黑
-- 生成：ImageGen 主视觉 → `magick` 缩放 / 羽化 / 合成
+- 明暗自检：mean=25（深色图）
+- 内容：赛博坦风格机械星球为前景（金属面板 + 霓虹青/品红电路纹路），
+  远景为霓虹青/品红/紫罗兰星云与星空，深黑底、高对比
+- 生成：ImageGen → `magick` 缩放裁切 2560×1440 / 去 alpha
 
 ## 派生配色（不手填）
 
