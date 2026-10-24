@@ -1,6 +1,7 @@
 // HyprBuddy SDDM 主题：深黑底 + 主视觉背景 + 霓虹青/品红渐变卡片。
 // 配色与 docs/themes/HyprBuddy.md 一致，Plymouth 同源（pkgs/plymouth-theme-hyprbuddy）。
 import QtQuick 2.15
+import QtQuick.Controls 2.15
 import SddmComponents 2.0
 
 Rectangle {
@@ -103,7 +104,7 @@ Rectangle {
                     font.pixelSize: 14
                     color: root.fg
                     echoMode: TextInput.Password
-                    onAccepted: sddm.login(user.text, password.text, sessionButton.selectedIndex)
+                    onAccepted: sddm.login(user.text, password.text, sessionCombo.currentIndex)
                     KeyNavigation.tab: loginButton
                 }
 
@@ -122,7 +123,7 @@ Rectangle {
                     width: parent.width
                     height: 36
                     text: textConstants.login
-                    onClicked: sddm.login(user.text, password.text, sessionButton.selectedIndex)
+                    onClicked: sddm.login(user.text, password.text, sessionCombo.currentIndex)
                     KeyNavigation.tab: user
                 }
             }
@@ -135,13 +136,16 @@ Rectangle {
     }
 
     // 底部：会话选择（左） + 电源（右）
-    SessionButton {
-        id: sessionButton
+    // 注意：SDDM 0.21 (Qt6) 的 SddmComponents 没有 SessionButton，用 Controls 的 ComboBox
+    ComboBox {
+        id: sessionCombo
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 20
+        model: sessionModel
+        textRole: "name"
+        currentIndex: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
         font.pixelSize: 13
-        color: root.fg
     }
     Row {
         anchors.right: parent.right
