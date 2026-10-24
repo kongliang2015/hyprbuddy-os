@@ -22,10 +22,10 @@
     # 注意 %w %h 后必须带换行：read 遇到无换行 EOF 会返回 1，set -e 下静默中断。
     magick ${../../wallpapers/10-hyprbuddy.png} -resize '1920x>' -alpha off /tmp/bg.png
     read -r w h < <(magick /tmp/bg.png -format '%w %h\n' info:)
-    inset=$(( w * 6 / 100 ))
+    inset=$(( w * 8 / 100 ))
     magick -size "''${w}x''${h}" xc:black -fill white \
       -draw "roundrectangle $inset,$inset $(( w - inset )),$(( h - inset )) $(( w / 10 )),$(( w / 10 ))" \
-      -blur 0x$(( w / 12 )) /tmp/feather.png
+      -blur 0x$(( w / 8 )) /tmp/feather.png
     magick /tmp/bg.png /tmp/feather.png -alpha off -compose CopyOpacity -composite \
       "$theme/background.png"
     runHook postInstall
