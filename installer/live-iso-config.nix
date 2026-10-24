@@ -58,7 +58,7 @@ in
   networking.hostName = lib.mkForce "hyprbuddy-live";
   # 输出文件名 → hyprbuddy-live.iso；卷标（stage-1 by-label 挂载用）≤32 字符
   image.baseName = lib.mkForce "hyprbuddy-live";
-  isoImage.volumeID = lib.mkForce "hyprbuddy-live-26.05-aarch64";
+  isoImage.volumeID = lib.mkForce "hyprbuddy-live-26.05-${if pkgs.stdenv.hostPlatform.isAarch64 then "aarch64" else "x86_64"}";
   isoImage.squashfsCompression = "zstd -Xcompression-level 6";
   boot.zfs.forceImportRoot = lib.mkForce false;
 

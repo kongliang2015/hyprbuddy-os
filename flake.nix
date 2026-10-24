@@ -76,8 +76,7 @@
       # 按目标架构分组，生成 packages.<system> / checks.<system>
       hostsBySystem = builtins.groupBy (name: systemFor name) hosts;
 
-      # 安装镜像：aarch64 分支产出 aarch64 ISO。
-      isoSystem = "aarch64-linux";
+      # 安装镜像：每个有 host 的架构各出一份（x86_64 可本机原生构建，aarch64 在 ARM 机器构建）。
       mkIso = system: (lib.nixosSystem {
         inherit system;
         modules = [
@@ -107,7 +106,7 @@
       packages = lib.mapAttrs
         (system: names:
           lib.genAttrs names homePkg
-          // lib.optionalAttrs (system == isoSystem) { iso = mkIso system; liveIso = mkLiveIso system; })
+          // { iso = mkIso system; liveIso = mkLiveIso system; })
         hostsBySystem;
 
       # nixosConfigurations 不会被 `nix flake check` 自动检查，显式放进 checks
