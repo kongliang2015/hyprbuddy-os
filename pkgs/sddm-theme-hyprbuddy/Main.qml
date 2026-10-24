@@ -1,7 +1,8 @@
 // HyprBuddy SDDM 主题：深黑底 + 主视觉背景 + 霓虹青/品红渐变卡片。
 // 配色与 docs/themes/HyprBuddy.md 一致，Plymouth 同源（pkgs/plymouth-theme-hyprbuddy）。
+// 注意：SDDM 0.21 (Qt6) 的 SddmComponents 类型名为 TextBox/PasswordBox/ComboBox，
+// 且 textConstants 需自行实例化（不再是 greeter 上下文属性），SessionButton 已移除。
 import QtQuick 2.15
-import QtQuick.Controls 2.15
 import SddmComponents 2.0
 
 Rectangle {
@@ -13,8 +14,11 @@ Rectangle {
     property string accent2: "#E926F5"       // 品红（次强调）
     property string fg: "#C6CDD0"            // 冷白正文
     property string fgDim: "#5A656A"         // 钢灰次要文字
-    property string panel: "#DD0D0F10"       // 主面（半透明）
+    property string panel: "#DD0D0F10"       // 主面
+    property string border: "#292C2E"        // 深钢灰描边
     property string danger: "#FF5C7A"        // 警示粉红
+
+    TextConstants { id: textConstants }
 
     // 背景：HyprBuddy 主视觉（构建期从 wallpapers/10-hyprbuddy.png 缩放）
     Image {
@@ -88,23 +92,29 @@ Rectangle {
                     color: root.fg
                 }
 
-                Textbox {
+                TextBox {
                     id: user
                     width: parent.width
                     height: 34
                     font.pixelSize: 14
-                    color: root.fg
+                    textColor: root.fg
+                    color: "#440D0F10"
+                    borderColor: root.border
+                    focusColor: root.accent
                     text: userModel.lastUser
                     KeyNavigation.tab: password
                 }
-                Textbox {
+                PasswordBox {
                     id: password
                     width: parent.width
                     height: 34
                     font.pixelSize: 14
-                    color: root.fg
-                    echoMode: TextInput.Password
-                    onAccepted: sddm.login(user.text, password.text, sessionCombo.currentIndex)
+                    textColor: root.fg
+                    color: "#440D0F10"
+                    borderColor: root.border
+                    focusColor: root.accent
+                    tooltipEnabled: false
+                    onAccepted: sddm.login(user.text, password.text, sessionCombo.index)
                     KeyNavigation.tab: loginButton
                 }
 
@@ -123,7 +133,9 @@ Rectangle {
                     width: parent.width
                     height: 36
                     text: textConstants.login
-                    onClicked: sddm.login(user.text, password.text, sessionCombo.currentIndex)
+                    textColor: root.fg
+                    borderColor: root.accent
+                    onClicked: sddm.login(user.text, password.text, sessionCombo.index)
                     KeyNavigation.tab: user
                 }
             }
@@ -135,17 +147,20 @@ Rectangle {
         function onLoginFailed() { errorMsg.visible = true; password.text = ""; password.focus = true }
     }
 
-    // 底部：会话选择（左） + 电源（右）
-    // 注意：SDDM 0.21 (Qt6) 的 SddmComponents 没有 SessionButton，用 Controls 的 ComboBox
+    // 底部：会话选择（左） + 电源（右）。SddmComponents 的 ComboBox 显示 sessionModel 的 name 角色
     ComboBox {
         id: sessionCombo
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 20
         model: sessionModel
-        textRole: "name"
-        currentIndex: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
+        index: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
         font.pixelSize: 13
+        textColor: root.fg
+        color: "#440D0F10"
+        borderColor: root.border
+        focusColor: root.accent
+        menuColor: "#EE0D0F10"
     }
     Row {
         anchors.right: parent.right
@@ -154,10 +169,12 @@ Rectangle {
         spacing: 10
         Button {
             text: textConstants.reboot
+            textColor: root.fgDim
             onClicked: sddm.reboot()
         }
         Button {
             text: textConstants.shutdown
+            textColor: root.fgDim
             onClicked: sddm.powerOff()
         }
     }
