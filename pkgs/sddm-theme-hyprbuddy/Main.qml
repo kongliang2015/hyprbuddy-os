@@ -1,5 +1,6 @@
 // HyprBuddy SDDM 主题：深黑底 + 主视觉背景 + 霓虹青/品红渐变卡片。
 // 配色与 docs/themes/HyprBuddy.md 一致，Plymouth 同源（pkgs/plymouth-theme-hyprbuddy）。
+// 布局：背景左移让出主视觉 logo，登录卡片靠右，两者互不遮挡。
 // 注意：SDDM 0.21 (Qt6) 的 SddmComponents 已移除 SessionButton，TextBox/PasswordBox
 // 不暴露 onAccepted（无法回车登录），且 textConstants 需自行实例化。
 // 因此输入框用自定义 AuthField（TextInput），仅 Button/ComboBox/TextConstants 来自 SddmComponents。
@@ -10,6 +11,10 @@ Rectangle {
     id: root
     anchors.fill: parent
     color: "#0A0C0D"
+
+    // 布局参数：背景/时钟左移量、卡片右移量（占屏宽比例）
+    property real bgShift: 0.25     // 背景放大 1.25 倍并左移 25% 屏宽，logo 中心约在 37.5%
+    property real cardShift: 0.16   // 登录卡片中心右移到约 66% 屏宽
 
     property string accent: "#02F0FA"        // 霓虹青（主强调）
     property string accent2: "#E926F5"       // 品红（次强调）
@@ -25,7 +30,6 @@ Rectangle {
     component AuthField: Rectangle {
         id: field
         property alias text: input.text
-        property alias input: input
         property bool isPassword: false
         signal accepted
         height: 34
@@ -48,9 +52,12 @@ Rectangle {
         }
     }
 
-    // 背景：HyprBuddy 主视觉（构建期从 wallpapers/10-hyprbuddy.png 缩放）
+    // 背景：放大 25% 并整体左移，铺满全屏的同时把 logo 挪到左侧
     Image {
-        anchors.fill: parent
+        width: parent.width * (1 + root.bgShift)
+        height: parent.height * (1 + root.bgShift)
+        x: -parent.width * root.bgShift
+        y: -parent.height * root.bgShift / 2
         source: "background.png"
         fillMode: Image.PreserveAspectCrop
         asynchronous: false
@@ -58,10 +65,11 @@ Rectangle {
     // 压暗背景，突出前景
     Rectangle { anchors.fill: parent; color: "#590A0C0D" }
 
-    // 时钟（自绘）
+    // 时钟（自绘），跟随 logo 居中在其上方
     Item {
         id: clock
         anchors.horizontalCenter: parent.horizontalCenter
+        anchors.horizontalCenterOffset: -parent.width * (root.bgShift / 2)
         anchors.top: parent.top
         anchors.topMargin: parent.height * 0.07
         property var now: new Date()
@@ -89,10 +97,12 @@ Rectangle {
         }
     }
 
-    // 登录卡片：外层渐变矩形充当青→品红渐变描边（对应活动边框 45deg 渐变）
+    // 登录卡片：外层渐变矩形充当青→品红渐变描边（对应活动边框 45deg 渐变），垂直居中、整体靠右
     Rectangle {
         id: cardBorder
-        anchors.centerIn: parent
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.horizontalCenterOffset: parent.width * root.cardShift
         width: 380
         height: cardColumn.implicitHeight + 56
         radius: 18
