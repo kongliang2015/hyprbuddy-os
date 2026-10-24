@@ -1,6 +1,6 @@
 # VMware Workstation 虚机适配：x86_64 + BIOS/MBR + VMware SVGA。
 # 复用当前机器的 hardware-configuration.nix；引导器为 GRUB(BIOS)。
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 {
   imports = [ ./hardware-configuration.nix ];
 
@@ -15,6 +15,14 @@
 
   # BIOS + MBR：GRUB 必须装到磁盘，modules/boot.nix 默认 nodev 不适用
   boot.loader.grub.device = lib.mkForce "/dev/sda";
+  # 显示 GRUB 菜单，等待 3 秒
+  boot.loader.grub.timeoutStyle = "menu";
+  boot.loader.grub.timeout = 3;
+  # 压掉内核/用户态的 console 输出（plymouth 链路已设 loglevel=0，这里再补 quiet）
+  boot.kernelParams = [ "quiet" ];
+  # VMware SVGA 的 KMS 驱动必须提前到 initrd，plymouthd 才有 DRM 设备可画；
+  # virtio.nix 只处理 virtio_gpu（QEMU），不覆盖 vmwgfx。
+  boot.initrd.kernelModules = lib.mkIf config.distro.boot.plymouth.enable [ "vmwgfx" ];
 
   distro = {
     user.name = "leonard";
@@ -22,12 +30,23 @@
 
     boot.loader = "grub";
     boot.windowsEntry = false;
+    boot.plymouth.enable = true;
+    # HyprBuddy 主题：仓库自带 splash 图 + 彩色进度条（pkgs/plymouth-theme-hyprbuddy）
+    boot.plymouth.theme = "hyprbuddy";
+    boot.plymouth.themePackages =
+      lib.mkIf config.distro.boot.plymouth.enable
+        [ (pkgs.callPackage ../../pkgs/plymouth-theme-hyprbuddy { }) ];
 
     gpu = {
       vendor = "virtio";   # 虚机通用 modesetting + Mesa 软件渲染
     };
 
-    desktop.extraSessions = [ ];
+    desktop = {
+      extraSessions = [ ];
+      # HyprBuddy 配套 SDDM 登录界面（pkgs/sddm-theme-hyprbuddy）
+      sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
+      theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名
+    };
 
     hardware.battery = false;
     hardware.backlight = false;
