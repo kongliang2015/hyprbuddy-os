@@ -1,4 +1,4 @@
-# NG 外壳方案（swaync + eww，hyprshell 待解锁）
+# NG 外壳方案（swaync + eww + hyprshell）
 
 分支：`distro/v0-ng`。目标：在不替换 waybar 的前提下，补齐 waybar 结构上做不到的
 交互能力（通知中心、控制中心、就地弹窗、窗口总览）。
@@ -9,10 +9,32 @@
 |---|---|---|
 | **swaync** | 通知守护 + 通知中心 + 控制中心（MPRIS/音量/亮度/DND） | 已接入，替代 mako |
 | **eww** | 自绘弹窗：日历、会话面板 | 已接入 |
-| **hyprshell** | 窗口总览 / Alt-Tab 缩略图 | **暂缓**（见文末） |
+| **hyprshell** | 窗口总览（Super + 反引号 grave） / Alt-Tab 缩略图切换 | 已接入，依赖 Lua 配置管理器 |
 | waybar | 状态栏 | 保留不动 |
 | mako | — | **退役**（与 swaync 抢 DBus 通知名） |
 | swayosd | 音量/亮度 OSD | 保留（避免与 swaync 控制中心双弹窗） |
+
+## 使用与验证（当前状态）
+
+| 键位 | 功能 |
+|---|---|
+| `Super+N` | swaync 通知中心 |
+| `Super+C` | eww 日历（跟随焦点显示器） |
+| `Super+Shift+E` | eww 会话面板 |
+| `Super` + `` ` `` (grave) | hyprshell 窗口总览 |
+| `Alt+Tab` | hyprshell 窗口切换 |
+
+环境要求：`home/uwsm/env` 里把 `HYPRLAND_CONFIG` 指向 `hyprland.lua`；
+`hyprctl systeminfo` 应显示 `configProvider: lua`（hyprshell 的 `eval` 键位注册只在
+Lua 管理器下可用）。
+
+```bash
+hypr-check                        # 8 组自检（含外壳组件、Lua 配置、规则计数）
+hyprctl binds -j | jq length      # 期望 64 = 56 基础键位 + hyprshell 注册
+```
+
+回退：删掉 `~/.config/uwsm/env` 后重新登录，即回到经典 `hyprland.conf`
+（hyprshell 热键随之失效，其余组件不受影响）。
 
 ## 主题联动
 
@@ -46,9 +68,12 @@ home/eww/eww.yuck           日历 + 会话面板
 home/eww/eww.scss           变量（theme-next 重写）
 ```
 
-## hyprshell：已备好配置，但键位注册被 Hyprland 配置模式卡住
+## 历史：hyprshell 曾因配置模式无法注册键位
 
-实测结论（4.10.4 + Hyprland 0.55.4，经典 `hyprland.conf`）：
+> 本节是排查记录。结论已被后文《方案 A 实施：Hyprland 迁移到 Lua 配置管理器》解决，
+> 现在键位能正常注册，留档供以后排查同类问题。
+
+当时的实测结论（4.10.4 + Hyprland 0.55.4，经典 `hyprland.conf`）：
 
 1. `hyprshell config generate` 需要图形界面，我已跑过一次，产出
    `home/hyprshell/config.ron`（已精修：overview = Super+`，switch = Alt+Tab），
@@ -68,7 +93,10 @@ home/eww/eww.scss           变量（theme-next 重写）
    但当前测试下发送后没有出现窗口（`hyprctl clients/layers` 均无新表面），
    推测与 GTK4 窗口创建或 config 里的 `top_offset/scale` 有关，需进一步调试。
 
-## socat 方案排查结论（2026-10-25）
+## 历史：socat 方案排查结论（2026-10-25）
+
+> 结论：socat 不是可用的控制面。后来改用方案 A（Lua 配置管理器）后，热键由
+> hyprshell 自己注册，不再需要 socat。本节留作协议记录。
 
 进一步调试后确认：**socat 不是可用的控制面，这条路走不通**。
 
