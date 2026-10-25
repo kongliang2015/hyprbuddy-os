@@ -1,5 +1,7 @@
 # NG 外壳方案（swaync + eww + hyprshell）
 
+> 同类项目与可借鉴功能见 [ng-shell-benchmark.md](ng-shell-benchmark.md)。
+
 分支：`distro/v0-ng`。目标：在不替换 waybar 的前提下，补齐 waybar 结构上做不到的
 交互能力（通知中心、控制中心、就地弹窗、窗口总览）。
 
