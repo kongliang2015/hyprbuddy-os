@@ -33,7 +33,7 @@ hl.config({
         follow_mouse = 1,
         touchpad = {
             natural_scroll = true,
-            ["tap-to-click"] = true,
+            tap_to_click = true,
         },
     },
     general = {
@@ -133,6 +133,9 @@ hl.window_rule({ name = "fastfetch-popup", match = { class = "^(fastfetch-popup)
 hl.layer_rule({ name = "menu-blur", match = { namespace = "^hypr-menu$" }, blur = true, ignore_alpha = 0.3 })
 hl.layer_rule({ name = "menu-dim", match = { namespace = "^hypr-menu$" }, dim_around = true, no_anim = true })
 hl.layer_rule({ name = "notif-blur", match = { namespace = "^swaync-notification-window$" }, blur = true, ignore_alpha = 0.5 })
+
+-- ── 主题生成的边框色（theme-next 写入；Lua 管理器下 keyword 不可用）──
+pcall(dofile, home .. "/.config/hypr/theme.lua")
 
 -- ── 发行版生成的条件片段（亮度键 / 终端 / agent）──────────
 local extra = home .. "/.config/hypr/extra.lua"

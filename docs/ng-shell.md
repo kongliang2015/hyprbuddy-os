@@ -170,3 +170,44 @@ WLR_BACKENDS=wayland WLR_WL_OUTPUTS=1 Hyprland -c ~/.config/hypr/hyprland.lua
 
 **风险与回退**：注销重登后若 Lua 配置有问题，会表现为键位/外观缺失。回退只需删掉
 `~/.config/uwsm/env`（或注释掉 `HYPRLAND_CONFIG`）再登录，即回到 hyprland.conf。
+
+## 重登后实测：三个报错与修复
+
+重登后 configProvider 变成 lua，hyprshell 的 Super+grave（Open Overview）与 Alt+Tab 成功注册。
+但暴露了三处问题：
+
+### 1. 顶部红条：keyword can't work with non-legacy parsers. Use eval.
+
+来源：theme-next 用 `hyprctl keyword general:col.active_border` 改边框色。
+Lua 配置管理器下 keyword 整体不可用，Hyprland 把失败写进 seterror，于是屏幕顶部出现
+红条（截图 862x56）。
+
+修复：provider 为 lua 时改为写 `~/.config/hypr/theme.lua` 再 `hyprctl reload`；
+`hyprland.lua` 里用 `pcall(dofile, ...theme.lua)` 加载。经典 hyprlang 仍走 keyword。
+
+### 2. hyprctl reload 会清空所有 bind
+
+hyprshell 只在启动时注册热键（eval dispatcher），reload 后不会自动重注册，表现为
+切主题后 Super+grave / Alt+Tab 失效（binds 从 64 掉回 56）。
+
+修复：theme-next 在 lua 分支 reload 之后重启 hyprshell daemon：
+
+```bash
+pkill -x .hyprshell-wrap; sleep 0.3; setsid hyprshell run &
+```
+
+### 3. Lua 配置的两个字段陷阱
+
+| 现象 | 正确写法 |
+|---|---|
+| unknown config key 'input.touchpad.tap-to-click' | `tap_to_click = true`（Lua 里用下划线） |
+| Scale factor must be less than 15 and greater than 0 | scale 取 (0,15) 开区间，最后定 10.0 |
+
+### 当前状态
+
+```
+configProvider: lua
+binds: 64（含 Super+grave overview、Alt+Tab switch）
+overview 窗口: 568x378（1 个工作区，尺寸由内容驱动）
+configerrors: 空
+```
