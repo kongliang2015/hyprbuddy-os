@@ -26,7 +26,7 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
 # @category: runtime
 # @usage: theme-next [restore]
 # @arg restore: 应用已保存主题（登录时调用，不前进索引）
-# @effect: 重写 ~/.config/waybar/style.css；重启 waybar/mako/swayosd
+# @effect: 重写 waybar/swaync/eww 样式；替换 fuzzel/swayosd 颜色；重启 waybar/swayosd，热重载 swaync/eww
 # @doc: theming.md
 ```
 
@@ -56,7 +56,7 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
       "category": "runtime",
       "usage": "theme-next [restore]",
       "args": [ { "name": "restore", "desc": "应用已保存主题" } ],
-      "effects": [ "重写 ~/.config/waybar/style.css", "重启 waybar/mako/swayosd" ],
+      "effects": [ "重写 waybar/swaync/eww 样式", "重启 waybar/swayosd，热重载 swaync/eww" ],
       "interactive": false,
       "requires_sudo": false,
       "available": true,
@@ -78,7 +78,7 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
   ],
   "paths": {
     "repo": "~/hyprland-nixos",
-    "user_config": [ "~/.config/hypr", "~/.config/waybar", "~/.config/fuzzel", "~/.config/kitty", "~/.config/mako", "~/.config/swayosd", "~/.config/Thunar" ],
+    "user_config": [ "~/.config/hypr", "~/.config/waybar", "~/.config/fuzzel", "~/.config/kitty", "~/.config/swaync", "~/.config/eww", "~/.config/swayosd", "~/.config/Thunar" ],
     "skills": [ "~/.codebuddy/skills/", "~/.claude/skills/" ]
   }
 }

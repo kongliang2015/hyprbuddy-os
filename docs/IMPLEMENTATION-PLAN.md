@@ -424,7 +424,7 @@ backlight=true
 |---|---|---|
 | 1 入口 | `modules/agent/core.nix` | 按 `distro.agent.agents` 装包；`Super+Shift+Ctrl+A` → `scripts/agent-menu`（fuzzel 选择） |
 | 2 主题 | `scripts/agent-theme-sync` | jq merge `~/.claude/settings.json` 的 `theme` 字段，不覆盖其它设置 |
-| 3 诊断 | `modules/agent/diagnostics.nix` | `systemd.paths.coredump-watch` + `coredump-analyze`（oneshot，User=主用户，SupplementaryGroups=systemd-coredump）→ 本地 ollama → mako/日志 |
+| 3 诊断 | `modules/agent/diagnostics.nix` | `systemd.paths.coredump-watch` + `coredump-analyze`（oneshot，User=主用户，SupplementaryGroups=systemd-coredump）→ 本地 ollama → swaync/日志 |
 | 4 观测 | `modules/agent/usage.nix` | 汇总 `~/.claude/projects/**/*.jsonl` 当日 token，注入 Waybar `custom/agent-usage` |
 | 5 变更 | `scripts/agent-apply` | `git diff` → 求值 → `nixos-rebuild build --flake` → 打印 sudo 命令 |
 | 6 本地模型 | `modules/agent/local-llm.nix` | `services.ollama`，按 `distro.gpu.vendor` 选 `ollama-cuda/rocm/vulkan/cpu` |

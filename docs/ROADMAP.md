@@ -10,7 +10,7 @@
 - fuzzel 启动器 + `Super+Space` 系统菜单
 - hyprlock 锁屏、hypridle 自动锁屏/熄屏
 - hyprpaper 壁纸 + 壁纸轮换
-- mako 通知统一风格 + 勿扰模式
+- swaync 通知中心 + 控制中心（勿扰、历史、MPRIS；已替代 mako）
 - SwayOSD 音量/亮度屏显
 - 截图（hyprshot）+ 标注（swappy）+ 取色（hyprpicker）
 - 录屏（wf-recorder）

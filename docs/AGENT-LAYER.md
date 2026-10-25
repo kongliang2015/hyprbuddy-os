@@ -45,7 +45,7 @@ AI agent（Claude Code、OpenCode、Codex 等）不是外挂应用，而是**系
 | `codex` / `aider-chat` | nixpkgs 存在，可选，未装 |
 | `ollama` 0.40.3 | 包变体 `ollama-cuda/rocm/vulkan/cpu`，本机未启用 |
 
-基础设施：`systemd-coredump` 活跃；kitty 16 色统一（agent ANSI 自动跟随）；mako 通知；awww 壁纸守护。
+基础设施：`systemd-coredump` 活跃；kitty 16 色统一（agent ANSI 自动跟随）；swaync 通知；awww 壁纸守护。
 
 ## 3. 六层：设计与实现
 
@@ -83,7 +83,7 @@ agent 层默认关闭，三个 agent 脚本随 `agent.enable` 安装（`home/def
 **实现**：`modules/agent/diagnostics.nix`：
 - `systemd.paths.coredump-watch`：`PathChanged = /var/lib/systemd/coredump` + **`pathConfig.Unit = coredump-analyze.service`**
 - `systemd.services.coredump-analyze`：`User` 为当前用户、`SupplementaryGroups = systemd-coredump`、wants/after ollama
-- 脚本：`coredumpctl info -1` → ollama `/api/generate` → `~/.local/state/agent/coredump-report.md` + mako 通知
+- 脚本：`coredumpctl info -1` → ollama `/api/generate` → `~/.local/state/agent/coredump-report.md` + swaync 通知
 - 断言：`diagnostics` 需要 `localModels = true`（不上传 core dump）
 
 **状态**：代码就绪，**本机未启用**（`diagnostics = false`；需 `localModels` + `ollama pull`）。
