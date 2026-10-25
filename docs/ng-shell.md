@@ -103,3 +103,23 @@ home/eww/eww.scss           变量（theme-next 重写）
 | C 等上游 | 关注 hyprshell 是否支持经典 conf 注册 | 不确定 |
 
 当前建议 **B**：`home/hyprshell/` 的配置保留为备料，等真的决定迁 Lua 时直接可用。
+
+## 踩坑记录：GTK CSS 语法错误会丢整份样式
+
+现象：通知卡片变成 Adwaita 默认样式（#1C1E1F 底、方角、无强调色），
+尺寸 366×105（单条通知卡在 swaync 380×1402 的通知窗口内，尺寸本身正常）。
+
+原因：`theme-next` 最初把主题色直接拼进 `rgba()`，而主题表里的颜色是**不带 # 的**
+十六进制串：
+
+```css
+@define-color border rgba(02F0FA, 0.28);   /* ✗ 'F0FA' is not a valid unit */
+```
+
+GTK4 CSS 解析失败时会**丢弃整份用户样式表**（不是跳过那一行），于是 swaync 退回
+自带默认样式，看起来"完全没跟主题走"。
+
+修复：GTK 用 `alpha(#02F0FA, 0.28)`，SCSS（eww）用 `rgba(#02f0fa, 0.28)`。
+
+排查时要看 swaync 启动日志里的 `Theme parser error`，这是唯一的提示。
+另外 `swaync` 的进程名是 `.swaync-wrapped`，重启脚本要用这个名字或 `pkill -f` 小心自杀。
