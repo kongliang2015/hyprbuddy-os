@@ -112,6 +112,7 @@ lib.mkIf cfg.desktop.enable {
     swww          # 壁纸守护（26.05 更名 awww，二进制 awww-daemon）
     swaynotificationcenter # 通知守护 + 通知中心 + 控制中心（替代 mako）
     eww           # 自绘弹窗（日历/会话面板）
+    hyprshell     # 窗口总览 / Alt-Tab 缩略图（需 Lua 配置管理器）
     hyprshot      # 截图（Print）
     grim          # 截图后端
     slurp         # 区域选择

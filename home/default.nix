@@ -59,6 +59,8 @@ let
     "swaync/style.css" = read ./swaync/style.css;
     "eww/eww.yuck" = read ./eww/eww.yuck;
     "eww/eww.scss" = read ./eww/eww.scss;
+    "hyprshell/config.ron" = read ./hyprshell/config.ron;
+    "hyprshell/styles.css" = read ./hyprshell/styles.css;
     "swayosd/style.css" = read ./swayosd/style.css;
     "Thunar/uca.xml" = read ./thunar/uca.xml;
     "fastfetch/config.jsonc" = read ./fastfetch/config.jsonc;
