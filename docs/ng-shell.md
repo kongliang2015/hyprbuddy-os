@@ -123,3 +123,13 @@ GTK4 CSS 解析失败时会**丢弃整份用户样式表**（不是跳过那一�
 
 排查时要看 swaync 启动日志里的 `Theme parser error`，这是唯一的提示。
 另外 `swaync` 的进程名是 `.swaync-wrapped`，重启脚本要用这个名字或 `pkill -f` 小心自杀。
+
+## 多显示器与关闭方式
+
+- **多显示器**：`defwindow` 的 `:monitor` 只能在定义时写死，会固定弹在主屏。
+  改为调用 `scripts/eww-popup <calendar|session>`：它从 `hyprctl monitors` 取当前
+  聚焦显示器，再用 `eww open --toggle --screen <连接器名>` 打开。键位与 hypr-menu 都走它。
+- **关闭方式**：eww 0.6 的窗口没有键盘事件支持（二进制里没有 `onkey` 相关符号），
+  Esc / 点击外部都关不掉，所以两个弹窗都放了按钮：日历「关闭」、会话「取消」。
+- **音量控件**：swaync 的 `volume` widget 加载正常（日志有 `Loading widget: volume`），
+  它走闭包内的 libpulse 直连 PipeWire-pulse，不依赖 `pactl`/`pamixer`（系统里都没装）。

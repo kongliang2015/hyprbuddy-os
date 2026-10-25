@@ -36,7 +36,7 @@ menu_entries() {
       sub '  外观'           appearance
       sub '  会话'             session
       act '  通知中心'        'swaync-client -t'
-      act '  日历'            'eww open --toggle calendar'
+      act '  日历'            '@HOME@/.local/bin/eww-popup calendar'
       act '  系统信息'        '@HOME@/.local/bin/show-sysinfo'
       act '  快捷键参考'      '@HOME@/.local/bin/show-keybinds'
       ;;
@@ -63,6 +63,7 @@ menu_entries() {
       act '  下一张壁纸'       '@HOME@/.local/bin/wallpaper-next'
       act '  切换主题'       '@HOME@/.local/bin/theme-next'
       act '  主题预览'       'kitty --class theme-picker --title 主题预览 -e @HOME@/.local/bin/theme-picker'
+      sub '  登录界面主题'     sddm
       sub '  登录界面主题'     sddm
       act '  重新加载壁纸'  '__reload_wallpaper__'
       act '  重载 Hyprland' 'hyprctl reload'
@@ -81,6 +82,19 @@ menu_entries() {
       act '  恢复默认（删除 override）' '@HOME@/.local/bin/sddm-theme reset'
       ;;
 
+    sddm)
+      # 条目由 sddm-theme list 动态生成：id<TAB>显示名<TAB>路径<TAB>当前标记
+      local s_id s_name s_path s_mark
+      while IFS=$'\t' read -r s_id s_name s_path s_mark; do
+        [ -n "$s_id" ] || continue
+        if [ -n "$s_mark" ]; then
+          act "✓ $s_name"       "@HOME@/.local/bin/sddm-theme set $s_id"
+        else
+          act "   $s_name"      "@HOME@/.local/bin/sddm-theme set $s_id"
+        fi
+      done < <(@HOME@/.local/bin/sddm-theme list 2>/dev/null)
+      act '   恢复默认（删除 override）' '@HOME@/.local/bin/sddm-theme reset'
+      ;;
     session)
       act '  锁屏'            'hyprlock'
       act "  通知勿扰        [$(dnd_state)]" '@HOME@/.local/bin/notif-dnd'

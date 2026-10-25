@@ -8,7 +8,6 @@
     (button :class "card-btn" :onclick "eww close calendar" "关闭")))
 
 (defwindow calendar
-  :monitor 0
   :geometry (geometry :x "0%" :y "46px" :width "340px" :height "300px" :anchor "top center")
   :stacking "overlay"
   :namespace "eww-calendar"
@@ -28,7 +27,6 @@
       (button :class "card-btn" :onclick "eww close session" "取消"))))
 
 (defwindow session
-  :monitor 0
   :geometry (geometry :x "0%" :y "0%" :width "520px" :height "110px" :anchor "center")
   :stacking "overlay"
   :namespace "eww-session"
