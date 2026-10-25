@@ -24,7 +24,7 @@ sub() { printf '%s\tsub\t%s\n' "$1" "$2"; }
 
 # ── 状态探测（菜单项实时显示开关）────────────────────────
 night_state() { [ -f "${XDG_RUNTIME_DIR:-/tmp}/hyprsunset.on" ] && printf '✓ 开' || printf '关'; }
-dnd_state()   { makoctl mode 2>/dev/null | grep -q dnd && printf '✓ 开' || printf '关'; }
+dnd_state()   { [ "$(swaync-client -D 2>/dev/null)" = "true" ] && printf '✓ 开' || printf '关'; }
 
 # ── 菜单树 ──────────────────────────────────────────────
 menu_entries() {
@@ -35,6 +35,8 @@ menu_entries() {
       sub '  系统工具'         tools
       sub '  外观'           appearance
       sub '  会话'             session
+      act '  通知中心'        'swaync-client -t'
+      act '  日历'            'eww open --toggle calendar'
       act '  系统信息'        '@HOME@/.local/bin/show-sysinfo'
       act '  快捷键参考'      '@HOME@/.local/bin/show-keybinds'
       ;;

@@ -110,7 +110,8 @@ lib.mkIf cfg.desktop.enable {
     fuzzel        # 应用启动器（Super+D / Super+Space）
     hyprlock      # 锁屏（Super+L）
     swww          # 壁纸守护（26.05 更名 awww，二进制 awww-daemon）
-    mako          # 通知守护进程
+    swaynotificationcenter # 通知守护 + 通知中心 + 控制中心（替代 mako）
+    eww           # 自绘弹窗（日历/会话面板）
     hyprshot      # 截图（Print）
     grim          # 截图后端
     slurp         # 区域选择

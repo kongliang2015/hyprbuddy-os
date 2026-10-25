@@ -1,0 +1,32 @@
+// eww 配色：theme-next 切主题时整体重写
+$bg: #12141a;
+$bg2: #1b1e26;
+$fg: #c6cdd0;
+$muted: #5a656a;
+$accent: #02f0fa;
+$accent2: #e926f5;
+$border: rgba(#02f0fa, 0.28);
+
+* { all: unset; font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC"; }
+
+.card {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 14px;
+  padding: 12px;
+  color: $fg;
+}
+
+.card-title { color: $accent; font-weight: bold; font-size: 14px; padding-bottom: 6px; }
+
+.cal { color: $fg; }
+.cal:selected { background: $accent; color: $bg; }
+
+.card-btn {
+  background: $bg2;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: $fg;
+}
+.card-btn:hover { color: $accent; border-color: $accent; }

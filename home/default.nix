@@ -49,7 +49,10 @@ let
     "waybar/style.css" = waybar.css;
     "fuzzel/fuzzel.ini" = read ./fuzzel/fuzzel.ini;
     "kitty/kitty.conf" = read ./kitty/kitty.conf;
-    "mako/config" = read ./mako/config;
+    "swaync/config.json" = read ./swaync/config.json;
+    "swaync/style.css" = read ./swaync/style.css;
+    "eww/eww.yuck" = read ./eww/eww.yuck;
+    "eww/eww.scss" = read ./eww/eww.scss;
     "swayosd/style.css" = read ./swayosd/style.css;
     "Thunar/uca.xml" = read ./thunar/uca.xml;
     "fastfetch/config.jsonc" = read ./fastfetch/config.jsonc;

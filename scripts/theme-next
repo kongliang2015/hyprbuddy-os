@@ -229,11 +229,8 @@ if [ -f "$FUZZEL" ]; then
   fi
 fi
 
-# ── mako 通知（替换颜色键 + makoctl reload 热加载） ──
-# mako 不支持阴影/渐变（0.55 的 layerrule 也没有 shadow 字段），"立体卡片"只能靠
-# 色彩层级实现：底比主题底色略提亮（近白 6%），描边取 底×强调色 30% 的低对比柔边，
-# 透明度压到 0.90 让 notifications 层的 blur 透出磨砂质感。
-mixhex() { # mixhex <A> <B> <pct> → #RRGGBB，pct% 偏向 B
+# ── 颜色工具：mixhex <A> <B> <pct> → #RRGGBB，pct% 偏向 B ──────────────
+mixhex() {
   local a=${1#\#} b=${2#\#} p=$3 i x y v out=""
   for i in 0 2 4; do
     x=$((16#${a:i:2})); y=$((16#${b:i:2}))
@@ -242,50 +239,100 @@ mixhex() { # mixhex <A> <B> <pct> → #RRGGBB，pct% 偏向 B
   done
   printf '#%s' "$out"
 }
-MK_BG="$(mixhex "$WB_BG" "$WB_FG" 6 | cut -c2-)e6"
-MK_BRD="$(mixhex "$WB_BG" "$WB_WSAFG" 30 | cut -c2-)b3"
-MK_PROG="$(mixhex "$WB_PULSE" "$WB_BG" 8 | cut -c2-)cc"
-MK_BG_LOW="$(mixhex "$WB_BG" "$WB_FG" 3 | cut -c2-)d9"
-MK_BRD_LOW="$(mixhex "$WB_BG" "$WB_WS" 28 | cut -c2-)99"
-MK_BG_CRIT="$(mixhex "$WB_BG" "$WB_URGENT" 12 | cut -c2-)f0"
-MK_BRD_CRIT="$(mixhex "$WB_BG" "$WB_URGENT" 55 | cut -c2-)cc"
-# 正文色：muted 向 fg 提 35%，保证在提亮后的卡片底上仍有 ~4.5:1 可读性
-MK_FMT="$(mixhex "$WB_WS" "$WB_FG" 35 | cut -c2-)"
-MAKO="$XDG_CONFIG_HOME/mako/config"
-# 只读兜底源：install.sh 生成的 share 产物（配置被清空成 0 字节时可自愈）
-MAKO_SRC="$HOME/.local/share/hyprland-nixos-home/mako/config"
-if [ -f "$MAKO" ]; then
-  if [ -L "$MAKO" ]; then MSRC=$(readlink -f "$MAKO"); else MSRC="$MAKO"; fi
-  # 源为空（历史出现过 0 字节）时回退到只读产物，否则空进空出会永久自锁
-  [ -s "$MSRC" ] || MSRC="$MAKO_SRC"
-  mkdir -p "$XDG_CONFIG_HOME/mako"
-  awk -v bg="$MK_BG" -v fg="${WB_FG}" -v border="$MK_BRD" \
-      -v prog="$MK_PROG" -v low="$MK_BRD_LOW" -v crit="$MK_BRD_CRIT" \
-      -v lowbg="$MK_BG_LOW" -v critbg="$MK_BG_CRIT" -v wsfg="$MK_FMT" '
-    /^\[/ { sec=$0 }
-    sec == "" {
-      if ($0 ~ /^background-color=/) { print "background-color=#" bg; next }
-      if ($0 ~ /^text-color=/)       { print "text-color=#" fg; next }
-      if ($0 ~ /^border-color=/)     { print "border-color=#" border; next }
-      if ($0 ~ /^progress-color=/)   { print "progress-color=#" prog; next }
-      if ($0 ~ /^format=/) { print "format=<b>%s</b>\\n<span foreground=\"#" wsfg "\">%b</span>"; next }
-    }
-    sec == "[urgency=low]" && $0 ~ /^border-color=/ { print "border-color=#" low; next }
-    sec == "[urgency=low]" && $0 ~ /^background-color=/ { print "background-color=#" lowbg; next }
-    sec == "[urgency=critical]" && $0 ~ /^border-color=/ { print "border-color=#" crit; next }
-    sec == "[urgency=critical]" && $0 ~ /^background-color=/ { print "background-color=#" critbg; next }
-    { print }
-  ' "$MSRC" > "$MAKO.tmp.$$" 2>/dev/null || true
-  # 唯一 tmp 名 + 锁：固定 tmp 名在并发切换时会互相截断，曾产出 0 字节配置
-  (
-    flock -x 202
-    if [ -s "$MAKO.tmp.$$" ]; then
-      mv -f "$MAKO.tmp.$$" "$MAKO"
-      makoctl reload >/dev/null 2>&1 || true
-    else
-      rm -f "$MAKO.tmp.$$"
-    fi
-  ) 202>"$RUNTIME/theme-next/mako.lock"
+
+# ── swaync（通知中心 + 控制中心；整份 CSS 重写，reload 热加载）────────────
+# 从 mako 迁移：卡片底 = 主题底向正文提亮 8%，描边 = 底×强调色 28%，
+# 与 waybar/hyprtoolkit 共用同一套推导，视觉不割裂。
+SN_BG2="$(mixhex "$WB_BG" "$WB_FG" 8 | cut -c2-)"
+SWAYNC="$XDG_CONFIG_HOME/swaync/style.css"
+mkdir -p "$XDG_CONFIG_HOME/swaync"
+cat > "$SWAYNC.tmp.$$" <<SWAYNCCSS
+/* 由 theme-next 生成，勿手改；改配色请改主题表 */
+@define-color bg      #${WB_BG};
+@define-color bg2     #${SN_BG2};
+@define-color fg      #${WB_FG};
+@define-color muted   #${WB_WS};
+@define-color accent  #${HA1};
+@define-color accent2 #${HA2};
+@define-color border  alpha(#${HA1}, 0.28);
+@define-color urgent  #${WB_URGENT};
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC", sans-serif;
+  font-size: 13px;
+}
+
+.control-center { background: @bg; border: 1px solid @border; border-radius: 14px; }
+.control-center-list { background: transparent; }
+
+.widget-title { color: @accent; font-weight: bold; margin: 8px 12px 4px 12px; }
+.widget-title > button {
+  background: transparent; color: @muted;
+  border: 1px solid @border; border-radius: 8px; padding: 2px 10px;
+}
+.widget-title > button:hover { color: @urgent; }
+
+.widget-dnd { color: @fg; margin: 4px 14px; }
+.widget-dnd > switch { background: @bg2; border: 1px solid @border; border-radius: 999px; }
+.widget-dnd > switch:checked { background: @accent; }
+
+.notification-row { background: transparent; outline: none; }
+.notification { background: @bg2; border: 1px solid @border; border-radius: 12px; margin: 6px 8px; }
+.notification-content { padding: 10px 12px; }
+.summary { color: @fg; font-weight: bold; }
+.body, .time { color: @muted; }
+.close-button { background: transparent; color: @muted; border-radius: 999px; }
+.close-button:hover { color: @urgent; }
+.notification.critical { border-color: @urgent; }
+
+.widget-mpris {
+  background: @bg2; border: 1px solid @border; border-radius: 12px;
+  margin: 6px 8px; color: @fg;
+}
+.widget-volume {
+  background: @bg2; border: 1px solid @border; border-radius: 12px;
+  margin: 6px 8px; padding: 6px 10px; color: @accent;
+}
+.widget-volume > box > label { color: @fg; }
+SWAYNCCSS
+if [ -s "$SWAYNC.tmp.$$" ]; then
+  mv -f "$SWAYNC.tmp.$$" "$SWAYNC"
+  swaync-client -rs >/dev/null 2>&1 || true
+else
+  rm -f "$SWAYNC.tmp.$$"
+fi
+
+# ── eww（日历/会话弹窗；整份 scss 重写，eww reload 热加载）───────────────
+# 用带引号的 heredoc（不做 shell 展开）+ sed 占位替换：scss 的 $var 与
+# theme 的 ${...} 混在一起时，无引号 heredoc 会在 set -u 下炸掉。
+EW="$XDG_CONFIG_HOME/eww/eww.scss"
+mkdir -p "$XDG_CONFIG_HOME/eww"
+cat > "$EW.tmp.$$" <<'EWWSCSS'
+// 由 theme-next 生成，勿手改
+$bg: #@BG@;
+$bg2: #@BG2@;
+$fg: #@FG@;
+$muted: #@MUTED@;
+$accent: #@ACCENT@;
+$accent2: #@ACCENT2@;
+$border: rgba(#@ACCENT@, 0.28);
+
+* { all: unset; font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC"; }
+.card { background: $bg; border: 1px solid $border; border-radius: 14px; padding: 12px; color: $fg; }
+.card-title { color: $accent; font-weight: bold; font-size: 14px; padding-bottom: 6px; }
+.cal { color: $fg; }
+.cal:selected { background: $accent; color: $bg; }
+.card-btn { background: $bg2; border: 1px solid $border; border-radius: 8px; padding: 6px 10px; color: $fg; }
+.card-btn:hover { color: $accent; border-color: $accent; }
+EWWSCSS
+sed -i -e "s/@BG@/$WB_BG/g" -e "s/@BG2@/$SN_BG2/g" -e "s/@FG@/$WB_FG/g" \
+       -e "s/@MUTED@/$WB_WS/g" -e "s/@ACCENT@/$HA1/g" -e "s/@ACCENT2@/$HA2/g" \
+       "$EW.tmp.$$" 2>/dev/null || true
+if [ -s "$EW.tmp.$$" ]; then
+  mv -f "$EW.tmp.$$" "$EW"
+  eww reload >/dev/null 2>&1 || true
+else
+  rm -f "$EW.tmp.$$"
 fi
 
 # ── swayosd OSD（值替换 + 重启 swayosd-server） ──
