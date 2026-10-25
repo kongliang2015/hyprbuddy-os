@@ -62,8 +62,8 @@
 .notification-content { padding: 10px 12px; }
 
 .summary { color: @fg; font-weight: bold; }
-.body { color: @muted; }
-.time { color: @muted; }
+.body { color: #80898E; }   /* muted 向正文提亮 35%，对比度 4.7:1 */
+.time { color: #80898E; }
 
 .close-button {
   background: transparent;

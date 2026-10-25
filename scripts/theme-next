@@ -266,6 +266,8 @@ mixhex() {
 # 从 mako 迁移：卡片底 = 主题底向正文提亮 8%，描边 = 底×强调色 28%，
 # 与 waybar/hyprtoolkit 共用同一套推导，视觉不割裂。
 SN_BG2="$(mixhex "$WB_BG" "$WB_FG" 8 | cut -c2-)"
+# 正文色：muted 向 fg 提 35%（原始 muted 在卡片底上对比度只有 2.8:1，几乎看不见）
+SN_FMT="$(mixhex "$WB_WS" "$WB_FG" 35 | cut -c2-)"
 SWAYNC="$XDG_CONFIG_HOME/swaync/style.css"
 mkdir -p "$XDG_CONFIG_HOME/swaync"
 cat > "$SWAYNC.tmp.$$" <<SWAYNCCSS
@@ -302,7 +304,7 @@ cat > "$SWAYNC.tmp.$$" <<SWAYNCCSS
 .notification { background: @bg2; border: 1px solid @border; border-radius: 12px; margin: 6px 8px; }
 .notification-content { padding: 10px 12px; }
 .summary { color: @fg; font-weight: bold; }
-.body, .time { color: @muted; }
+.body, .time { color: #${SN_FMT}; }
 .close-button { background: transparent; color: @muted; border-radius: 999px; }
 .close-button:hover { color: @urgent; }
 .notification.critical { border-color: @urgent; }
