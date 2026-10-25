@@ -123,6 +123,37 @@ if [ -f "$htk" ]; then
   fi
 fi
 
+# 7) 外壳组件（swaync / eww）：配置可解析 + 已知回归项
+cfgdir="${XDG_CONFIG_HOME:-$HOME/.config}"
+sn_cfg="$cfgdir/swaync/config.json"
+sn_css="$cfgdir/swaync/style.css"
+if [ -f "$sn_cfg" ]; then
+  if python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$sn_cfg" 2>/dev/null; then
+    info "swaync 配置 JSON 合法"
+  else
+    warn "swaync/config.json 不是合法 JSON（通知守护会退回默认配置）"
+  fi
+fi
+if [ -f "$sn_css" ]; then
+  # 把不带 # 的十六进制塞进 rgba()/alpha() 会让 GTK 丢弃整份样式（今日踩过）
+  bad=$(grep -nE '(rgba|alpha)\([0-9A-Fa-f]{6}[,)]' "$sn_css" 2>/dev/null | head -3)
+  if [ -n "$bad" ]; then
+    warn "swaync/style.css 颜色写法错误（缺 #，GTK 会丢弃整份样式）："
+    printf '%s\n' "$bad" | sed 's/^/      /'
+  else
+    info "swaync 样式颜色写法正常"
+  fi
+fi
+if [ -f "$cfgdir/eww/eww.yuck" ]; then
+  if grep -qE '^[[:space:]]*\(defwindow' "$cfgdir/eww/eww.yuck"; then
+    info "eww 窗口定义存在"
+  else
+    warn "eww.yuck 里没有 defwindow（弹窗不会出现）"
+  fi
+fi
+if [ -f "$conf" ] && grep -qE '^[[:space:]]*exec-once[[:space:]]*=[[:space:]]*mako' "$conf"; then
+  warn "hyprland.conf 仍在启动 mako：它与 swaync 抢通知服务，只能留一个"
+fi
 if [ "$status" -eq 0 ]; then
   echo "  - 自检通过"
 fi
