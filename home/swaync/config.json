@@ -29,12 +29,29 @@
   "hide-on-action": true,
   "keyboard-shortcuts": true,
   "image-visibility": "when-available",
-  "widgets": [ "title", "dnd", "mpris", "volume", "notifications" ],
+  "widgets": [ "title", "dnd", "mpris", "volume", "buttons-grid", "notifications" ],
   "widget-config": {
     "title": { "text": "通知", "clear-all-button": true, "button-text": "全部清除" },
     "dnd": { "text": "免打扰" },
     "mpris": { "image-size": 96, "image-radius": 8 },
     "volume": { "label": "音量" },
+    "buttons-grid": {
+      "buttons-per-row": 4,
+      "actions": [
+        { "label": "截图", "type": "button", "command": "hyprshot -m region" },
+        { "label": "夜间", "type": "toggle",
+          "command": "~/.local/bin/night-mode",
+          "update-command": "pgrep -x hyprsunset >/dev/null && echo true || echo false" },
+        { "label": "录屏", "type": "toggle",
+          "command": "~/.local/bin/record-toggle",
+          "update-command": "pgrep -x wf-recorder >/dev/null && echo true || echo false" },
+        { "label": "壁纸", "type": "button", "command": "~/.local/bin/wallpaper-next" },
+        { "label": "锁屏", "type": "button", "command": "hyprlock" },
+        { "label": "主题", "type": "button", "command": "~/.local/bin/theme-next" },
+        { "label": "菜单", "type": "button", "command": "~/.local/bin/hypr-menu" },
+        { "label": "信息", "type": "button", "command": "~/.local/bin/show-sysinfo" }
+      ]
+    },
     "notifications": { "vexpand": true }
   }
 }

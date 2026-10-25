@@ -133,6 +133,9 @@ hl.window_rule({ name = "fastfetch-popup", match = { class = "^(fastfetch-popup)
 hl.layer_rule({ name = "menu-blur", match = { namespace = "^hypr-menu$" }, blur = true, ignore_alpha = 0.3 })
 hl.layer_rule({ name = "menu-dim", match = { namespace = "^hypr-menu$" }, dim_around = true, no_anim = true })
 hl.layer_rule({ name = "notif-blur", match = { namespace = "^swaync-notification-window$" }, blur = true, ignore_alpha = 0.5 })
+-- 玻璃拟态：overview / launcher 是 layer 表面，模糊后能透出桌面
+hl.layer_rule({ name = "overview-blur", match = { namespace = "^hyprshell_overview$" }, blur = true, ignore_alpha = 0.55 })
+hl.layer_rule({ name = "launcher-blur", match = { namespace = "^hyprshell_launcher$" }, blur = true, ignore_alpha = 0.55 })
 
 -- ── 主题生成的边框色（theme-next 写入；Lua 管理器下 keyword 不可用）──
 pcall(dofile, home .. "/.config/hypr/theme.lua")
