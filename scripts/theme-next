@@ -4,7 +4,7 @@
 # @category: runtime
 # @usage: theme-next [restore]
 # @arg restore: 应用已保存主题（登录时调用，不前进索引）
-# @effect: 重写 ~/.config/waybar/style.css；替换 mako/fuzzel/swayosd 颜色；重启 waybar/mako/swayosd
+# @effect: 重写 waybar/swaync/eww 样式；替换 fuzzel/swayosd 颜色；重启 waybar/swayosd，热重载 swaync/eww
 # @doc: theming.md
 # theme-next: 在若干内置主题间循环切换桌面配色
 #   theme-next          切换到下一套（默认动作）
@@ -24,7 +24,7 @@ STATE="$STATE_DIR/idx"
 WALL="$HOME/Pictures/wallpapers"
 
 mkdir -p "$STATE_DIR"
-# 锁文件目录：waybar/mako/swayosd 段的 flock 重定向依赖它，缺失会让整段被跳过
+# 锁文件目录：waybar/swayosd 段的 flock 重定向依赖它，缺失会让整段被跳过
 mkdir -p "$RUNTIME/theme-next"
 
 # 壁纸守护：hyprpaper 在本 VM 因 GBM 分配失败段错误已弃用；

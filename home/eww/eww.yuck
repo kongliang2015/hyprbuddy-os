@@ -23,7 +23,9 @@
       (button :class "card-btn" :onclick "eww close session; hyprlock" "锁屏")
       (button :class "card-btn" :onclick "eww close session; hyprctl dispatch exit" "注销")
       (button :class "card-btn" :onclick "eww close session; systemctl reboot" "重启")
-      (button :class "card-btn" :onclick "eww close session; systemctl poweroff" "关机"))))
+      (button :class "card-btn" :onclick "eww close session; systemctl poweroff" "关机"))
+    (box :orientation "horizontal" :space-evenly true
+      (button :class "card-btn" :onclick "eww close session" "取消"))))
 
 (defwindow session
   :monitor 0
