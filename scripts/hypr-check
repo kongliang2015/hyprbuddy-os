@@ -38,21 +38,40 @@ else
   info "未在 Hyprland 会话中，跳过运行时检查"
 fi
 
-# 3) 规则语法 lint
-if [ -f "$conf" ]; then
-  old_wr=$(grep -nE '^[[:space:]]*windowrule[[:space:]]*=[[:space:]]*[a-z_]+[[:space:]]+(class|title|initial_class|initial_title):' "$conf" 2>/dev/null)
-  old_lr=$(grep -nE '^[[:space:]]*layerrule[[:space:]]*=[[:space:]]*[a-z_]+[[:space:]]*,' "$conf" 2>/dev/null)
-  if [ -n "$old_wr" ]; then
-    warn "windowrule 疑似 0.54 旧语法（0.55 下静默失效，不报错）："
-    printf '%s\n' "$old_wr" | sed 's/^/      /'
-    echo "      正确：windowrule = match:class ^(名字)$, float true, size monitor_w*0.72 monitor_h*0.72"
+# 3) 规则语法 lint（只检查真正生效的那份配置）
+# Lua 配置管理器下 hyprland.conf 完全不加载，再去 lint 它只会给出假阳性。
+if [ -f "$lua" ]; then
+  binds=$(grep -cE '^[[:space:]]*hl\.bind\(' "$lua" 2>/dev/null || true)
+  wrules=$(grep -cE '^[[:space:]]*hl\.window_rule\(' "$lua" 2>/dev/null || true)
+  lrules=$(grep -cE '^[[:space:]]*hl\.layer_rule\(' "$lua" 2>/dev/null || true)
+  : "${binds:=0}"; : "${wrules:=0}"; : "${lrules:=0}"
+  if [ "$binds" -lt 10 ]; then
+    warn "$lua 只有 $binds 条 hl.bind(...)，看起来不完整（期望 40+）"
+  else
+    info "hyprland.lua：$binds 条键位 / $wrules 条窗口规则 / $lrules 条图层规则"
   fi
-  if [ -n "$old_lr" ]; then
-    warn "layerrule 疑似 0.54 旧语法（0.55 下报 invalid field）："
-    printf '%s\n' "$old_lr" | sed 's/^/      /'
-    echo "      正确：layerrule = match:namespace <namespace>, blur true, ignore_alpha 0.3"
+  # 迁移时真实踩过的两个 Lua 写法坑
+  if grep -qE 'hl\.curve\(\{' "$lua" 2>/dev/null; then
+    warn "hl.curve 是位置参数：hl.curve(\"name\", { type = \"bezier\", points = {...} })"
   fi
-  [ -z "$old_wr$old_lr" ] && info "windowrule/layerrule 语法符合 0.55"
+  if grep -q 'tap-to-click' "$lua" 2>/dev/null; then
+    warn "Lua 配置里 touchpad 要用 tap_to_click（连字符会报 unknown config key）"
+  fi
+  [ -f "$conf" ] && info "hyprland.conf 会被忽略（Lua 生效）；改配置请改 hyprland.lua"
+else
+  if [ -f "$conf" ]; then
+    old_wr=$(grep -nE '^[[:space:]]*windowrule[[:space:]]*=[[:space:]]*[a-z_]+[[:space:]]+(class|title|initial_class|initial_title):' "$conf" 2>/dev/null)
+    old_lr=$(grep -nE '^[[:space:]]*layerrule[[:space:]]*=[[:space:]]*[a-z_]+[[:space:]]*,' "$conf" 2>/dev/null)
+    if [ -n "$old_wr" ]; then
+      warn "windowrule 疑似 0.54 旧语法（0.55 下静默失效，不报错）："
+      printf '%s\n' "$old_wr" | sed 's/^/      /'
+    fi
+    if [ -n "$old_lr" ]; then
+      warn "layerrule 疑似 0.54 旧语法（0.55 下报 invalid field）："
+      printf '%s\n' "$old_lr" | sed 's/^/      /'
+    fi
+    [ -z "$old_wr$old_lr" ] && info "windowrule/layerrule 语法符合 0.55"
+  fi
 fi
 
 # 4) 命令清单一致性（manifest vs 已部署脚本）
