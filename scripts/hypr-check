@@ -18,9 +18,11 @@ status=0
 warn() { echo "  ! $*"; status=1; }
 info() { echo "  - $*"; }
 
-# 1) Lua 优先
+# 1) Lua 配置管理器（hyprshell 的 eval 键位依赖它）
 if [ -f "$lua" ]; then
-  warn "存在 $lua：Hyprland 0.55 会优先加载 Lua 配置，$conf 将被忽略"
+  info "使用 Lua 配置管理器（$lua），hyprland.conf 被忽略"
+elif [ -f "$conf" ]; then
+  info "使用经典 hyprland.conf（hyprshell 的热键自注册需要 Lua 配置管理器）"
 fi
 
 # 2) 运行时解析错误（会话外 hyprctl version 会失败，自动跳过）

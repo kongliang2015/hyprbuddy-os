@@ -1,0 +1,5 @@
+# uwsm 会话环境（由 install.sh 软链到 ~/.config/uwsm/env）
+# Hyprland 默认读 hyprland.conf（hyprlang）；显式指定 .lua 才会启用 Lua 配置管理器，
+# 而 hyprshell 的热键自注册依赖 Lua 的 eval dispatcher。
+# 想回退：删掉本文件（或这一行）后重新登录。
+export HYPRLAND_CONFIG="$HOME/.config/hypr/hyprland.lua"

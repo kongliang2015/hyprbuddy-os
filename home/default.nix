@@ -24,25 +24,31 @@ let
     inherit agentUsageCmd;
   };
 
-  # 按硬件/功能开关生成的 Hyprland 片段
+  # 按硬件/功能开关生成的 Hyprland 片段（Lua 版，由 hyprland.lua dofile 加载）
   extraHypr = ''
-    # 由发行版生成（home/default.nix），不要手改
+    -- 由发行版生成（home/default.nix），不要手改
   '' + concatStringsSep "
 " (
     optionals distro.hardware.backlight [
-      "bind = , XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
-      "bind = , XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
+      ''hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("swayosd-client --brightness raise"))''
+      ''hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("swayosd-client --brightness lower"))''
     ]
-    ++ (if distro.hypervisor == "vmware" then [ "monitor=,1920x1080@60,auto,1" "bind = $mainMod, RETURN, exec, env LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe kitty" ] else [ "bind = $mainMod, RETURN, exec, kitty" ])
-    ++ (if distro.hypervisor == "vmware" then [ ] else [ "bind = $mainMod, L, exec, hyprlock" ])
+    ++ (if distro.hypervisor == "vmware" then [
+      ''hl.monitor({ output = "", mode = "1920x1080@60", position = "auto", scale = 1 })''
+      ''hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("env LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe kitty"))''
+    ] else [ ''hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("kitty"))'' ])
+    ++ (if distro.hypervisor == "vmware" then [ ] else [ ''hl.bind("SUPER + L", hl.dsp.exec_cmd("hyprlock"))'' ])
     ++ optional agentEnabled
-      "bind = $mainMod SHIFT CTRL, A, exec, ${home}/.local/bin/agent-menu"
+      ''hl.bind("SUPER + SHIFT + CTRL + A", hl.dsp.exec_cmd("${home}/.local/bin/agent-menu"))''
   ) + "
 ";
 
   textFiles = {
+    "uwsm/env" = read ./uwsm/env;
+    "hypr/hyprland.lua" = read ./hypr/hyprland.lua;
+    # 保留 .conf 仅作参考/回退：Lua 存在时 Hyprland 会忽略它
     "hypr/hyprland.conf" = read ./hypr/hyprland.conf;
-    "hypr/extra.conf" = extraHypr;
+    "hypr/extra.lua" = extraHypr;
     "hypr/hypridle.conf" = if distro.hypervisor == "vmware" then "" else read ./hypr/hypridle.conf;
     "hypr/hyprlock.conf" = read ./hypr/hyprlock.conf;
     "waybar/config" = builtins.toJSON waybar.config;

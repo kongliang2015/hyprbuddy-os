@@ -133,3 +133,40 @@ GTK4 CSS 解析失败时会**丢弃整份用户样式表**（不是跳过那一�
   Esc / 点击外部都关不掉，所以两个弹窗都放了按钮：日历「关闭」、会话「取消」。
 - **音量控件**：swaync 的 `volume` widget 加载正常（日志有 `Loading widget: volume`），
   它走闭包内的 libpulse 直连 PipeWire-pulse，不依赖 `pactl`/`pamixer`（系统里都没装）。
+
+## 方案 A 实施：Hyprland 迁移到 Lua 配置管理器
+
+**为什么需要**：hyprshell 用 `eval` dispatcher 自注册热键，而 eval 只在 Lua 配置
+管理器下存在（经典 hyprlang 会报 `Could not bind key: eval is only supported with the
+lua config manager`）。
+
+**怎么切换**（关键点，实测得出）：光放一个 `hyprland.lua` **不够** —— Hyprland 默认
+仍走 hyprlang（`hyprctl systeminfo` 显示 `configProvider: hyprlang`）。必须用
+`HYPRLAND_CONFIG` 指向 .lua，才会加载 Lua 管理器：
+
+```bash
+export HYPRLAND_CONFIG="$HOME/.config/hypr/hyprland.lua"   # 见 home/uwsm/env
+```
+
+所以仓库里：`home/hypr/hyprland.lua`（完整移植）+ `home/hypr/extra.lua`（原
+extra.conf 的 Lua 版，由 hyprland.lua `dofile`）+ `home/uwsm/env`（设置环境变量）。
+当前会话仍是 hyprlang（环境变量只在会话启动时生效），**需要注销重登**才切过去。
+
+**移植时的 API 差异（踩过的）**
+| 经典写法 | Lua 写法 |
+|---|---|
+| `bezier = name, x1,y1,x2,y2` | `hl.curve("name", { type="bezier", points={{x1,y1},{x2,y2}} })`（位置参数，不是表） |
+| `bind = MOD, K, exec, CMD` | `hl.bind(MOD .. " + K", hl.dsp.exec_cmd("CMD"))` |
+| `bind = MOD, K, fullscreen` | `hl.dsp.exec_cmd("hyprctl dispatch fullscreen 0")`（Lua 侧暂无对应 dsp） |
+| `windowrule = match:class ^x$, float true` | `hl.window_rule({ name="x", match={class="^x$"}, float=true })` |
+| `source = extra.conf` | `pcall(dofile, "$HOME/.config/hypr/extra.lua")` |
+
+**验证方式（不用注销）**：用嵌套 Hyprland 跑一遍：
+```bash
+WLR_BACKENDS=wayland WLR_WL_OUTPUTS=1 Hyprland -c ~/.config/hypr/hyprland.lua
+```
+日志里 `[cfg] Config is lua, loading lua mgr` 表示加载成功，任何 `Lua error` 都会
+逐行指出位置——迁移就是靠这个循环修完的。
+
+**风险与回退**：注销重登后若 Lua 配置有问题，会表现为键位/外观缺失。回退只需删掉
+`~/.config/uwsm/env`（或注释掉 `HYPRLAND_CONFIG`）再登录，即回到 hyprland.conf。
