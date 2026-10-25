@@ -68,11 +68,38 @@ home/eww/eww.scss           变量（theme-next 重写）
    但当前测试下发送后没有出现窗口（`hyprctl clients/layers` 均无新表面），
    推测与 GTK4 窗口创建或 config 里的 `top_offset/scale` 有关，需进一步调试。
 
-**解锁路径（二选一）**
+## socat 方案排查结论（2026-10-25）
 
-- A：把 Hyprland 迁到 Lua 配置管理器，hyprshell 自动注册键位（改动大，影响全仓 conf）
-- B：继续排查 `socat '"OpenOverview"'` 无窗口的原因，搞通后手写绑定：
-  `bind = $mainMod, grave, exec, hyprshell socat '"OpenOverview"'`
+进一步调试后确认：**socat 不是可用的控制面，这条路走不通**。
 
-在此之前 `home/hyprshell/` 里的两份配置只是**备料**，没有接进 `home/default.nix`，
-也不会有 `exec-once`。
+1. **daemon 处于降级状态**：启动日志末尾是
+   ```
+   WARN Failed to configure wm: Failed to apply binds
+   ... eval is only supported with the lua config manager
+   Failed to register: 已到超时限制
+   ```
+   也就是说键位注册失败后它一直在重试并超时，overview/switch 的"打开"路径
+   从未被完整初始化——这解释了为什么下面即使命令被接收也没有窗口。
+
+2. **协议细节**（从报错反推，无文档）：
+   - `OpenOverview`：unit 变体，`hyprshell socat '"OpenOverview"'` 可被接收
+   - `OpenSwitch`：newtype 变体，需要结构体，至少 `{"reverse": bool}`
+   - `CloseSwitch`、`Reload`：unit 变体
+   - **传错字段会让 daemon 直接退出**（实测 `{"direction":"next"}` 触发
+     `missing field reverse` 后进程消失），对绑定脚本非常不友好
+
+3. **即便收到命令也没有窗口**：`hyprctl clients` / `layers` 都没有新表面，
+   说明渲染路径依赖前面失败的注册流程。
+
+4. 附带坑：包里的 wrapper 把进程名改成了 `.hyprshell-wrap`（和 mako 的
+   `.mako-wrapped` 同一套路），`pkill -x hyprshell` 杀不掉，得按包装名杀。
+
+**结论与选项**
+
+| 选项 | 说明 | 代价 |
+|---|---|---|
+| A 迁到 Hyprland **Lua 配置管理器** | hyprshell 才能用它要的 `eval` dispatcher 注册键位 | 需要重写 `hyprland.conf`（55 条 bind + 全部配置项），影响面大 |
+| B 放弃 hyprshell | 窗口切换继续用 `hypr-menu` / waybar 工作区模块；总览需求改用 Hyprland 自带方案 | 没有缩略图总览 |
+| C 等上游 | 关注 hyprshell 是否支持经典 conf 注册 | 不确定 |
+
+当前建议 **B**：`home/hyprshell/` 的配置保留为备料，等真的决定迁 Lua 时直接可用。
