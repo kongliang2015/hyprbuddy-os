@@ -71,7 +71,7 @@ hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("firefox"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("thunar"))
 hl.bind(mainMod .. " + SHIFT + T", hl.dsp.exec_cmd(home .. "/.local/bin/theme-next"))
 hl.bind(mainMod .. " + M", hl.dsp.exit())
-hl.bind(mainMod .. " + Q", hl.dsp.window.close())
+hl.bind(mainMod .. " + Q", hl.dsp.window.kill())   -- close() 在 0.55.4 静默无效，kill() 才关窗
 hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("hyprctl reload"))
 
 hl.bind(mainMod .. " + T", hl.dsp.window.float({ action = "toggle" }))
