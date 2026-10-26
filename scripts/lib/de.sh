@@ -63,14 +63,22 @@ de_screenshot_annotate() {
       grim -g "$(slurp)" - | swappy -f -
       ;;
     cosmic)
-      # COSMIC 走 portal 交互截图，落地到临时目录后再交 swappy
-      local tmp="${XDG_RUNTIME_DIR:-/tmp}"
-      local before after f
-      before=$(ls -t "$tmp"/cosmic-screenshot-*.png 2>/dev/null | head -1)
-      cosmic-screenshot --interactive=true --notify=false --save-dir "$tmp" >/dev/null 2>&1 || return 1
-      after=$(ls -t "$tmp"/cosmic-screenshot-*.png 2>/dev/null | head -1)
-      [ -n "$after" ] && [ "$after" != "$before" ] || return 1
-      swappy -f "$after"
+      # COSMIC 走 portal 交互截图。注意它保存名是 Screenshot_YYYY-MM-DD_HH-MM-SS.png，
+      # 不是 lowercase cosmic-screenshot-*，所以用独立临时目录 + 取最新文件来定位。
+      command -v cosmic-screenshot >/dev/null 2>&1 || return 1
+      local d f
+      d=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/shot.XXXXXX") || return 1
+      cosmic-screenshot --interactive=true --notify=false --save-dir "$d" >/dev/null 2>&1
+      f=$(find "$d" -maxdepth 1 -type f -name '*.png' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2-)
+      if [ -z "$f" ]; then
+        rm -rf "$d"
+        return 1
+      fi
+      if command -v swappy >/dev/null 2>&1; then
+        swappy -f "$f"
+      else
+        de_notify "截图已保存" "$f"
+      fi
       ;;
     *) return 1 ;;
   esac
@@ -141,5 +149,24 @@ de_theme_apply() {
       echo "de_theme_apply: 未知桌面" >&2
       return 1
       ;;
+  esac
+}
+
+# 整屏截图（区域截图见 de_screenshot_annotate）
+de_screenshot_output() {
+  case "$(de_name)" in
+    hyprland)
+      if command -v hyprshot >/dev/null 2>&1; then
+        hyprshot -m output >/dev/null 2>&1 || return 1
+      else
+        grim "$HOME/Pictures/Screenshot_$(date +%Y%m%d_%H%M%S).png" || return 1
+      fi
+      ;;
+    cosmic)
+      command -v cosmic-screenshot >/dev/null 2>&1 || return 1
+      mkdir -p "$HOME/Pictures" || return 1
+      cosmic-screenshot --interactive=false --notify=true --save-dir "$HOME/Pictures" >/dev/null 2>&1 || return 1
+      ;;
+    *) return 1 ;;
   esac
 }

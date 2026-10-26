@@ -31,7 +31,7 @@ menu_entries() {
   case "$1" in
     root)
       sub '  应用'            apps
-      act '  区域截图'        'hyprshot -m region'
+      act '  区域截图'        'screenshot-annotate'
       sub '  系统工具'         tools
       sub '  外观'           appearance
       sub '  会话'             session
@@ -54,8 +54,8 @@ menu_entries() {
       act '  开始/停止录屏'  '@HOME@/.local/bin/record-toggle'
       ;;
     screenshot)
-      act '  区域截图'        'hyprshot -m region'
-      act '  整屏截图'        'hyprshot -m output'
+      act '  区域截图'        'screenshot-annotate'
+      act '  整屏截图'        'screenshot-output'
       act '  截图标注'      '@HOME@/.local/bin/screenshot-annotate'
       ;;
     appearance)
