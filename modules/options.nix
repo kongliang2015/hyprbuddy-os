@@ -115,6 +115,21 @@ in
         default = [ ];
         description = "除 Hyprland 外额外保留的 X11 会话";
       };
+
+      # 同时安装的 Wayland 桌面会话。两个提供方实现同一组能力契约
+      # （见 docs/desktop-abstraction.md），可并存、可逐步退役。
+      sessions = mkOption {
+        type = types.listOf (types.enum [ "hyprland" "cosmic" ]);
+        default = [ "hyprland" ];
+        description = "启用的桌面提供方；SDDM 会为每一项生成登录会话";
+      };
+
+      # 默认登录的会话，必须在 sessions 里。
+      default = mkOption {
+        type = types.enum [ "hyprland" "cosmic" ];
+        default = "hyprland";
+        description = "SDDM 默认选中的桌面（hyprland 映射到 hyprland-uwsm 会话）";
+      };
       theme = mkOption { type = types.str; default = "elarun"; };
 
       # SDDM 主题包：null = 默认 catppuccin-sddm（catppuccin-mocha-mauve）；

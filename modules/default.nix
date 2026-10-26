@@ -5,6 +5,7 @@
     ./options.nix
     ./assertions.nix
     ./desktop/hyprland.nix
+    ./desktop/cosmic.nix
     ./base.nix
     ./boot.nix
     ./users.nix

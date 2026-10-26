@@ -14,6 +14,10 @@ in
       message = "distro.gpu.vendor = \"none\"（headless）时请同时设置 distro.desktop.enable = false。";
     }
     {
+      assertion = builtins.elem cfg.desktop.default cfg.desktop.sessions;
+      message = "distro.desktop.default 必须是 distro.desktop.sessions 中的一项。";
+    }
+    {
       assertion = cfg.agent.enable || !cfg.agent.localModels;
       message = "distro.agent.localModels 需要 distro.agent.enable = true。";
     }
