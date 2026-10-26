@@ -1,5 +1,8 @@
 # P2 主题 token 化方案
 
+> **修订（2026-10-26）**：COSMIC 已原生提供的桌面功能不再迁移，P2 范围收缩为
+> 「token 化 + 只给 COSMIC 导出调色板」。详见文末《十、迁移边界》，第四节与工作量以修订版为准。
+
 目标：把主题数据从 `scripts/theme-next` 的 shell 数组里抽出来，变成一份 **JSON token**，
 再按桌面拆成多个 exporter。这样：
 - 视觉输出零变化（有 golden 校验兜底）
@@ -229,3 +232,65 @@ for i in 0..7; do theme-next <i>; cp -r ~/.config/{waybar,swaync,eww,hyprshell,s
 
 - P3 的"键位统一"可以复用同一套 `lib/` + `exporters/` 结构（token 之外再加 `keybinds.json`）
 - P5 退役时删 `exporters/hyprland/` 即可，`themes/*/tokens.json` 与 cosmic exporter 保留
+## 十、迁移边界（修订）：COSMIC 原生功能不搬
+
+原则：**COSMIC 自己有的，不重复实现**。只迁「桌面不提供、属于我们资产」的部分。
+
+| # | 现有 writer | COSMIC 原生对应 | 结论 |
+|---|---|---|---|
+| 1 | waybar（顶栏） | cosmic-panel + applets | **不迁移**（COSMIC 面板自带） |
+| 2 | swaync（通知/控制中心） | cosmic-notifications | 不迁移 |
+| 3 | eww（日历/会话弹窗） | 面板 applet + 系统动作 | 不迁移 |
+| 4 | hyprshell（总览/切换） | WorkspaceOverview / WindowSwitcher | 不迁移 |
+| 5 | swayosd（OSD） | cosmic-osd | 不迁移 |
+| 6 | fuzzel（启动器） | cosmic-launcher（Super 单按） | 不迁移 |
+| 7 | hyprlock（锁屏） | COSMIC 内置锁屏 | 不迁移 |
+| 8 | hyprtoolkit（polkit 认证框） | 系统 polkit agent | 不迁移 |
+| 9 | Hyprland 边框（theme.lua） | 无对应，且 Hyprland 将退役 | 保留为 Hyprland 专属 |
+| 10 | 壁纸（awww） | cosmic-bg | **不迁移**，改用已有的 `de_wallpaper_set` |
+| 11 | **kitty 配色** | 无（终端是应用级） | **迁移（共享）** |
+| 12 | **fastfetch 配色** | 无（终端工具） | **迁移（共享）** |
+| 13 | **主题调色板本身** | cosmic-themes RON 需要我们自己生成 | **迁移（唯一必须项）** |
+
+### 修订后的结构
+
+```
+themes/<id>/tokens.json           8 套（唯一真相）
+lib/tokens.py                     读取 + 派生
+scripts/theme-next                调度器（切主题/切壁纸/调 exporter）
+scripts/exporters/
+  hyprland/*.sh                   1-9 项：只在 Hyprland 会话生效，P5 退役时整目录删除
+  shared/kitty.sh                 11-12 项：两桌面共用（终端资产，不是桌面功能）
+  shared/fastfetch.sh
+  cosmic/palette.sh               13 项：生成 cosmic-themes RON（neutral 插值 + accent 映射
+                                  + is_frosted + radius/gaps），并用 cosmic-config 激活
+```
+
+### 修订后的步骤
+
+| Step | 内容 | 变化 |
+|---|---|---|
+| 0 | golden 快照 | 不变 |
+| 1 | THEMES → tokens.json | 不变 |
+| 2 | theme-next 退化为调度器 | 不变 |
+| 3a | 桌面组件 writer（1–9）**只做 token 化，仍仅 Hyprland** | 不新增 COSMIC 实现 |
+| 3b | 共享 writer（kitty、fastfetch）改为读 token | 跨桌面生效 |
+| 4 | **唯一新增**：`cosmic/palette.sh`（约 100 行） | 原计划 13 个 cosmic exporter → 1 个 |
+| 5 | 自检 + 文档 | 不变 |
+
+### 修订后的工作量
+
+| 阶段 | 预估 |
+|---|---|
+| Step 0–2 | 2–3 h |
+| Step 3a/3b（token 化 11 个 writer，不加新功能） | 3–4 h |
+| Step 4（cosmic palette） | 1.5–2 h |
+| Step 5 | 1 h |
+| **合计** | **约 8 h**（原 10 h） |
+
+### 附带收益
+
+- COSMIC 侧只需要维护 **1 个 exporter**，不存在"两套 UI 同步升级"的负担
+- P5 退役 Hyprland 时，删 `exporters/hyprland/` 不影响 COSMIC 与终端资产
+- 不再需要为 COSMIC 重写 CSS 类（原方案里最不确定、最容易反复的部分被整体去掉）
+
