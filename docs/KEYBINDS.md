@@ -2,6 +2,8 @@
 
 主修饰键 `$mainMod = SUPER`（Windows 键）。
 
+> COSMIC 桌面的默认键位、与 Hyprland 的冲突项见文末「COSMIC 桌面（默认键位）」。
+
 ## 启动 / 窗口
 
 | 快捷键 | 动作 |
@@ -76,3 +78,101 @@
 ├── 会话        → 锁屏 / 勿扰开关 / 注销 / 重启 / 关机
 └── 快捷键参考  → 动态读取 hyprctl binds，浮动窗口显示全部快捷键及中文说明
 ```
+
+---
+
+## COSMIC 桌面（默认键位）
+
+COSMIC 的键位不写在仓库里，来源是 cosmic-comp 自带的默认表：
+
+```
+# 默认值（随包分发，只读）
+/nix/store/*-cosmic-comp-1.2.0/share/cosmic/com.system76.CosmicSettings.Shortcuts/v1/defaults
+# 用户覆盖（当前不存在 → 用默认）
+~/.config/cosmic/com.system76.CosmicSettings.Shortcuts/v1/
+```
+
+格式是 RON，形如 `(modifiers: [Super], key: "q"): Close`，可用声明式部署（见 P3）。
+
+### 系统
+
+| 快捷键 | 动作 |
+|---|---|
+| `Super`（单按） | 打开启动器 |
+| `Super+/` | 打开启动器 |
+| `Super+Esc` | 锁屏 |
+| `Super+Shift+Esc` | 注销 |
+| `Super+Alt+Esc` | 终止当前会话 |
+| `Super+Ctrl+Esc` | 调试信息 |
+| `Super+Space` | **输入法切换**（不是启动器） |
+| `Print` | 截图 |
+
+### 窗口管理
+
+| 快捷键 | 动作 |
+|---|---|
+| `Super+Q` / `Alt+F4` | 关闭窗口 |
+| `Super+M` | 最大化 |
+| `Super+F11` | 全屏 |
+| `Super+G` | 切换浮动 |
+| `Super+X` | 交换窗口 |
+| `Super+Y` | 切换平铺 |
+| `Super+S` | 切换堆叠 |
+| `Super+O` | 切换排列方向 |
+| `Super+R` / `Super+Shift+R` | 调整大小（外扩 / 内收） |
+| `Super+方向` 或 `Super+hjkl` | 焦点移动 |
+| `Super+Shift+方向` 或 `Super+Shift+hjkl` | 移动窗口 |
+| `Super+U` / `Super+I` | 焦点出 / 入（层级） |
+
+### 工作区
+
+| 快捷键 | 动作 |
+|---|---|
+| `Super+1…9` | 切换工作区 |
+| `Super+0` | 上一个工作区 |
+| `Super+Shift+1…9` | 窗口移到工作区 |
+| `Super+Shift+0` | 窗口移到上一个工作区 |
+| `Super+Ctrl+方向/hjkl` | 上 / 下一个工作区 |
+| `Super+Shift+Ctrl+方向/hjkl` | 窗口移到上 / 下一个工作区 |
+
+### 显示器
+
+| 快捷键 | 动作 |
+|---|---|
+| `Super+Alt+方向/hjkl` | 焦点切到另一显示器 |
+| `Super+Shift+Alt+方向/hjkl` | 窗口移到另一显示器 |
+
+### 应用与切换
+
+| 快捷键 | 动作 |
+|---|---|
+| `Super+W` | 工作区总览（WorkspaceOverview） |
+| `Super+A` | 应用库 |
+| `Super+T` | 终端 cosmic-term |
+| `Super+F` | 文件管理器 |
+| `Super+B` | 浏览器 |
+| `Super+Tab` / `Alt+Tab` | 窗口切换 |
+| `Super+Shift+Tab` / `Shift+Alt+Tab` | 反向切换 |
+| `Super+=` / `Super+-`、`Super+.` / `Super+,` | 缩放放大 / 缩小 |
+| XF86 多媒体键 | 音量 / 亮度 / 播放 / 电源 / 触摸板 |
+
+### 与 Hyprland 的差异（切桌面注意）
+
+| 快捷键 | Hyprland（本仓库） | COSMIC 默认 | 处理建议 |
+|---|---|---|---|
+| `Super+T` | 切换浮动 | **打开终端** | 冲突：COSMIC 下浮动改用 `Super+G` |
+| `Super+F` | 全屏 | **打开文件管理器** | 冲突：COSMIC 下全屏改用 `Super+F11` |
+| `Super+Space` | 系统菜单 | **输入法切换** | 不要覆盖，否则中文输入法无法切换 |
+| `Super+S` | 特殊工作区 | 切换堆叠 | 语义不同 |
+| `Super+Q` | 关闭窗口 | 关闭窗口 | 一致 |
+| `Super+1…4` / `Super+Shift+1…4` | 工作区 / 移窗 | 相同 | 一致 |
+| `Super+grave` | hyprshell 总览 | 无 | COSMIC 用 `Super+W` |
+| `Super+N` | swaync 通知中心 | 无 | 需自建（P3） |
+| `Super+C` | eww 日历 | 无 | 需自建（P3） |
+| `Super+V` | 剪贴板历史 | 无内置 | 需自建（P3） |
+
+### 结论
+
+1. COSMIC 默认偏「应用启动器」：`T/B/F/A` 全是开应用，与我们的窗口操作冲突最大的是 `Super+T`、`Super+F`。
+2. `Super+Space` 已被输入法占用，hypr-menu 在 COSMIC 下应换键（如 `Super+Shift+Space`）。
+3. 键位可用 RON 声明式部署，P3 计划用同一份定义生成 Hyprland 绑定与 COSMIC 快捷键，避免两套肌肉记忆。
