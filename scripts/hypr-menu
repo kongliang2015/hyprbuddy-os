@@ -98,7 +98,7 @@ menu_entries() {
     session)
       act '  锁屏'            'hyprlock'
       act "  通知勿扰        [$(dnd_state)]" '@HOME@/.local/bin/notif-dnd'
-      act '  注销'             'hyprctl dispatch exit'
+      act '  注销'             "hyprctl dispatch 'hl.dsp.exit()'"
       act '  重启'         '__reboot__'
       act '  关机'           '__poweroff__'
       ;;

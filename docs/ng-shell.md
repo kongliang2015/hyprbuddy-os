@@ -241,3 +241,28 @@ binds: 64（含 Super+grave overview、Alt+Tab switch）
 overview 窗口: 568x378（1 个工作区，尺寸由内容驱动）
 configerrors: 空
 ```
+## 踩坑：Lua 管理器下 `hyprctl dispatch` 也变了
+
+`hyprctl keyword` 不可用（见上文），**`hyprctl dispatch` 同样不能再用经典写法**：
+
+```
+$ hyprctl dispatch exec "notify-send x"
+error: [string "return hl.dispatch(exec notify-send ..."]:1: ')' expected near 'notify'
+ → Note: dispatch in lua is a shorthand for hl.dispatch(...), your syntax might need to be updated.
+```
+
+也就是说 `hyprctl dispatch <经典 dispatcher> <参数>` 会被当成 Lua 表达式解析，**静默失败**。
+影响过的位置（现已全部改为 Lua 原生调用）：
+
+| 位置 | 修复前 | 修复后 |
+|---|---|---|
+| hypr-menu 注销 | `hyprctl dispatch exit` | `hyprctl dispatch 'hl.dsp.exit()'` |
+| Super+F 全屏 | `exec_cmd("hyprctl dispatch fullscreen 0")` | `hl.dsp.window.fullscreen()` |
+| Super+Shift+方向 移动窗口 | `exec_cmd("hyprctl dispatch movewindow l")` | `hl.dsp.window.move({ direction = "l" })` |
+| Super+Alt+方向 调整大小 | `exec_cmd("hyprctl dispatch resizeactive 30 0")` | `hl.dsp.window.resize({ x = 30, y = 0, relative = true })` |
+
+**注意 resize 语义**：`{ x, y }` 是**绝对尺寸**，要增量必须加 `relative = true`。
+（实测 800x600 + `{x=60,y=40,relative=true}` → 860x640；不加则直接变成 60x40。）
+
+在脚本里调用时，括号需要引号保护，例如 `sh -c "hyprctl dispatch 'hl.dsp.exit()'"`。
+
