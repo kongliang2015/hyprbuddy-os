@@ -64,11 +64,15 @@ let
     "swayosd/style.css" = read ./swayosd/style.css;
     "Thunar/uca.xml" = read ./thunar/uca.xml;
     "fastfetch/config.jsonc" = read ./fastfetch/config.jsonc;
+    # 能力层库（scripts/lib/de.sh）：脚本被逐个装进 bin/，无法靠相对路径找兄弟文件，
+    # 所以单独落到 ~/.local/share/hyprland-nixos/lib/ 供脚本 source
+    "share/hyprland-nixos/lib/de.sh" = read ../scripts/lib/de.sh;
   };
 
   # agent 层脚本随 distro.agent.enable 开关安装（agent-usage 由 lib/ 生成，下面单独挂到 bin/）
   scriptNames = let
-    all = builtins.attrNames (builtins.readDir ../scripts);
+    entries = builtins.readDir ../scripts;
+    all = builtins.filter (n: entries.${n} == "regular") (builtins.attrNames entries);
     agentOnly = [ "agent-menu" "agent-apply" "agent-theme-sync" ];
   in
     if agentEnabled then all

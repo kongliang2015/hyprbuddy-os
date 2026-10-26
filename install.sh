@@ -91,11 +91,14 @@ echo "==> 壁纸"
 mkdir -p "$HOME/Pictures/wallpapers"
 cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
 
-echo "==> Hyprland 配置自检"
-if [ -x "$HOME/.local/bin/hypr-check" ]; then
+echo "==> 桌面自检"
+# desktop-check 按当前桌面分派：Hyprland → hypr-check，COSMIC → 基础项
+if [ -x "$HOME/.local/bin/desktop-check" ]; then
+  "$HOME/.local/bin/desktop-check" || true
+elif [ -x "$HOME/.local/bin/hypr-check" ]; then
   "$HOME/.local/bin/hypr-check" || true
 else
-  echo "  - 跳过（hypr-check 未安装）"
+  echo "  - 跳过（desktop-check / hypr-check 未安装）"
 fi
 
 echo

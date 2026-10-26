@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# @command: desktop-check
+# @summary: 按当前桌面跑自检（Hyprland → hypr-check；COSMIC → 基础检查）
+# @category: check
+# @usage: desktop-check [hyprland|cosmic]
+# @effect: 只读检查，返回 1 表示有告警
+# @doc: desktop-abstraction.md
+# 桌面自检入口：Hyprland 沿用 hypr-check（8 组检查），COSMIC 跑本文件内的基础项。
+set -uo pipefail
+self=$(dirname "$(readlink -f "$0")")
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
+[ -r "$DE_LIB" ] || DE_LIB="$self/lib/de.sh"
+. "$DE_LIB"
+
+warn=0
+info() { printf '  - %s\n' "$1"; }
+bad()  { printf '  ! %s\n' "$1"; warn=$((warn+1)); }
+
+de="${1:-$(de_name)}"
+case "$de" in
+  hyprland)
+    if [ -x "$self/hypr-check" ]; then exec "$self/hypr-check"; fi
+    if command -v hypr-check >/dev/null 2>&1; then exec hypr-check; fi
+    bad "找不到 hypr-check"
+    ;;
+  cosmic)
+    info "桌面: COSMIC"
+
+    # 1) 核心进程
+    for p in cosmic-session cosmic-panel cosmic-notifications cosmic-bg cosmic-settings-daemon; do
+      if pgrep -f "$p" >/dev/null 2>&1; then
+        info "进程 $p 在运行"
+      else
+        bad "进程 $p 未运行"
+      fi
+    done
+
+    # 2) portal（截图/屏幕共享依赖 cosmic 门户；用 DBus 注册判断，不看二进制路径）
+    if busctl --user list 2>/dev/null | grep -q 'impl.portal.desktop.cosmic'; then
+      info "cosmic portal 已注册（impl.portal.desktop.cosmic）"
+    else
+      bad "cosmic portal 未注册（截图/共享会失败）"
+    fi
+
+# 3) 壁纸配置
+    cfg="$HOME/.config/cosmic/com.system76.CosmicBackground/v1/all"
+    if [ -f "$cfg" ]; then
+      info "壁纸配置存在: $(grep -oP 'Path\("[^"]+"' "$cfg" 2>/dev/null | head -1)"
+    else
+      bad "缺少 COSMIC 壁纸配置（de_wallpaper_set 还没跑过）"
+    fi
+
+    # 4) 中文字体解析
+    cjk=$(fc-match ":lang=zh-cn" -f "%{family}" 2>/dev/null)
+    case "$cjk" in
+      *"文泉驿"*) info "中文解析: $cjk" ;;
+      *) bad "中文解析为 $cjk（期望文泉驿）" ;;
+    esac
+
+    # 5) 常用命令
+    for c in cosmic-screenshot cosmic-randr cosmic-term; do
+      command -v "$c" >/dev/null 2>&1 && info "命令 $c 可用" || bad "命令 $c 缺失"
+    done
+    ;;
+  *)
+    bad "未识别的桌面: $de（可用: hyprland / cosmic）"
+    ;;
+esac
+
+if [ "$warn" -gt 0 ]; then
+  printf "  自检完成：%s 项告警\n" "$warn"
+  exit 1
+fi
+printf "  自检通过\n"

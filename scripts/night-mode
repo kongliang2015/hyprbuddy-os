@@ -5,6 +5,14 @@
 # @usage: night-mode
 # @effect: 切换 hyprsunset 色温
 # 夜间模式：在 4000K 暖色与正常色温之间切换（依赖 hyprsunset 守护进程）
+# COSMIC 侧暂无内置色温接口（无 hyprsunset / gammastep），先明确拒绝而不是静默失败
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
+[ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
+. "$DE_LIB"
+if [ "$(de_name)" != "hyprland" ]; then
+  de_notify "夜间模式" "当前桌面（$(de_name)）暂不支持色温切换"
+  exit 1
+fi
 state="${XDG_RUNTIME_DIR:-/tmp}/hyprsunset.on"
 if [ -f "$state" ]; then
   hyprctl hyprsunset identity >/dev/null 2>&1

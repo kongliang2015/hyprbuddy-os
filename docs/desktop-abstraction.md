@@ -104,3 +104,60 @@ Hyprland 退役 = 删 `exporters/hyprland/`，主题资产不受影响。
   distro.desktop.default = "hyprland";   # 先用 Hyprland 登录，验证 COSMIC 后再改
   ```
   然后 `sudo nixos-rebuild switch`，SDDM 会出现 COSMIC 会话。
+
+## P1 落地（2026-10-26）
+
+### 能力层文件位置
+
+脚本被逐个装成独立的 store 文件（`bin-<name>`），无法靠相对路径找兄弟文件，所以
+能力层库单独部署：
+
+```
+./scripts/lib/de.sh                     源码
+~/.local/share/hyprland-nixos/lib/de.sh 部署位置（home/default.nix 里的 textFiles）
+```
+
+脚本统一这样引入（`@HOME@` 在构建期替换）：
+
+```bash
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
+[ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"   # 仓库内直接跑时的回退
+. "$DE_LIB"
+```
+
+### 已实现的能力
+
+| 能力 | Hyprland | COSMIC | 说明 |
+|---|---|---|---|
+| `de_name` | `XDG_CURRENT_DESKTOP` 含 Hyprland / hyprctl 可用 | 含 COSMIC / cosmic-session 进程 | |
+| `de_wallpaper_set` | awww（兼容 swww） | 写 `com.system76.CosmicBackground/v1/all` RON，cosmic-bg 热加载 | 两边都实测通过 |
+| `de_screenshot_annotate` | grim + slurp → swappy | cosmic-screenshot（portal）→ swappy | COSMIC 分支未互动实测 |
+| `de_lock` | hyprlock | `loginctl lock-session` | |
+| `de_notify` | notify-send | notify-send | 同一套 DBus |
+| `de_monitors` | hyprctl monitors -j | cosmic-randr list | |
+
+### 已改造的脚本
+
+- `wallpaper-next`：改调 `de_wallpaper_set`（COSMIC 下实测切换成功）
+- `screenshot-annotate`：改调 `de_screenshot_annotate`
+- `night-mode`：非 Hyprland 时明确提示"暂不支持"并退出 1（不再静默失败）
+
+### 自检入口
+
+新增 `desktop-check`，按当前桌面分派：
+
+```
+desktop-check            # 自动探测
+desktop-check cosmic     # 显式指定
+  → Hyprland: exec hypr-check（原 8 组检查不变）
+  → COSMIC  : 进程 / portal / 壁纸配置 / 中文字体 / 常用命令 共 12 项
+```
+
+`install.sh` 末尾改为优先跑 `desktop-check`。
+
+### P1 未完成（留到 P3）
+
+- `de_osd`：COSMIC 的 cosmic-osd 需要自己的协议调用，暂未实现（swayosd 仅 Hyprland）
+- `de_keybinds_help`：COSMIC 无等价物，需自建文本速查
+- `de_theme_apply`：依赖 P2 的 token/exporters 拆分
+- 夜间模式：COSMIC 需要引入 gammastep 或等 cosmic 上游支持
