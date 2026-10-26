@@ -144,7 +144,7 @@ Rectangle {
                     width: parent.width
                     isPassword: true
                     KeyNavigation.tab: loginButton
-                    onAccepted: sddm.login(user.text, password.text, sessionCombo.index)
+                    onAccepted: sddm.login(user.text, password.text, sessionPicker.currentIndex)
                 }
 
                 Text {
@@ -164,7 +164,7 @@ Rectangle {
                     text: textConstants.login
                     textColor: root.fg
                     borderColor: root.accent
-                    onClicked: sddm.login(user.text, password.text, sessionCombo.index)
+                    onClicked: sddm.login(user.text, password.text, sessionPicker.currentIndex)
                     KeyNavigation.tab: user
                 }
             }
@@ -176,20 +176,112 @@ Rectangle {
         function onLoginFailed() { errorMsg.visible = true; password.text = ""; password.forceActiveFocus() }
     }
 
-    // 底部：会话选择（左） + 电源（右）。SddmComponents 的 ComboBox 显示 sessionModel 的 name 角色
-    ComboBox {
-        id: sessionCombo
+    // 会话选择（左下，向上弹出）。
+    // 不用 SddmComponents.ComboBox：它写死 anchors.top: container.bottom，只能向下展开，
+    // 放在屏幕底部会把菜单甩到屏幕外；且默认尺寸 80x30，文字会被截断。
+    Item {
+        id: sessionPicker
+        width: 260
+        height: 36
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.margins: 20
-        model: sessionModel
-        index: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
-        font.pixelSize: 13
-        textColor: root.fgDim
-        color: "#440D0F10"
-        borderColor: root.border
-        focusColor: root.accent
-        menuColor: "#EE0D0F10"
+
+        // SDDM 的 sessionModel 是 QAbstractListModel；DisplayRole 取不到时退回 name 角色
+        function sessionName(i) {
+            var idx = sessionModel.index(i, 0)
+            var n = sessionModel.data(idx, Qt.DisplayRole)
+            if (!n)
+                n = sessionModel.data(idx, 0)
+            return n ? n : ("会话 " + (i + 1))
+        }
+
+        property int currentIndex: sessionModel.lastIndex >= 0 ? sessionModel.lastIndex : 0
+
+        Rectangle {
+            id: sessionBtn
+            anchors.fill: parent
+            radius: 8
+            color: sessionMenu.visible ? "#EE0D0F10" : "#440D0F10"
+            border.width: 1
+            border.color: sessionMenu.visible ? root.accent : root.border
+
+            Text {
+                anchors.fill: parent
+                anchors.leftMargin: 12
+                anchors.rightMargin: 30
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+                color: root.fg
+                font.pixelSize: 14
+                text: sessionPicker.sessionName(sessionPicker.currentIndex)
+            }
+            Text {
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                text: "\u25b2"          // 上箭头：提示菜单向上展开
+                color: root.fgDim
+                font.pixelSize: 11
+            }
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: sessionMenu.visible = !sessionMenu.visible
+            }
+        }
+
+        Rectangle {
+            id: sessionMenu
+            visible: false
+            width: sessionPicker.width
+            height: Math.min(sessionList.contentHeight + 8, 220)
+            anchors.bottom: sessionBtn.top
+            anchors.bottomMargin: 6
+            radius: 8
+            color: "#EE0D0F10"
+            border.width: 1
+            border.color: root.border
+            clip: true
+
+            ListView {
+                id: sessionList
+                anchors.fill: parent
+                anchors.margins: 4
+                model: sessionModel
+                currentIndex: sessionPicker.currentIndex
+                boundsBehavior: Flickable.StopAtBounds
+
+                delegate: Rectangle {
+                    width: sessionList.width
+                    height: 32
+                    radius: 6
+                    color: index === sessionPicker.currentIndex
+                           ? root.accent
+                           : (rowMouse.containsMouse ? "#33FFFFFF" : "transparent")
+
+                    Text {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                        color: index === sessionPicker.currentIndex ? "#0D0F10" : root.fg
+                        font.pixelSize: 14
+                        text: model.name
+                    }
+                    MouseArea {
+                        id: rowMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            sessionPicker.currentIndex = index
+                            sessionMenu.visible = false
+                        }
+                    }
+                }
+            }
+        }
     }
     Row {
         anchors.right: parent.right
