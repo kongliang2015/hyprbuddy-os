@@ -58,31 +58,52 @@ Hyprland 退役 = 删 `exporters/hyprland/`，主题资产不受影响。
 | P0 | 并存骨架：`sessions`/`default` 选项、`modules/desktop/cosmic.nix`、portal 分会话 | **已完成（cosmic 默认关）** |
 | P1 | 能力层 `scripts/lib/de.sh`，21 处 hyprctl 收敛到 8 个能力；`hypr-check` → `desktop-check` | **已完成（2026-10-26，见文末）** |
 | P2 | `themes/*/tokens.json` + exporters 拆分，新增 cosmic exporter | **已完成（2026-10-27，见文末）** |
-| P3 | COSMIC 功能对齐（配置部署、壁纸/截图/锁屏/OSD/夜间/键位） | 待做 |
+| P3 | 重定义为「实测 + 键位迁移 + de_osd 接线」（原"功能对齐"口径作废，见文末 P3 方案） | 待做（方案已定） |
 | P4 | `default = "cosmic"`，Hyprland 降为可选 | 部分达成：vmware host 已 default = cosmic（2026-10-27） |
 | P5 | 删 `hyprland.nix` + `exporters/hyprland/` + 相关包，打 tag 留回退 | 待做 |
 
-## 退役判据（parity checklist）
+## 退役判据（parity checklist，2026-10-27 重定义）
 
-进 P4/P5 前，下列各条必须在 COSMIC 下实测通过：
+进 P4/P5 前，按 A/B/C/D 四类逐项确认（原 15 条扁平清单作废——
+其中两条"硬缺口"经实测/内省证伪，见文末 P3 方案）。
 
-1. 通知（发送 / 历史 / 勿扰）
-2. 8 套主题生效
-3. 壁纸切换 + 主题绑定
-4. 截图（区域/全屏）+ 标注
-5. 锁屏 / 空闲 / 挂起
-6. 中文输入法（text-input-v3）
-7. 多显示器 + 缩放
-8. 常用 15 个键位
-9. 启动器（应用/计算/网页）
-10. 音量/亮度 OSD
-11. 剪贴板历史（COSMIC 无内置，需自建）
-12. 夜间模式（无内置，需 gammastep）
-13. 窗口总览（hyprshell 依赖 Hyprland IPC，**大概率放弃**）
-14. agent 层（coredump 通知 / agent-menu / 诊断）
-15. `desktop-check --de cosmic` 通过
+### A. COSMIC 原生（零开发，实测确认即可）
 
-第 11、12、13 是硬缺口，其中 13 需明确接受"总览功能消失"。
+| # | 能力 | COSMIC 实现 | 状态 |
+|---|---|---|---|
+| 1 | 通知（发送/历史/勿扰） | cosmic-notifications | 待实测 |
+| 2 | 8 套主题生效 | cosmic exporter（P2 已落地） | ✅ 已实测 |
+| 3 | 壁纸切换 + 主题绑定 | cosmic-bg（de_wallpaper_set） | ✅ 已实测 |
+| 4 | 锁屏 / 空闲 / 挂起 | 内置锁屏 + com.system76.CosmicIdle | 待实测 |
+| 5 | 启动器（应用/计算/网页） | cosmic-launcher | 待实测 |
+| 6 | 工作区总览（侧边栏） | cosmic-workspaces | ✅ 已实测（vmwgfx 修复后） |
+| 7 | 多显示器 + 缩放 | 设置 / cosmic-randr | 待实测 |
+| 8 | agent 层 | 桌面无关，直接可用 | ✅ |
+
+### B. 通用 Wayland 工具（装包即可，零开发）
+
+| # | 能力 | 工具 | 依据 | 状态 |
+|---|---|---|---|---|
+| 9 | 剪贴板历史 | cliphist + wl-clipboard | 协议与合成器无关（原判"硬缺口"不成立） | 装包 + 实测 |
+| 10 | 截图标注 | swappy（已在栈） | 通用 | 已接入 |
+| 11 | 夜间模式 | gammastep | wlr-gamma-control，smithay 支持（原判"硬缺口"降级为实测项） | 装包 + 实测 |
+| 12 | 中文输入法 | fcitx5 | text-input-v3，smithay 支持 | 装包 + 实测 |
+
+### C. 少量开发（接口已确认）
+
+| # | 能力 | 方案 | 状态 |
+|---|---|---|---|
+| 13 | 音量/亮度 OSD 触发（de_osd） | busctl 调 settings-daemon 现成方法（VolumeUp/Down、Increase/DecreaseDisplayBrightness） | 待开发（约半天） |
+| 14 | 常用 15 个键位迁移 | com.system76.CosmicSettings.Shortcuts/v1/defaults 支持自定义命令绑定，写 RON 声明式部署进 home/ | 待开发（约半天） |
+| 15 | desktop-check --de cosmic | 已有 12 项，随 A/B/C 各项实测补充 | 随测随补 |
+
+### D. 明确放弃（接受降级）
+
+| 能力 | 原因 | 替代 |
+|---|---|---|
+| 窗口总览 / Alt-Tab 缩略图 | hyprshell 依赖 Hyprland IPC | COSMIC 侧边栏（部分覆盖） |
+| Waybar 形态 | COSMIC 用面板 applet 体系 | 能力等价、形态不同 |
+| 玻璃拟态 CSS 级样式 | cosmic-themes 无 CSS/层模糊概念 | 接受降级 |
 
 ## 风险
 
@@ -221,3 +242,36 @@ kitty 色板 v0 只有 15 项（K15 缺失），缺省位回落终端前景色�
   少 `,`），整份主题反序列化失败，libcosmic **静默回落默认主题**（日志
   `RonSpanned(ExpectedComma)`），表现为"切主题颜色不变"。RON 要求：嵌套字段闭合
   括号后必须有逗号；仅文件末尾最后一个字段可省略。修复后 COSMIC 实测配色跟随正常
+
+
+## P3 方案（2026-10-27 重定义）
+
+原 P3「配置部署、壁纸/截图/锁屏/OSD/夜间/键位」的"功能对齐"口径作废。
+逐项核对后，真正需要开发的只有两项（OSD 触发接线、键位 RON 迁移），
+其余为 COSMIC 原生已有或通用 Wayland 工具直接可用。
+
+### 重定义依据（实测/内省证据）
+
+- **音量/亮度 OSD 触发**：cosmic-settings-daemon 已有现成 DBus 方法
+  （busctl --user introspect 实测：VolumeUp/Down、Increase/DecreaseDisplayBrightness、
+  KeyboardBrightness 等）——原判"需自研协议调用"不成立
+- **剪贴板历史**：cliphist + wl-clipboard 走标准 Wayland 剪贴板协议，与合成器
+  无关，直接可用——原判"COSMIC 无内置、需自建"不成立
+- **夜间模式**：COSMIC 1.2 无内置（settings-daemon 内省无 CCT/NightMode 方法），
+  但 gammastep 走 wlr-gamma-control（smithay 支持）可平替——降级为实测项
+- **自定义键位**：com.system76.CosmicSettings.Shortcuts/v1/defaults 支持
+  自定义命令绑定（社区键位表有先例），可声明式部署进 home/
+- **主题传播链路**：cosmic-settings-daemon WatchConfig → 各 libcosmic 应用经
+  cosmic-config 订阅热更新（P2 的 RON 写入路径已实测打通，含尾逗号坑）
+
+### 工作项
+
+1. 键位迁移：整理 15 个常用键位 → Shortcuts RON 声明式部署进 home/
+2. 实测三件套：fcitx5 / gammastep / cliphist 装包实测（cosmic.nix 补包）
+3. de_osd：busctl 接线（音量 + 亮度）
+4. desktop-check --de cosmic 检查项随 A/B/C 各项实测补充
+
+### 明确放弃
+
+窗口总览/Alt-Tab 缩略图（hyprshell 依赖 Hyprland IPC）、Waybar 形态、
+玻璃拟态 CSS 级样式。接受降级，P4/P5 判据不含这些项。
