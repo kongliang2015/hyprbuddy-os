@@ -5,7 +5,7 @@ flake 化的桌面配置：SDDM → 桌面会话（Hyprland / COSMIC 可并存�
 收敛（壁纸 / 截图 / 锁屏 / 通知 / 显示器…），脚本不直接依赖具体桌面。
 
 - Hyprland 栈：uwsm 托管，Lua 配置管理器（hyprland.lua），Waybar / fuzzel /
-  swaync / eww / hyprshell / SwayOSD，8 套主题热切换
+  swaync / eww / hyprshell / SwayOSD，9 套主题热切换（新增 Deepin Blue）
 - COSMIC 栈：System76 COSMIC 1.2（comp / panel / settings 自带全套外壳），
   由 \`distro.desktop.sessions\` 控制安装，与 Hyprland 共用 agent 层与技能层
 - 当前分支 distro/v1-dev：桌面提供方抽象 P0/P1 已完成（见

@@ -206,6 +206,50 @@ cosmic_theme_apply() {
       && [ -s "$base/palette.tmp" ] && mv -f "$base/palette.tmp" "$base/palette" || rm -f "$base/palette.tmp"
   fi
 
+# ── 形状与间距（可选：tokens.json 里给了才写，其余主题保持官方默认）──
+  local tok="$THEMES_DIR/$T_SLUG/tokens.json"
+  if [ -r "$tok" ] && jq -e '.corner_radii' "$tok" >/dev/null 2>&1; then
+    {
+      echo "("
+      for k in 0 xs s m l xl; do
+        v=$(jq -r --arg k "$k" '.corner_radii[$k] // empty' "$tok")
+        [ -n "$v" ] && printf '    radius_%s: (%s, %s, %s, %s),\n' "$k" "$v" "$v" "$v" "$v"
+      done
+      echo ")"
+    } | atomic "$base/corner_radii"
+  fi
+  if [ -r "$tok" ] && jq -e '.spacing' "$tok" >/dev/null 2>&1; then
+    {
+      echo "("
+      for k in none xxxs xxs xs s m l xl xxl xxxl; do
+        v=$(jq -r --arg k "$k" '.spacing[$k] // empty' "$tok")
+        [ -n "$v" ] && printf '    space_%s: %s,\n' "$k" "$v"
+      done
+      echo ")"
+    } | atomic "$base/spacing"
+  else
+    # 主题没定义形状时回到 COSMIC 官方默认，避免上一套主题的圆角/间距残留
+    {
+      echo "("
+      printf '    radius_0: (0, 0, 0, 0),\n'
+      printf '    radius_xs: (4, 4, 4, 4),\n'
+      printf '    radius_s: (8, 8, 8, 8),\n'
+      printf '    radius_m: (16, 16, 16, 16),\n'
+      printf '    radius_l: (32, 32, 32, 32),\n'
+      printf '    radius_xl: (160, 160, 160, 160),\n'
+      echo ")"
+    } | atomic "$base/corner_radii"
+    {
+      echo "("
+      local i=0
+      for v in 0 4 8 12 16 24 32 48 64 128; do
+        printf '    space_%s: %s,\n' "$(echo none xxxs xxs xs s m l xl xxl xxxl | cut -d' ' -f$((i+1)))" "$v"
+        i=$((i + 1))
+      done
+      echo ")"
+    } | atomic "$base/spacing"
+  fi
+
   # 明暗模式同步（浅色主题会翻转全局模式）
   local mode_file="$HOME/.config/cosmic/com.system76.CosmicTheme.Mode/v1/is_dark"
   if [ -f "$mode_file" ] && [ "${COSMIC_THEME_DIR_OVERRIDE:-}" = "" ]; then

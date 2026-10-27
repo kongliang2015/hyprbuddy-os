@@ -131,3 +131,16 @@ Panel: entries = [ "Dock" ]   # 只留一条任务栏，最接近 Deepin 默认
 
 建议把它作为第 9 套主题（`deepin-blue`）与现有 8 套并列，
 不替换默认主题；先用 `theme-next` 切过去看实际效果，再决定是否设为默认。
+## 八、实现状态（2026-10-27）
+
+| 项 | 状态 |
+|---|---|
+| `themes/deepin-blue/tokens.json` | ✅ 已加入（第 9 套，order=8） |
+| cosmic exporter 形状支持 | ✅ 读 `corner_radii` / `spacing`，缺省时回落官方默认 |
+| 深蓝配色 | ✅ 实测 `accent=#0081FF`、`background=#1C1E26` |
+| 12/16 圆角 | ✅ 实测 `radius_s/m=12, l=16, xl=32` |
+| Dock-only 布局 | ⏳ 待做（`uxctl layout save deepin-dock`） |
+| 整体观感验证 | ⏳ 待用户在 COSMIC 会话实际切换体验 |
+
+切换：`theme-next 8`（Deepin Blue）；回退：`theme-next 0`（Kanagawa）。
+
