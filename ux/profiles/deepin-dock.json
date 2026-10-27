@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "panels": {
+    "entries": [
+      "Dock"
+    ]
+  },
+  "dock": {
+    "anchor": "Bottom",
+    "expand_to_edges": false,
+    "margin": 8,
+    "padding": 6,
+    "border_radius": 16,
+    "size": "L",
+    "opacity": 0.96,
+    "autohide": null,
+    "plugins_center": [
+      "com.system76.CosmicPanelLauncherButton",
+      "com.system76.CosmicAppList",
+      "com.system76.CosmicPanelWorkspacesButton",
+      "com.system76.CosmicAppletMinimize"
+    ],
+    "plugins_wings": {
+      "left": [],
+      "right": [
+        "com.system76.CosmicAppletStatusArea",
+        "com.system76.CosmicAppletNotifications",
+        "com.system76.CosmicAppletPower"
+      ]
+    }
+  }
+}

@@ -144,3 +144,27 @@ Panel: entries = [ "Dock" ]   # 只留一条任务栏，最接近 Deepin 默认
 
 切换：`theme-next 8`（Deepin Blue）；回退：`theme-next 0`（Kanagawa）。
 
+
+## 九、Dock-only 布局（已实现）
+
+配置文件：`ux/profiles/deepin-dock.json`
+
+```json
+{ "panels": { "entries": ["Dock"] },
+  "dock": { "anchor": "Bottom", "expand_to_edges": false, "margin": 8,
+            "padding": 6, "border_radius": 16, "size": "L",
+            "opacity": 0.96, "autohide": null,
+            "plugins_center": ["LauncherButton", "AppList", "WorkspacesButton", "Minimize"],
+            "plugins_wings": { "left": [], "right": ["StatusArea", "Notifications", "Power"] } } }
+```
+
+```bash
+uxctl apply ux/profiles/deepin-dock.json --yes --reason "deepin-dock 布局"
+uxctl snapshot restore <apply 输出的快照 id>     # 回滚
+```
+
+uxctl 为此新增了 `panels.entries` 写入支持（值必须是 `Panel` / `Dock` 的子集）。
+
+**注意**：`entries` 只留 `Dock` 意味着顶栏消失，时钟与部分托盘项随之不见；
+已把 `StatusArea` / `Notifications` / `Power` 移到 Dock 右翼作为补偿。
+若发现托盘项不显示，把 `entries` 改回 `["Panel", "Dock"]` 即可恢复。

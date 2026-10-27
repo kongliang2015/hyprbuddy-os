@@ -68,6 +68,8 @@ SCHEMA = {
     ("dock", "plugins_wings"):      ("wings", None),
     ("comp", "autotile"):           ("bool", None),
     ("comp", "autotile_behavior"):  ("enum", ["Global", "PerWorkspace"]),
+    # 面板条目列表：决定哪些面板生效（隐藏顶栏 = 只留 "Dock"）
+    ("panels", "entries"):          ("panels", None),
 }
 
 
@@ -183,6 +185,16 @@ def render(ns: str, key: str, value) -> tuple[str | None, str | None]:
         if not (lo <= value <= hi):
             return None, f"{ns}.{key} 超出范围 {lo}–{hi}"
         return str(value), None
+
+    if kind == "panels":
+        if not isinstance(value, list) or not value:
+            return None, f"{ns}.{key} 需要非空数组，元素为 Panel / Dock"
+        allowed = {"Panel", "Dock"}
+        bad = [i for i in value if i not in allowed]
+        if bad:
+            return None, f"{ns}.{key} 含非法面板: {', '.join(bad)}（可用 Panel / Dock）"
+        body = "\n".join(f'    "{i}",' for i in value)
+        return f"[\n{body}\n]", None
 
     if kind == "bool":
         if not isinstance(value, bool):
