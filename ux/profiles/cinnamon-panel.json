@@ -16,13 +16,12 @@
     "margin": 0,
     "padding": 0,
     "plugins_center": [
+      "com.system76.CosmicPanelLauncherButton",
       "com.system76.CosmicPanelWorkspacesButton",
       "com.system76.CosmicAppList"
     ],
     "plugins_wings": {
-      "left": [
-        "com.system76.CosmicPanelLauncherButton"
-      ],
+      "left": [],
       "right": [
         "com.system76.CosmicAppletInputSources",
         "com.system76.CosmicAppletStatusArea",
