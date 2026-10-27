@@ -75,10 +75,18 @@ theme_env_load "$slug" || exit 1
 # restore 时 hyprctl reload 前先等会话就绪（沿用 v0 行为）
 [ "$req" = "restore" ] && sleep 1
 
-# ── 编排：按序执行 Hyprland 栈 exporters（同进程 source，T_* 直接可见）──
-for e in hyprland-border wallpaper waybar fuzzel swaync eww hyprshell swayosd kitty fastfetch hyprlock hyprtoolkit; do
-  . "$LIB_DIR/hyprland/$e.sh"
-done
+# ── 编排 ──────────────────────────────────────────────────────────────
+# COSMIC 会话只跑 cosmic exporter：Hyprland 栈的 exporter 会调 hyprctl、重启
+# waybar/swaync，在 COSMIC 下既报错又会把无关组件拉起来。
+if [ "${XDG_CURRENT_DESKTOP:-}" != "${XDG_CURRENT_DESKTOP#*COSMIC}" ]; then
+  . "$LIB_DIR/cosmic/theme.sh"
+  cosmic_theme_apply || exit 1
+else
+  # Hyprland 栈 exporters（同进程 source，T_* 直接可见）
+  for e in hyprland-border wallpaper waybar fuzzel swaync eww hyprshell swayosd kitty fastfetch hyprlock hyprtoolkit; do
+    . "$LIB_DIR/hyprland/$e.sh"
+  done
+fi
 
 # agent 主题跟随（agent 层未启用时脚本不存在，静默跳过）；
 # 明暗按背景亮度判断，与 v0 一致
