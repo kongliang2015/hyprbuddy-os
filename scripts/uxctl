@@ -279,28 +279,18 @@ def cmd_diff(args) -> int:
         print(f"uxctl diff: 读取 profile 失败: {exc}", file=sys.stderr)
         return 2
 
-    changes, same, errors = [], [], []
-
+    changes, errors = collect(profile)
+    changed_names = {(c["ns"], c["key"]) for c in changes}
+    same = []
     for ns, keys in profile.items():
-        if ns == "version":
-            continue
-        if ns not in NS:
-            errors.append({"ns": ns, "key": "", "error": f"未知命名空间: {ns}"})
-            continue
-        if not isinstance(keys, dict):
-            errors.append({"ns": ns, "key": "", "error": "该命名空间的值必须是对象"})
+        if ns == "version" or not isinstance(keys, dict) or ns not in NS:
             continue
         for key, want in keys.items():
-            ron, err = render(ns, key, want)
-            if err:
-                errors.append({"ns": ns, "key": key, "error": err})
+            if (ns, key) in changed_names or any(e["ns"] == ns and e["key"] == key for e in errors):
                 continue
-            cur = read_key(ns, key)
-            item = {"ns": ns, "key": key, "current": cur, "desired": ron}
-            if cur is not None and norm(cur) == norm(ron):
-                same.append(item)
-            else:
-                changes.append(item)
+            ron, err = render(ns, key, want)
+            if err is None:
+                same.append({"ns": ns, "key": key, "current": read_key(ns, key), "desired": ron})
 
     if args.json:
         print(json.dumps({"changes": changes, "same": same, "errors": errors},
@@ -335,6 +325,200 @@ def cmd_diff(args) -> int:
     return 1 if errors else 0
 
 
+STATE_DIR = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "uxctl")
+SNAP_DIR = os.path.join(STATE_DIR, "snapshots")
+MAX_CHANGES = 12
+
+
+def now_id() -> str:
+    import datetime
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def collect(profile: dict) -> tuple[list[dict], list[dict]]:
+    """返回 (changes, errors)。"""
+    changes, errors = [], []
+    for ns, keys in profile.items():
+        if ns == "version":
+            continue
+        if ns not in NS:
+            errors.append({"ns": ns, "key": "", "error": f"未知命名空间: {ns}"})
+            continue
+        if not isinstance(keys, dict):
+            errors.append({"ns": ns, "key": "", "error": "该命名空间的值必须是对象"})
+            continue
+        for key, want in keys.items():
+            ron, err = render(ns, key, want)
+            if err:
+                errors.append({"ns": ns, "key": key, "error": err})
+                continue
+            cur = read_key(ns, key)
+            item = {"ns": ns, "key": key, "current": cur, "desired": ron}
+            if cur is not None and norm(cur) == norm(ron):
+                continue
+            changes.append(item)
+    return changes, errors
+
+
+def write_atomic(path: str, text: str) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = f"{path}.tmp.{os.getpid()}"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        fh.write(text if text.endswith("\n") else text + "\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)
+
+
+def make_snapshot(changes: list[dict], reason: str) -> str:
+    sid = now_id()
+    root = os.path.join(SNAP_DIR, sid)
+    n = 1
+    while os.path.exists(root):          # 同一秒多次 apply
+        n += 1
+        root = os.path.join(SNAP_DIR, f"{sid}-{n}")
+    os.makedirs(root, exist_ok=True)
+
+    files = []
+    for c in changes:
+        src = os.path.join(ns_dir(c["ns"]), c["key"])
+        existed = os.path.isfile(src)
+        entry = {"ns": c["ns"], "key": c["key"], "existed": existed}
+        if existed:
+            rel = os.path.join(c["ns"], c["key"])
+            dst = os.path.join(root, "files", rel)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            with open(src, "r", encoding="utf-8") as fh:
+                write_atomic(dst, fh.read())
+        files.append(entry)
+
+    manifest = {
+        "id": os.path.basename(root),
+        "created": sid,
+        "reason": reason,
+        "files": files,
+    }
+    with open(os.path.join(root, "manifest.json"), "w", encoding="utf-8") as fh:
+        json.dump(manifest, fh, ensure_ascii=False, indent=2)
+    return os.path.basename(root)
+
+
+def restore_snapshot(sid: str) -> int:
+    root = os.path.join(SNAP_DIR, sid)
+    man_path = os.path.join(root, "manifest.json")
+    if not os.path.isfile(man_path):
+        print(f"uxctl: 找不到快照 {sid}", file=sys.stderr)
+        return 1
+    with open(man_path, "r", encoding="utf-8") as fh:
+        man = json.load(fh)
+
+    restored = 0
+    for f in man["files"]:
+        dst = os.path.join(ns_dir(f["ns"]), f["key"])
+        if f["existed"]:
+            src = os.path.join(root, "files", f["ns"], f["key"])
+            with open(src, "r", encoding="utf-8") as fh:
+                write_atomic(dst, fh.read())
+        else:
+            if os.path.isfile(dst):
+                os.remove(dst)
+        restored += 1
+    print(f"已还原 {restored} 个键（快照 {sid}，{man.get('created','')}）")
+    return 0
+
+
+def cmd_snapshot(args) -> int:
+    if args.action == "list":
+        if not os.path.isdir(SNAP_DIR):
+            print("（暂无快照）")
+            return 0
+        ids = sorted(os.listdir(SNAP_DIR), reverse=True)
+        if not ids:
+            print("（暂无快照）")
+            return 0
+        for sid in ids:
+            mp = os.path.join(SNAP_DIR, sid, "manifest.json")
+            if not os.path.isfile(mp):
+                continue
+            with open(mp, "r", encoding="utf-8") as fh:
+                man = json.load(fh)
+            keys = ", ".join(f"{f['ns']}.{f['key']}" for f in man["files"][:4])
+            more = "" if len(man["files"]) <= 4 else f" 等 {len(man['files'])} 项"
+            print(f"{sid}  {len(man['files'])} 键  {keys}{more}")
+            if man.get("reason"):
+                print(f"    reason: {man['reason']}")
+        return 0
+
+    if args.action == "restore":
+        if not args.id:
+            print("uxctl snapshot restore <id>", file=sys.stderr)
+            return 2
+        return restore_snapshot(args.id)
+
+    print("uxctl snapshot [list|restore <id>]", file=sys.stderr)
+    return 2
+
+
+def cmd_apply(args) -> int:
+    try:
+        with open(args.profile, "r", encoding="utf-8") as fh:
+            profile = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"uxctl apply: 读取 profile 失败: {exc}", file=sys.stderr)
+        return 2
+
+    changes, errors = collect(profile)
+    if errors:
+        print("拒绝应用，存在校验错误：", file=sys.stderr)
+        for e in errors:
+            name = f"{e['ns']}.{e['key']}" if e["key"] else e["ns"]
+            print(f"  {name}: {e['error']}", file=sys.stderr)
+        return 1
+
+    if not changes:
+        print("无变更（profile 与当前配置一致）")
+        return 0
+
+    if len(changes) > MAX_CHANGES:
+        print(f"拒绝应用：本次 {len(changes)} 处变更超过上限 {MAX_CHANGES}", file=sys.stderr)
+        return 1
+
+    w = max(len(f"{c['ns']}.{c['key']}") for c in changes)
+    for c in changes:
+        name = f"{c['ns']}.{c['key']}"
+        cur = " ".join((c["current"] or "(不存在)").split())[:40]
+        des = " ".join(c["desired"].split())[:40]
+        print(f"  {name:<{w}}  {cur}  →  {des}")
+
+    if not args.yes:
+        print(f"\n共 {len(changes)} 处变更，未写入（加 --yes 应用）")
+        return 0
+
+    reason = args.reason or os.path.basename(args.profile)
+    sid = make_snapshot(changes, reason)
+    print(f"\n快照: {sid}")
+
+    for c in changes:
+        write_atomic(os.path.join(ns_dir(c["ns"]), c["key"]), c["desired"])
+
+    # 写后校验：读回比对，不一致立即回滚
+    bad = []
+    for c in changes:
+        back = read_key(c["ns"], c["key"])
+        if back is None or norm(back) != norm(c["desired"]):
+            bad.append(c)
+    if bad:
+        print("校验失败，正在回滚：", file=sys.stderr)
+        for c in bad:
+            print(f"  {c['ns']}.{c['key']}", file=sys.stderr)
+        restore_snapshot(sid)
+        return 1
+
+    print(f"已应用 {len(changes)} 处变更，校验通过")
+    print(f"回滚: uxctl snapshot restore {sid}")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="uxctl")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -349,6 +533,17 @@ def main(argv: list[str]) -> int:
     f.add_argument("profile", help="profile JSON 路径")
     f.add_argument("--json", action="store_true")
     f.set_defaults(func=cmd_diff)
+
+    a = sub.add_parser("apply", help="应用 profile（默认 dry-run，需 --yes 写入）")
+    a.add_argument("profile", help="profile JSON 路径")
+    a.add_argument("--yes", action="store_true", help="真正写入（否则只打印变更）")
+    a.add_argument("--reason", default="", help="写入快照的备注")
+    a.set_defaults(func=cmd_apply)
+
+    s = sub.add_parser("snapshot", help="快照管理")
+    s.add_argument("action", choices=["list", "restore"])
+    s.add_argument("id", nargs="?")
+    s.set_defaults(func=cmd_snapshot)
 
     args = ap.parse_args(argv)
     return args.func(args)

@@ -280,3 +280,28 @@ uxctl diff profile.json --json   # 机器可读 {changes, same, errors}
   `plugins_wings` / `plugins_center` 判为「无变化」，说明模板与 COSMIC 自身写出的格式一致
 - **退出码**：0 = 可应用（含 0 变更），1 = 有校验错误，2 = profile 读不了
 
+### U1-c：`uxctl apply` + `snapshot`（已完成 2026-10-27）
+
+```bash
+uxctl apply profile.json                 # 默认 dry-run：只打印变更，不写盘
+uxctl apply profile.json --yes --reason "改圆角"
+uxctl snapshot list
+uxctl snapshot restore <id>
+```
+
+流程：校验 → 变更预算（≤12 键）→ 快照 → 原子写（tmp+fsync+rename）→ 读回校验 →
+不一致自动回滚。
+
+实测：
+| 场景 | 结果 |
+|---|---|
+| dry-run | 打印 `0 → 12`，文件未变 |
+| `--yes` | 快照 `20261027T133822Z`，写入 12，校验通过 |
+| `snapshot list` | 显示 id / 键数 / 键名 / reason |
+| `snapshot restore` | 值回到 0 |
+| 多键 apply（7 键） | 快照 + 写入 + 校验通过，随后 restore 完整还原 |
+
+快照存于 `~/.local/state/uxctl/snapshots/<UTC id>/`：
+`manifest.json`（id/created/reason/files[]）+ `files/<ns>/<key>`（原文件副本）。
+未提供 `--yes` 时不会产生任何写入，这是 agent 工作流的安全默认值。
+
