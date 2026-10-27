@@ -264,3 +264,19 @@ uxctl dump --ns panel --raw     # 不截断
 输出含类型推断（bool/int/float/enum/none/some/list/record/string），
 实测 panel 与 dock 各 22 键，空命名空间显示「无配置键」而非报错。
 
+### U1-b：`uxctl diff`（已完成 2026-10-27）
+
+```bash
+uxctl diff profile.json          # 人类可读变更表
+uxctl diff profile.json --json   # 机器可读 {changes, same, errors}
+```
+
+- **schema 白名单**：内置 panel/dock/comp 共 33 个可写键，未知键直接报错
+- **类型校验**：enum 取值、数值范围（opacity 0.3–1.0、border_radius 0–32）、
+  bool、applet 白名单（从 `/run/current-system/sw/share/applications` 读取 13 个内置 applet）
+- **RON 模板化渲染**：`Some([...])` / `Some(([左],[右]))` / `Some((wait_time: …))` 各自独立函数，
+  禁止字符串拼接
+- **比较方式**：渲染结果与现文件做「去空白规范化」比较——实测对当前面板
+  `plugins_wings` / `plugins_center` 判为「无变化」，说明模板与 COSMIC 自身写出的格式一致
+- **退出码**：0 = 可应用（含 0 变更），1 = 有校验错误，2 = profile 读不了
+

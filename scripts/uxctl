@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # @command: uxctl
-# @summary: COSMIC UX 配置的受控读写（U1：dump）
+# @summary: COSMIC UX 配置的受控读写（U1：dump / diff）
 # @category: runtime
-# @usage: uxctl dump [--ns panel|dock|comp|applist|background|notifications|idle|shortcuts|all] [--json] [--raw]
-# @effect: 只读，打印当前 cosmic-config 值
+# @usage: uxctl dump [--ns NS|all] [--json] [--raw] | uxctl diff <profile.json> [--json]
+# @effect: dump 只读；diff 只读，比较 profile 与当前值
 # @doc: cosmic-ux-agent.md
-"""uxctl —— COSMIC UX 配置入口（U1 只实现只读 dump）。
+"""uxctl —— COSMIC UX 配置入口（U1：dump / diff）。
 
 设计见 docs/cosmic-ux-agent.md：agent 不得直接编辑 ~/.config/cosmic/**，
 一切读写经本工具（白名单 + 类型校验 + 原子写 + 快照）。
@@ -31,6 +31,44 @@ NS = {
 }
 
 CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+
+# ── schema：只允许这些键（白名单）────────────────────────────────────────
+# 每项：(类型, 额外约束)
+SCHEMA = {
+    ("panel", "anchor"):            ("enum", ["Top", "Bottom", "Left", "Right"]),
+    ("panel", "layer"):             ("enum", ["Background", "Bottom", "Top", "Overlay"]),
+    ("panel", "size"):              ("enum", ["XS", "S", "M", "L", "XL"]),
+    ("panel", "size_center"):       ("enum", ["XS", "S", "M", "L", "XL", "None"]),
+    ("panel", "size_wings"):        ("enum", ["XS", "S", "M", "L", "XL", "None"]),
+    ("panel", "background"):        ("enum", ["ThemeDefault", "Dark", "Light", "Custom"]),
+    ("panel", "keyboard_interactivity"): ("enum", ["OnDemand", "Exclusive", "None"]),
+    ("panel", "output"):            ("enum", ["All"]),
+    ("panel", "autohide"):          ("autohide", None),
+    ("panel", "border_radius"):     ("number", (0, 32)),
+    ("panel", "opacity"):           ("number", (0.3, 1.0)),
+    ("panel", "margin"):            ("int", (0, 64)),
+    ("panel", "spacing"):           ("int", (0, 64)),
+    ("panel", "padding"):           ("int", (0, 64)),
+    ("panel", "exclusive_zone"):    ("bool", None),
+    ("panel", "expand_to_edges"):   ("bool", None),
+    ("panel", "plugins_center"):    ("applist", None),
+    ("panel", "plugins_wings"):     ("wings", None),
+    ("dock", "anchor"):             ("enum", ["Top", "Bottom", "Left", "Right"]),
+    ("dock", "layer"):              ("enum", ["Background", "Bottom", "Top", "Overlay"]),
+    ("dock", "size"):               ("enum", ["XS", "S", "M", "L", "XL"]),
+    ("dock", "autohide"):           ("autohide", None),
+    ("dock", "border_radius"):      ("number", (0, 32)),
+    ("dock", "opacity"):            ("number", (0.3, 1.0)),
+    ("dock", "margin"):             ("int", (0, 64)),
+    ("dock", "spacing"):            ("int", (0, 64)),
+    ("dock", "padding"):            ("int", (0, 64)),
+    ("dock", "exclusive_zone"):     ("bool", None),
+    ("dock", "expand_to_edges"):    ("bool", None),
+    ("dock", "plugins_center"):     ("applist", None),
+    ("dock", "plugins_wings"):      ("wings", None),
+    ("comp", "autotile"):           ("bool", None),
+    ("comp", "autotile_behavior"):  ("enum", ["Global", "PerWorkspace"]),
+}
 
 
 def ns_dir(ns: str) -> str:
@@ -58,11 +96,137 @@ def classify(text: str) -> str:
     return "enum"
 
 
-def read_key(path: str) -> str:
-    with open(path, "r", encoding="utf-8") as fh:
+def read_key(ns: str, key: str) -> str | None:
+    p = os.path.join(ns_dir(ns), key)
+    if not os.path.isfile(p):
+        return None
+    with open(p, "r", encoding="utf-8") as fh:
         return fh.read().strip()
 
 
+def known_applets() -> set[str]:
+    apps = "/run/current-system/sw/share/applications"
+    ids = set()
+    try:
+        for name in os.listdir(apps):
+            if name.startswith("com.system76.Cosmic") and name.endswith(".desktop"):
+                ids.add(name[: -len(".desktop")])
+    except OSError:
+        pass
+    # 面板专用按钮不一定有 desktop 文件
+    ids |= {
+        "com.system76.CosmicPanelWorkspacesButton",
+        "com.system76.CosmicPanelAppButton",
+        "com.system76.CosmicPanelLauncherButton",
+    }
+    return ids
+
+
+APPLETS = known_applets()
+
+
+# ── RON 渲染（模板化，不拼裸字符串）────────────────────────────────────────
+def r_applist(items: list[str]) -> str:
+    if not items:
+        return "None"
+    body = "\n".join(f'    "{i}",' for i in items)
+    return f"Some([\n{body}\n])"
+
+
+def r_wings(w: dict) -> str:
+    left = w.get("left") or []
+    right = w.get("right") or []
+    if not left and not right:
+        return "None"
+    def block(items):
+        return "[\n" + "\n".join(f'    "{i}",' for i in items) + "\n]" if items else "[]"
+    return f"Some(({block(left)}, {block(right)}))"
+
+
+def r_autohide(a) -> str:
+    if a is None:
+        return "None"
+    fields = [
+        ("wait_time", 500), ("transition_time", 200), ("handle_size", 2),
+        ("unhide_delay_ms", 0),
+    ]
+    body = "\n".join(f"    {k}: {a.get(k, d)}," for k, d in fields)
+    return f"Some((\n{body}\n))"
+
+
+def render(ns: str, key: str, value) -> tuple[str | None, str | None]:
+    """返回 (ron_text, error)。"""
+    spec = SCHEMA.get((ns, key))
+    if spec is None:
+        return None, f"未知键（不在 schema 白名单）: {ns}.{key}"
+    kind, rule = spec
+
+    if kind == "enum":
+        if not isinstance(value, str) or value not in rule:
+            return None, f"{ns}.{key} 必须是 {rule} 之一，收到 {value!r}"
+        return value, None
+
+    if kind in ("number",):
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return None, f"{ns}.{key} 需要数字，收到 {value!r}"
+        lo, hi = rule
+        if not (lo <= value <= hi):
+            return None, f"{ns}.{key} 超出范围 {lo}–{hi}，收到 {value}"
+        return (str(value) if isinstance(value, int) else f"{value:g}"), None
+
+    if kind == "int":
+        if not isinstance(value, int) or isinstance(value, bool):
+            return None, f"{ns}.{key} 需要整数，收到 {value!r}"
+        lo, hi = rule
+        if not (lo <= value <= hi):
+            return None, f"{ns}.{key} 超出范围 {lo}–{hi}"
+        return str(value), None
+
+    if kind == "bool":
+        if not isinstance(value, bool):
+            return None, f"{ns}.{key} 需要 true/false，收到 {value!r}"
+        return ("true" if value else "false"), None
+
+    if kind == "applist":
+        if value is None:
+            return "None", None
+        if not isinstance(value, list) or not all(isinstance(i, str) for i in value):
+            return None, f"{ns}.{key} 需要字符串数组或 null"
+        unknown = [i for i in value if APPLETS and i not in APPLETS]
+        if unknown:
+            return None, f"{ns}.{key} 含未知 applet: {', '.join(unknown)}"
+        return r_applist(value), None
+
+    if kind == "wings":
+        if value is None:
+            return "None", None
+        if not isinstance(value, dict):
+            return None, f"{ns}.{key} 需要 {{left:[], right:[]}} 或 null"
+        items = (value.get("left") or []) + (value.get("right") or [])
+        unknown = [i for i in items if APPLETS and i not in APPLETS]
+        if unknown:
+            return None, f"{ns}.{key} 含未知 applet: {', '.join(unknown)}"
+        return r_wings(value), None
+
+    if kind == "autohide":
+        if value is None:
+            return "None", None
+        if not isinstance(value, dict):
+            return None, f"{ns}.{key} 需要对象或 null"
+        allowed = {"wait_time", "transition_time", "handle_size", "unhide_delay_ms"}
+        extra = set(value) - allowed
+        if extra:
+            return None, f"{ns}.{key} 含未知字段: {', '.join(sorted(extra))}"
+        return r_autohide(value), None
+
+    return None, f"内部错误：未处理的类型 {kind}"
+
+
+def norm(text: str) -> str:
+    return re.sub(r"\s+", "", text or "")
+
+
+# ── 命令实现 ─────────────────────────────────────────────────────────────
 def dump_ns(ns: str) -> dict:
     d = ns_dir(ns)
     out = {"namespace": NS[ns], "path": d, "exists": os.path.isdir(d), "keys": {}}
@@ -73,8 +237,8 @@ def dump_ns(ns: str) -> dict:
         if not os.path.isfile(p):
             continue
         try:
-            raw = read_key(p)
-        except OSError as exc:  # 权限/损坏
+            raw = read_key(ns, name) or ""
+        except OSError as exc:
             out["keys"][name] = {"error": str(exc)}
             continue
         out["keys"][name] = {"type": classify(raw), "raw": raw}
@@ -82,24 +246,12 @@ def dump_ns(ns: str) -> dict:
     return out
 
 
-def main(argv: list[str]) -> int:
-    ap = argparse.ArgumentParser(prog="uxctl", add_help=True)
-    sub = ap.add_subparsers(dest="cmd", required=True)
-
-    d = sub.add_parser("dump", help="打印当前配置")
-    d.add_argument("--ns", default="all", choices=list(NS) + ["all"])
-    d.add_argument("--json", action="store_true")
-    d.add_argument("--raw", action="store_true", help="不截断原始文本")
-
-    args = ap.parse_args(argv)
-
+def cmd_dump(args) -> int:
     names = list(NS) if args.ns == "all" else [args.ns]
     data = {ns: dump_ns(ns) for ns in names}
-
     if args.json:
         print(json.dumps(data, ensure_ascii=False, indent=2))
         return 0
-
     for ns, info in data.items():
         state = "" if info["exists"] else "  (目录不存在)"
         print(f"[{ns}] {info['namespace']}{state}")
@@ -117,6 +269,89 @@ def main(argv: list[str]) -> int:
             print(f"  {k:<{width}}  {v['type']:<6} {raw}")
         print(f"  — {info['count']} 个键")
     return 0
+
+
+def cmd_diff(args) -> int:
+    try:
+        with open(args.profile, "r", encoding="utf-8") as fh:
+            profile = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"uxctl diff: 读取 profile 失败: {exc}", file=sys.stderr)
+        return 2
+
+    changes, same, errors = [], [], []
+
+    for ns, keys in profile.items():
+        if ns == "version":
+            continue
+        if ns not in NS:
+            errors.append({"ns": ns, "key": "", "error": f"未知命名空间: {ns}"})
+            continue
+        if not isinstance(keys, dict):
+            errors.append({"ns": ns, "key": "", "error": "该命名空间的值必须是对象"})
+            continue
+        for key, want in keys.items():
+            ron, err = render(ns, key, want)
+            if err:
+                errors.append({"ns": ns, "key": key, "error": err})
+                continue
+            cur = read_key(ns, key)
+            item = {"ns": ns, "key": key, "current": cur, "desired": ron}
+            if cur is not None and norm(cur) == norm(ron):
+                same.append(item)
+            else:
+                changes.append(item)
+
+    if args.json:
+        print(json.dumps({"changes": changes, "same": same, "errors": errors},
+                         ensure_ascii=False, indent=2))
+        return 1 if errors else 0
+
+    def show(label, items):
+        if not items:
+            return
+        print(f"{label}：")
+        w = max(len(f"{i['ns']}.{i['key']}") for i in items)
+        for i in items:
+            name = f"{i['ns']}.{i['key']}"
+            cur = " ".join((i["current"] or "(不存在)").split())
+            if len(cur) > 48:
+                cur = cur[:45] + "..."
+            des = " ".join(i["desired"].split())
+            if len(des) > 48:
+                des = des[:45] + "..."
+            print(f"  {name:<{w}}  {cur}  →  {des}")
+
+    print(f"profile: {args.profile}")
+    show("将变更", changes)
+    show("无变化", same)
+    if errors:
+        print("错误：")
+        for e in errors:
+            name = f"{e['ns']}.{e['key']}" if e["key"] else e["ns"]
+            print(f"  {name}: {e['error']}")
+    total = len(changes)
+    print(f"\n合计：{total} 处变更，{len(same)} 处一致，{len(errors)} 处错误")
+    return 1 if errors else 0
+
+
+def main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(prog="uxctl")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    d = sub.add_parser("dump", help="打印当前配置")
+    d.add_argument("--ns", default="all", choices=list(NS) + ["all"])
+    d.add_argument("--json", action="store_true")
+    d.add_argument("--raw", action="store_true", help="不截断原始文本")
+    d.set_defaults(func=cmd_dump)
+
+    f = sub.add_parser("diff", help="对比 profile 与当前配置（只读）")
+    f.add_argument("profile", help="profile JSON 路径")
+    f.add_argument("--json", action="store_true")
+    f.set_defaults(func=cmd_diff)
+
+    args = ap.parse_args(argv)
+    return args.func(args)
 
 
 if __name__ == "__main__":
