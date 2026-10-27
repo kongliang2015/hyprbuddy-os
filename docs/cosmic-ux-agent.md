@@ -242,3 +242,25 @@ COSMIC 的自定义能力全部落在**声明式 RON 文件 + 热加载**上，�
 真正缺的不是能力，而是**受控的写入层**。uxctl 就是这个层：
 它把"agent 的自由度"限制在 schema 白名单内，同时提供 diff/快照/回滚/验证，
 使 agent 驱动 UX 定制从"危险的文本编辑"变成"可审计的配置事务"。
+## 十三、实现进度
+
+| 阶段 | 内容 | 状态 |
+|---|---|---|
+| U1-a | `uxctl dump`（只读） | **已完成（2026-10-27）** |
+| U1-b | `diff / apply / snapshot / restore` | 待做 |
+| U2 | `layout` 预设、`shortcuts import` | 待做 |
+| U3 | skill `cosmic-ux` | 待做 |
+| U4 | `verify` + desktop-check 集成 | 待做 |
+
+`uxctl dump` 实测行为：
+
+```bash
+uxctl dump                      # 全部命名空间，人类可读
+uxctl dump --ns panel           # 单个命名空间
+uxctl dump --ns panel --json    # 机器可读（含 type/raw/count）
+uxctl dump --ns panel --raw     # 不截断
+```
+
+输出含类型推断（bool/int/float/enum/none/some/list/record/string），
+实测 panel 与 dock 各 22 键，空命名空间显示「无配置键」而非报错。
+
