@@ -56,10 +56,10 @@ Hyprland 退役 = 删 `exporters/hyprland/`，主题资产不受影响。
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | P0 | 并存骨架：`sessions`/`default` 选项、`modules/desktop/cosmic.nix`、portal 分会话 | **已完成（cosmic 默认关）** |
-| P1 | 能力层 `scripts/lib/de.sh`，21 处 hyprctl 收敛到 8 个能力；`hypr-check` → `desktop-check` | 待做 |
+| P1 | 能力层 `scripts/lib/de.sh`，21 处 hyprctl 收敛到 8 个能力；`hypr-check` → `desktop-check` | **已完成（2026-10-26，见文末）** |
 | P2 | `themes/*/tokens.json` + exporters 拆分，新增 cosmic exporter | 待做 |
 | P3 | COSMIC 功能对齐（配置部署、壁纸/截图/锁屏/OSD/夜间/键位） | 待做 |
-| P4 | `default = "cosmic"`，Hyprland 降为可选 | 待做 |
+| P4 | `default = "cosmic"`，Hyprland 降为可选 | 部分达成：vmware host 已 default = cosmic（2026-10-27） |
 | P5 | 删 `hyprland.nix` + `exporters/hyprland/` + 相关包，打 tag 留回退 | 待做 |
 
 ## 退役判据（parity checklist）
@@ -93,17 +93,20 @@ Hyprland 退役 = 删 `exporters/hyprland/`，主题资产不受影响。
 | 主题能力降级（无 CSS/模糊） | 接受降级，或用 cosmic-ext-tweaks 做有限调色 |
 | 输入法 | P3 实测 fcitx5 text-input-v3 |
 | ISO 回归 | 变更只在 v1-dev，出 ISO 前整体回归 |
+| VMware vmwgfx dmabuf 导入残缺 | 宿主机关闭 3D 加速（已实测解决）；物理机/QEMU virtio 不受影响 |
 
-## 当前状态（2026-10-26）
+## 当前状态（2026-10-27）
 
-- `modules/desktop/cosmic.nix` 已落地，由 `sessions` 控制，**默认不启用**
-- 带 cosmic 的配置已通过 `nix eval`（未下载/未安装）
-- 启用方式：host 里加
-  ```nix
-  distro.desktop.sessions = [ "hyprland" "cosmic" ];
-  distro.desktop.default = "hyprland";   # 先用 Hyprland 登录，验证 COSMIC 后再改
-  ```
-  然后 `sudo nixos-rebuild switch`，SDDM 会出现 COSMIC 会话。
+- `modules/desktop/cosmic.nix` 已落地，由 `sessions` 控制
+- 已启用的 host：
+  - **vmware**（x86_64 虚机）：`sessions = [ hyprland cosmic ]`，`default = cosmic`，
+    **日用中**。前提：宿主机关闭「加速 3D 图形」——vmwgfx 的 dmabuf 导入残缺，
+    开启 3D 加速时 Workspaces 缩略图等客户端因协议错误 7（create_immed failed，
+    invalid wl_buffer，pop-os/cosmic-epoch#2978 同类）崩溃循环；关闭后 mesa
+    全栈自动回落 swrast。排查过程见 hosts/vmware/default.nix 注释
+  - **leonard**（x86_64 + NVIDIA）：`default = hyprland`，COSMIC 并存待实测
+- `defaultSession` 优先级：hyprland.nix 用 `mkDefault`，由 sessions.nix 分发层
+  裁决（多提供方并存的前提，commit 0702555）
 
 ## P1 落地（2026-10-26）
 
