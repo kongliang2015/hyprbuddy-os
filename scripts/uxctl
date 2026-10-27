@@ -113,11 +113,13 @@ def known_applets() -> set[str]:
                 ids.add(name[: -len(".desktop")])
     except OSError:
         pass
-    # 面板专用按钮不一定有 desktop 文件
+    # 面板内建 widget（不是独立 .desktop）：官方布局模板里会出现
     ids |= {
         "com.system76.CosmicPanelWorkspacesButton",
         "com.system76.CosmicPanelAppButton",
         "com.system76.CosmicPanelLauncherButton",
+        "com.system76.CosmicAppList",
+        "com.system76.CosmicAppLibrary",
     }
     return ids
 
@@ -519,6 +521,57 @@ def cmd_apply(args) -> int:
     return 0
 
 
+LAYOUT_DIR = "/run/current-system/sw/share/cosmic-layouts"
+
+
+def read_layout(path: str) -> dict:
+    """读取一个系统布局模板：layout.kdl 元数据 + cosmic-config 树。"""
+    info = {"id": os.path.basename(path), "name": "", "keys": {}}
+    kdl = os.path.join(path, "layout.kdl")
+    if os.path.isfile(kdl):
+        with open(kdl, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line.startswith("name en="):
+                    info["name"] = line.split("=", 1)[1].strip().strip('"')
+                    break
+    for ns in sorted(os.listdir(path)):
+        v1 = os.path.join(path, ns, "v1")
+        if not os.path.isdir(v1):
+            continue
+        keys = {}
+        for k in sorted(os.listdir(v1)):
+            p = os.path.join(v1, k)
+            if os.path.isfile(p):
+                with open(p, "r", encoding="utf-8") as fh:
+                    keys[k] = fh.read().strip()
+        if keys:
+            info["keys"][ns] = keys
+    return info
+
+
+def cmd_layout(args) -> int:
+    if not os.path.isdir(LAYOUT_DIR):
+        print(f"uxctl: 未找到系统布局模板目录 {LAYOUT_DIR}", file=sys.stderr)
+        return 1
+    items = [read_layout(os.path.join(LAYOUT_DIR, d))
+             for d in sorted(os.listdir(LAYOUT_DIR))
+             if os.path.isdir(os.path.join(LAYOUT_DIR, d))]
+    if args.json:
+        print(json.dumps(items, ensure_ascii=False, indent=2))
+        return 0
+    for it in items:
+        n = sum(len(v) for v in it["keys"].values())
+        print(f"{it['id']:<28} {it['name']}")
+        for ns, keys in it["keys"].items():
+            short = ns.replace("com.system76.", "")
+            print(f"    {short}: {len(keys)} 键")
+        if n == 0:
+            print("    （空模板）")
+    print(f"\n来源: {LAYOUT_DIR}（cosmic-initial-setup 自带）")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="uxctl")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -544,6 +597,11 @@ def main(argv: list[str]) -> int:
     s.add_argument("action", choices=["list", "restore"])
     s.add_argument("id", nargs="?")
     s.set_defaults(func=cmd_snapshot)
+
+    l = sub.add_parser("layout", help="系统布局模板（只读列举）")
+    l.add_argument("action", nargs="?", default="list", choices=["list"])
+    l.add_argument("--json", action="store_true")
+    l.set_defaults(func=cmd_layout)
 
     args = ap.parse_args(argv)
     return args.func(args)
