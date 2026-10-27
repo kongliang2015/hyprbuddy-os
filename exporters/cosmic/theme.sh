@@ -252,7 +252,8 @@ cosmic_theme_apply() {
 
   # 明暗模式同步（浅色主题会翻转全局模式）
   local mode_file="$HOME/.config/cosmic/com.system76.CosmicTheme.Mode/v1/is_dark"
-  if [ -f "$mode_file" ] && [ "${COSMIC_THEME_DIR_OVERRIDE:-}" = "" ]; then
+  if [ "${COSMIC_THEME_DIR_OVERRIDE:-}" = "" ]; then
+    # 文件可能存在也可能不存在（新装只有 auto_switch），都要能创建
     local cur; cur=$(cat "$mode_file" 2>/dev/null | tr -d "[:space:]")
     [ "$cur" = "$mode_flag" ] || printf "%s" "$mode_flag" > "$mode_file"
   fi

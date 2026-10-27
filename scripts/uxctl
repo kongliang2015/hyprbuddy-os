@@ -45,7 +45,7 @@ SCHEMA = {
     ("panel", "output"):            ("enum", ["All"]),
     ("panel", "autohide"):          ("autohide", None),
     ("panel", "border_radius"):     ("number", (0, 32)),
-    ("panel", "opacity"):           ("number", (0.3, 1.0)),
+    ("panel", "opacity"):           ("float", (0.3, 1.0)),
     ("panel", "margin"):            ("int", (0, 64)),
     ("panel", "spacing"):           ("int", (0, 64)),
     ("panel", "padding"):           ("int", (0, 64)),
@@ -58,7 +58,7 @@ SCHEMA = {
     ("dock", "size"):               ("enum", ["XS", "S", "M", "L", "XL"]),
     ("dock", "autohide"):           ("autohide", None),
     ("dock", "border_radius"):      ("number", (0, 32)),
-    ("dock", "opacity"):            ("number", (0.3, 1.0)),
+    ("dock", "opacity"):            ("float", (0.3, 1.0)),
     ("dock", "margin"):             ("int", (0, 64)),
     ("dock", "spacing"):            ("int", (0, 64)),
     ("dock", "padding"):            ("int", (0, 64)),
@@ -176,7 +176,20 @@ def render(ns: str, key: str, value) -> tuple[str | None, str | None]:
         lo, hi = rule
         if not (lo <= value <= hi):
             return None, f"{ns}.{key} 超出范围 {lo}–{hi}，收到 {value}"
-        return (str(value) if isinstance(value, int) else f"{value:g}"), None
+        if isinstance(value, int):
+            return str(value), None
+        # 浮点必须带小数点：RON 里 1 与 1.0 是不同类型
+        text = f"{value:g}"
+        return (text if "." in text else text + ".0"), None
+
+    if kind == "float":
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return None, f"{ns}.{key} 需要数字，收到 {value!r}"
+        lo, hi = rule
+        if not (lo <= value <= hi):
+            return None, f"{ns}.{key} 超出范围 {lo}–{hi}，收到 {value}"
+        text = f"{float(value):g}"
+        return (text if "." in text else text + ".0"), None
 
     if kind == "int":
         if not isinstance(value, int) or isinstance(value, bool):

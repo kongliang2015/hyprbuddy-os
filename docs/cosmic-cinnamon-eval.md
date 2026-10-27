@@ -132,3 +132,31 @@ Noto Sans CJK SC（已有）+ JetBrainsMono（等宽）。Cinnamon 用 Ubuntu �
 1. 先只改面板布局（不动主题），看 AppList 在面板里的实际表现
 2. 确认窗口列表可用后，再加 Mint-Y 配色
 3. 若 AppList 表现不理想，退回"顶栏 + 胶囊 Dock"组合
+
+## 九、实施记录（2026-10-27）
+
+| 步骤 | 结果 |
+|---|---|
+| Step1 面板布局 | ✅ `ux/profiles/cinnamon-panel.json` 已应用：底栏 M 号、通栏、挤压窗口、
+  左翼 启动器+AppList、中区 工作区、右翼 输入法/托盘/通知/时钟/电源 |
+| Step2 Mint-Y 配色 | ✅ `themes/mint-y/tokens.json` 已加入（第 10 套，order=9），
+  实测 `accent=#3EB34F`、`is_dark=false`、截图平均亮度 245（确实切到浅色） |
+| Step3 回退判断 | ⏳ 待用户体验后决定 |
+
+### 顺带修的两处
+
+1. `uxctl` 浮点渲染：`opacity: 1.0` 之前被写成 `1`（RON 里 `1` 与 `1.0` 类型不同），
+   已改为强制带小数点，并把 opacity 单列为 `float` 类型
+2. `exporters/cosmic/theme.sh`：`is_dark` 原先只在文件**已存在**时写入，
+   新机器只有 `auto_switch` 文件 → 浅色主题永远不生效；已改为不存在时也创建
+
+### 对比度实测（Mint-Y）
+
+```
+fg/bg      11.30   ✅
+accent/fg   4.68   ✅
+muted/bg    3.12   ⚠️ 低于 4.5（次要文字偏浅）
+accent/bg   2.42   ⚠️ 绿色作正文色不合格，只能用于填充/图标
+```
+
+若要用于正文，把 `accent` 压到 `#2E8B3D`（对比约 3.6）或 `#256B31`（约 4.6）。
