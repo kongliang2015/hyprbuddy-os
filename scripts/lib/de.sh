@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # 桌面能力层（P1）：脚本只调 de_*，不直接写 hyprctl / cosmic-*。
+# P2 新增：de_theme_apply <slug>（tokens 见 themes/*/tokens.json）。
 # 由 scripts/* 通过 source 引入，本身不是可执行命令。
 #
 # 约定：每个能力返回 0 表示已处理，1 表示当前桌面未实现（调用方应给出提示）。
@@ -102,5 +103,43 @@ de_monitors() {
       cosmic-randr list 2>/dev/null
       ;;
     *) return 1 ;;
+  esac
+}
+
+# de_theme_apply <slug>：应用指定主题（slug 为 themes/<slug>/ 目录名）。
+# Hyprland → theme-next <idx>；COSMIC → exporters/cosmic/theme.sh。
+# 依赖 exporters/lib.sh（theme_list / theme_env_load），按部署布局定位。
+de_theme_apply() {
+  local slug=$1 lib=""
+  [ -n "$slug" ] || { echo "usage: de_theme_apply <slug>" >&2; return 1; }
+  # 注意不能用 readlink -f：解析到 store 会丢掉 share/hyprland-nixos/ 布局。
+  # 按 source 时的原始路径回溯：
+  #   部署   ~/.local/share/hyprland-nixos/lib/ → ../exporters/
+  #   仓库   scripts/lib/ → ../../exporters/
+  local d; d=$(dirname "${BASH_SOURCE[0]}")
+  for d in "$d/../exporters/lib.sh" "$d/../../exporters/lib.sh"; do
+    [ -r "$d" ] && lib=$d && break
+  done
+  [ -n "$lib" ] || { echo "de_theme_apply: 找不到 exporters/lib.sh" >&2; return 1; }
+  . "$lib"
+  case "$(de_name)" in
+    cosmic)
+      theme_env_load "$slug" || return 1
+      . "$THEME_LIB_DIR/cosmic/theme.sh"
+      cosmic_theme_apply
+      ;;
+    hyprland)
+      local i=0 found="" s
+      for s in $(theme_list); do
+        [ "$s" = "$slug" ] && found=$i
+        i=$((i + 1))
+      done
+      [ -n "$found" ] || { echo "de_theme_apply: 未知主题 $slug" >&2; return 1; }
+      theme-next "$found"
+      ;;
+    *)
+      echo "de_theme_apply: 未知桌面" >&2
+      return 1
+      ;;
   esac
 }

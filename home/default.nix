@@ -69,6 +69,39 @@ let
     "share/hyprland-nixos/lib/de.sh" = read ../scripts/lib/de.sh;
   };
 
+  # P2 主题系统：themes/<slug>/tokens.json（唯一真相）+ exporters
+  # （theme-next / de_theme_apply 运行时 source；部署到 share/hyprland-nixos/）
+  themeEntries = lib.concatLists (
+    lib.mapAttrsToList
+      (slug: _:
+        lib.optional (builtins.pathExists (../themes + "/${slug}/tokens.json")) {
+          name = "share/hyprland-nixos/themes/${slug}/tokens.json";
+          path = pkgs.writeTextFile {
+            name = "theme-${slug}-tokens";
+            text = read (../themes + "/${slug}/tokens.json");
+          };
+        })
+      (lib.filterAttrs (_: t: t == "directory") (builtins.readDir ../themes)));
+
+  exporterFiles = {
+    "lib.sh" = ../exporters/lib.sh;
+  } // builtins.listToAttrs (map (n: {
+        name = "hyprland/${n}";
+        value = ../exporters/hyprland + "/${n}";
+      }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/hyprland))))
+    // builtins.listToAttrs (map (n: {
+        name = "cosmic/${n}";
+        value = ../exporters/cosmic + "/${n}";
+      }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/cosmic))));
+
+  exporterEntries = lib.mapAttrsToList (name: path: {
+    name = "share/hyprland-nixos/exporters/${name}";
+    path = pkgs.writeTextFile {
+      name = "exporter-${lib.replaceStrings [ "/" ] [ "-" ] name}";
+      text = read path;
+    };
+  }) exporterFiles;
+
   # agent 层脚本随 distro.agent.enable 开关安装（agent-usage 由 lib/ 生成，下面单独挂到 bin/）
   scriptNames = let
     entries = builtins.readDir ../scripts;
@@ -96,7 +129,10 @@ let
     }) scriptNames
     # agent-usage 由 lib/ 生成，部署到 PATH 供 fastfetch 的 command 模块调用
     ++ lib.optional (agentUsage != null) { name = "bin/agent-usage"; path = agentUsage; }
-    ++ lib.optional (distro.hypervisor == "vmware") { name = "bin/kitty"; path = pkgs.writeShellScript "kitty-software-egl" (builtins.readFile ./kitty-egl.sh); };
+    ++ lib.optional (distro.hypervisor == "vmware") { name = "bin/kitty"; path = pkgs.writeShellScript "kitty-software-egl" (builtins.readFile ./kitty-egl.sh); }
+    ++ themeEntries
+    ++ exporterEntries
+    ++ lib.singleton { name = "bin/jq"; path = "${pkgs.jq}/bin/jq"; };
   # agent skills（skills/<name>/…）：install.sh 链接到 ~/.codebuddy/skills/
   skillsDir = ../skills;
   skillEntries = lib.concatLists (

@@ -93,13 +93,16 @@ hyprland-nixos/
 - 窗口总览 / Alt-Tab 缩略图：hyprshell（依赖 Lua 配置管理器；样式随主题）
 - eww 弹窗：日历 / 会话面板 / 系统信息（跟随焦点显示器）
 - fastfetch：配置随主题联动（OS / 主题 / Agent 三项定制）
-- 能力层 de.sh：壁纸 / 截图标注 / 锁屏 / 通知 / 显示器等能力分派
+- 能力层 de.sh：壁纸 / 截图标注 / 锁屏 / 通知 / 显示器 / 主题应用等能力分派
   （Hyprland / COSMIC 双实现），wallpaper-next / screenshot-annotate /
   night-mode 已接入
+- 主题系统（P2）：`themes/<slug>/tokens.json` 唯一真相 + `exporters/{hyprland,
+  cosmic}/*` 输出端拆分；theme-next 只做编排；COSMIC 经 `de_theme_apply`
+  生成 cosmic-themes RON（详见 docs/desktop-abstraction.md）
 - desktop-check：按桌面分派的自检（Hyprland → hypr-check 原有 8 组；
   COSMIC → 12 项：进程 / portal / 壁纸 / 字体 / 常用命令）
-- theme-next：8 套主题热切换，联动 waybar / fuzzel / swaync / eww / hyprshell /
-  swayosd / fastfetch / 壁纸；登录时 restore；theme-picker 预览选择器
+- theme-next：8 套主题热切换（编排器），联动 waybar / fuzzel / swaync / eww /
+  hyprshell / swayosd / fastfetch / 壁纸；登录时 restore；theme-picker 预览选择器
 - 其他：SwayOSD / hypridle / 夜间模式 / 录屏 / 截图标注 / 壁纸轮换（awww）
 
 ### Agent 层（modules/agent/ + lib/agent-usage.nix）

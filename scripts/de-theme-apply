@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# @command: de-theme-apply
+# @summary: 应用指定主题（slug），按当前桌面自动分派（Hyprland / COSMIC）
+# @category: runtime
+# @usage: de-theme-apply <slug>
+# @arg slug: 主题目录名（见 themes/<slug>/tokens.json，如 hyprbuddy）；缺省列出可选主题
+# @effect: Hyprland 重写各应用配置并热加载；COSMIC 重写 cosmic-themes RON + 壁纸
+# @doc: theming.md
+# de-theme-apply: de_theme_apply 能力的命令行入口（能力本身在 scripts/lib/de.sh）
+set -uo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+# 仓库内：scripts/../exporters；部署后：share/hyprland-nixos/exporters
+LIB_DIR="$(dirname "$(dirname "$SELF")")/exporters"
+[ -d "$LIB_DIR" ] || LIB_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprland-nixos/exporters"
+. "$LIB_DIR/lib.sh"
+
+slug="${1:-}"
+if [ -z "$slug" ]; then
+  echo "usage: de-theme-apply <slug>" >&2
+  echo "可选主题：" >&2
+  for s in $(theme_list); do echo "  $s" >&2; done
+  exit 1
+fi
+
+# 能力实现在 de.sh（与脚本层共用）。仓库内：scripts/lib/de.sh；部署后：
+# share/hyprland-nixos/lib/de.sh
+DE_SH="$(dirname "$SELF")/lib/de.sh"
+[ -r "$DE_SH" ] || DE_SH="${XDG_DATA_HOME:-$HOME/.local/share}/hyprland-nixos/lib/de.sh"
+. "$DE_SH"
+de_theme_apply "$slug"

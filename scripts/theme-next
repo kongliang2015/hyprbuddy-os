@@ -1,86 +1,40 @@
 #!/usr/bin/env bash
 # @command: theme-next
-# @summary: 在 8 套内置主题间循环切换
+# @summary: 在内置主题间循环切换（P2 编排器：tokens.json + exporters）
 # @category: runtime
-# @usage: theme-next [restore]
+# @usage: theme-next [restore | <idx>]
 # @arg restore: 应用已保存主题（登录时调用，不前进索引）
-# @effect: 重写 waybar/swaync/eww 样式；替换 fuzzel/swayosd 颜色；重启 waybar/swayosd，热重载 swaync/eww
+# @arg <idx>: 直接应用第 idx 套主题（theme-picker 使用）
+# @effect: 按 exporters/hyprland/* 重写各应用配置并重启对应服务
 # @doc: theming.md
-# theme-next: 在若干内置主题间循环切换桌面配色
-#   theme-next          切换到下一套（默认动作）
-#   theme-next restore  应用已保存的主题（登录时由 exec-once 调用，不前进索引）
+# theme-next: 主题切换编排器
+#   theme-next          切换到下一套
+#   theme-next restore  应用已保存主题（登录 exec-once 调用）
+#   theme-next <idx>    直接指定（主题预览选择器使用）
+#   theme-next --print-themes  输出主题清单（选择器数据源）
 #
-# 覆盖范围：Hyprland 边框/窗口色（hyprctl 实时）+ 壁纸 + Waybar（CSS 变量覆盖）
-#           + Kitty（include 持久化 + 实时 set-colors）+ hyprlock 锁屏。
+# P2 重构：主题定义在 themes/<slug>/tokens.json（唯一真相），写入逻辑在
+# exporters/hyprland/*.sh；本脚本只做索引管理 + tokens 环境展开 + 编排。
+# COSMIC 栈的主题应用走 de_theme_apply → exporters/cosmic/。
 set -uo pipefail
 
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 RUNTIME="${XDG_RUNTIME_DIR:-/tmp}"
-mkdir -p "$RUNTIME/theme-next" 2>/dev/null || true   # waybar/osd flock 锁文件目录
-# 索引持久化：XDG_RUNTIME_DIR 是 tmpfs，重启即失，登录时 restore 会退回 idx=0；
-# 改存 XDG_STATE_HOME，restore 才能恢复上次选择的主题
+mkdir -p "$RUNTIME/theme-next" 2>/dev/null || true
+# 索引持久化：XDG_STATE_HOME（XDG_RUNTIME_DIR 是 tmpfs，重启即失）
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/theme-next"
 STATE="$STATE_DIR/idx"
-WALL="$HOME/Pictures/wallpapers"
-
 mkdir -p "$STATE_DIR"
-# 锁文件目录：waybar/swayosd 段的 flock 重定向依赖它，缺失会让整段被跳过
-mkdir -p "$RUNTIME/theme-next"
 
-# 壁纸守护：hyprpaper 在本 VM 因 GBM 分配失败段错误已弃用；
-# nixpkgs 26.05 起 swww 包更名 awww（二进制 awww / awww-daemon），此处做两者兼容
-if command -v awww >/dev/null 2>&1; then
-  WP=awww WPD=awww-daemon
-elif command -v swww >/dev/null 2>&1; then
-  WP=swww WPD=swww-daemon
-else
-  WP= WPD=
-fi
-ensure_swww() {
-  [ -z "$WPD" ] && return 0
-  pgrep -f "$WPD" >/dev/null 2>&1 && return 0
-  setsid "$WPD" >/dev/null 2>&1 < /dev/null &
-  local _i
-  for _i in 1 2 3 4 5 6 7 8 9 10; do
-    sleep 0.3
-    pgrep -f "$WPD" >/dev/null 2>&1 && return 0
-  done
-  return 0
-}
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+# 仓库内：scripts/../exporters；部署后：share/hyprland-nixos/exporters
+LIB_DIR="$(dirname "$(dirname "$SELF")")/exporters"
+[ -d "$LIB_DIR" ] || LIB_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprland-nixos/exporters"
+. "$LIB_DIR/lib.sh"
 
-# mixhex <A> <B> <pct> → #RRGGBB，pct% 偏向 B（用于派生中间色）
-mixhex() {
-  local a=${1#\#} b=${2#\#} p=$3 i x y v out=""
-  for i in 0 2 4; do
-    x=$((16#${a:i:2})); y=$((16#${b:i:2}))
-    v=$(( (x * (100 - p) + y * p + 50) / 100 ))
-    printf -v out '%s%02X' "$out" "$v"
-  done
-  printf '#%s' "$out"
-}
-
-# 主题表字段：
-# name|wallpaper|ha1|ha2|hi
-# |wb_bg|wb_fg|wb_ws|wb_wsafg|wb_wsabg|wb_urgent|wb_clock|wb_cpu|wb_mem|wb_bat|wb_pulse|wb_agent
-# |k_bg|k_fg|k_cursor|k0..k15(16)
-THEMES=(
-"Kanagawa|01-kanagawa.png|7E9CD8|957FB8|54546D|16161D|DCD7BA|54546D|DCD7BA|2A2A37|FF5D62|7AA89F|76946A|DCA561|957FB8|7E9CD8|957FB8|1F1F28|DCD7BA|DCD7BA|1F1F28|C34043|76946A|C0A36E|7E9CD8|957FB8|6A9589|C5C9C5|717C7C|C34043|76946A|C0A36E|7E9CD8|957FB8|6A9589|DCD7BA"
-"Tokyo Night|02-tokyo-night.png|7AA2F7|BB9AF7|565F89|16161E|C0CAF5|565F89|7AA2F7|1F2335|F7768E|7DCFFF|9ECE6A|E0AF68|BB9AF7|2AC3DE|BB9AF7|1A1B26|C0CAF5|C0CAF5|15161E|F7768E|9ECE6A|E0AF68|7AA2F7|BB9AF7|7DCFFF|A9B1D6|414868|F7768E|9ECE6A|E0AF68|7AA2F7|BB9AF7|7DCFFF|C0CAF5"
-"Catppuccin Mocha|03-catppuccin-mocha.png|89B4FA|CBA6F7|6C7086|1E1E2E|CDD6F4|6C7086|CDD6F4|313244|F38BA8|89DCEB|A6E3A1|F9E2AF|CBA6F7|94E2D5|CBA6F7|1E1E2E|CDD6F4|F5E0DC|45475A|F38BA8|A6E3A1|F9E2AF|89B4FA|CBA6F7|94E2D5|BAC2DE|585B70|F38BA8|A6E3A1|F9E2AF|89B4FA|CBA6F7|94E2D5|CDD6F4"
-"Rose Pine|04-rose-pine.png|9CCFD8|C4A7E7|6E6A86|191724|E0DEF4|6E6A86|E0DEF4|2A283E|EB6F92|9CCFD8|31748F|F6C177|C4A7E7|EBBCBA|C4A7E7|191724|E0DEF4|E0DEF4|191724|EB6F92|31748F|F6C177|9CCFD8|C4A7E7|EBBCBA|908CA4|6E6A86|EB6F92|31748F|F6C177|9CCFD8|C4A7E7|EBBCBA|E0DEF4"
-"Nord|05-nord.png|81A1C1|B48EAD|4C566A|2E3440|D8DEE9|4C566A|D8DEE9|3B4252|BF616A|88C0D0|A3BE8C|EBCB8B|B48EAD|8FBCBB|B48EAD|2E3440|D8DEE9|D8DEE9|2E3440|BF616A|A3BE8C|EBCB8B|81A1C1|B48EAD|8FBCBB|E5E9F0|4C566A|BF616A|A3BE8C|EBCB8B|81A1C1|B48EAD|8FBCBB|ECEFF4"
-# WorkBuddy：参考 workbuddy.cn 官网设计令牌（薄荷绿 #00C29A、白面 #FFF、文字 #1A1A1A、
-# 边框 #EBEBEB、圆角卡片），浅色版
-"WorkBuddy|08-workbuddy-light.png|00C29A|3B82F6|BDBDBD|FFFFFF|1A1A1A|646464|009273|DDF0EC|D14343|009273|1F6FEB|8B5CF6|079D55|00A383|6C4DFF|FFFFFF|1A1A1A|00C29A|1A1A1A|CF3B45|0E8F55|9A6700|1F6FEB|8250DF|009273|57606A|8B949E|E5534B|2DA44E|BF8700|4C8DFF|A475F9|12A594|1A1A1A"
-# WorkBuddy Dark：同一套品牌令牌的暗部（#0A0A0A 面 + #28B894→#3B82F6 渐变强调）
-"WorkBuddy Dark|09-workbuddy-dark.png|1BC69B|3B82F6|2A2F36|111417|F2F4F8|8A8F98|7CE0C0|172A25|FF6B6B|34D399|60A5FA|A78BFA|4ADE80|2DD4BF|8B5CF6|0E1116|E6EAF0|1BC69B|0E1116|FF6B6B|34D399|E3B341|60A5FA|A78BFA|2DD4BF|C9D1D9|6B7280|FF8787|6EE7B7|F2CC60|93C5FD|C4B5FD|5EEAD4|F8FAFC"
-# HyprBuddy：取自项目主视觉图（深黑 + 霓虹青 #02F0FA / 品红 #E926F5 / 长春花紫 #A19AF4），
-# 边框跑 霓虹青→品红 渐变；终端保留红绿黄以维持 diff/状态可读
-"HyprBuddy|11-cybertron.png|02F0FA|E926F5|292C2E|0D0F10|C6CDD0|5A656A|4DE8F2|14323A|FF5C7A|02F0FA|A19AF4|9565E1|39C6FF|E926F5|99A4AA|0A0C0D|C6CDD0|02F0FA|0A0C0D|FF5C7A|4FD8A8|D9C27A|5AA7D6|B77BF0|02F0FA|AAB3B6|5A656A|FF7D93|6FE8BE|F0D48A|7FC4E8|CFA0FF|6FF6FC|E6ECEE"
-)
-
-N=${#THEMES[@]}
-
+mapfile -t SLUGS < <(theme_list)
+N=${#SLUGS[@]}
+[ "$N" -gt 0 ] || { echo "theme-next: $THEMES_DIR 下没有主题" >&2; exit 1; }
 
 get_idx() {
   local i=0
@@ -92,25 +46,23 @@ get_idx() {
 
 cur_idx=$(get_idx)
 
-# 输出主题清单（主题预览选择器的数据源）：
-#   idx<TAB>名称<TAB>壁纸<TAB>色板(逗号分隔5色)<TAB>当前标记
+# 主题清单（theme-picker 数据源）：idx<TAB>名称<TAB>壁纸<TAB>色板(5色)<TAB>当前标记
 if [ "${1:-}" = "--print-themes" ]; then
-  i=0
-  for t in "${THEMES[@]}"; do
-    IFS='|' read -r NAME WALLPAPER HA1 HA2 _ WB_BG WB_FG _ _ _ WB_URGENT _ <<< "$t"
+  for i in "${!SLUGS[@]}"; do
+    theme_env_load "${SLUGS[$i]}" || continue
     tag=""
     [ "$i" = "$cur_idx" ] && tag="← 当前"
-    printf '%s\t%s\t%s\t%s\t%s\n' \
-      "$i" "$NAME" "$WALL/$WALLPAPER" "$WB_BG,$WB_FG,$HA1,$HA2,$WB_URGENT" "$tag"
-    i=$((i + 1))
+    printf '%s\t%s\t%s/%s\t%s\t%s\n' \
+      "$i" "$T_NAME" "$HOME/Pictures/wallpapers" "$T_WALLPAPER" \
+      "$T_BG,$T_FG,$T_ACCENT,$T_ACCENT2,$T_URGENT" "$tag"
   done
   exit 0
 fi
+
 req="${1:-next}"
 if [ "$req" = "restore" ]; then
   idx=$cur_idx
 elif [[ "$req" =~ ^[0-9]+$ ]] && [ "$req" -lt "$N" ]; then
-  # 直接指定主题（主题预览选择器使用）
   idx=$req
   echo "$idx" > "$STATE"
 else
@@ -118,466 +70,25 @@ else
   echo "$idx" > "$STATE"
 fi
 
-IFS='|' read -r NAME WALLPAPER HA1 HA2 HI \
-  WB_BG WB_FG WB_WS WB_WSAFG WB_WSABG WB_URGENT WB_CLOCK WB_CPU WB_MEM WB_BAT WB_PULSE WB_AGENT \
-  K_BG K_FG K_CURSOR \
-  K0 K1 K2 K3 K4 K5 K6 K7 K8 K9 K10 K11 K12 K13 K14 K15 <<< "${THEMES[$idx]}"
+slug=${SLUGS[$idx]}
+theme_env_load "$slug" || exit 1
+# restore 时 hyprctl reload 前先等会话就绪（沿用 v0 行为）
+[ "$req" = "restore" ] && sleep 1
 
-# ── Hyprland 边框（实时，无需重建） ──────────────
-# 经典 hyprlang 用 keyword；Lua 配置管理器下 keyword 不被支持（会弹红条
-# "keyword can't work with non-legacy parsers"），改为写 theme.lua + reload。
-if command -v hyprctl >/dev/null 2>&1; then
-  [ "${1:-next}" = "restore" ] && sleep 1
-  if hyprctl systeminfo 2>/dev/null | grep -q "configProvider: lua"; then
-    cat > "$XDG_CONFIG_HOME/hypr/theme.lua.tmp.$$" <<THEMELUA
-hl.config({ general = { col = {
-    active_border   = { colors = { "rgba(@HA1@ee)", "rgba(@HA2@ee)" }, angle = 45 },
-    inactive_border = "rgba(@HI@aa)",
-} } })
-THEMELUA
-    sed -i -e "s/@HA1@/${HA1}/g" -e "s/@HA2@/${HA2}/g" -e "s/@HI@/${HI}/g" \
-      "$XDG_CONFIG_HOME/hypr/theme.lua.tmp.$$" 2>/dev/null || true
-    mv -f "$XDG_CONFIG_HOME/hypr/theme.lua.tmp.$$" "$XDG_CONFIG_HOME/hypr/theme.lua" 2>/dev/null \
-      && hyprctl reload >/dev/null 2>&1
-    # hyprctl reload 会清空所有 bind，而 hyprshell 只在启动时注册热键，
-    # 所以每次改边框（切主题）后必须重启它的 daemon，否则 Super+` / Alt+Tab 失效。
-    if command -v hyprshell >/dev/null 2>&1 && pgrep -x .hyprshell-wrap >/dev/null 2>&1; then
-      pkill -x .hyprshell-wrap 2>/dev/null
-      sleep 0.3
-      setsid hyprshell run >/dev/null 2>&1 < /dev/null &
-    fi
-  else
-    hyprctl keyword general:col.active_border "rgba(${HA1}ee) rgba(${HA2}ee) 45deg" 2>/dev/null
-    hyprctl keyword general:col.inactive_border "rgba(${HI}aa)" 2>/dev/null
-  fi
-fi
+# ── 编排：按序执行 Hyprland 栈 exporters（同进程 source，T_* 直接可见）──
+for e in hyprland-border wallpaper waybar fuzzel swaync eww hyprshell swayosd kitty fastfetch hyprlock hyprtoolkit; do
+  . "$LIB_DIR/hyprland/$e.sh"
+done
 
-# ── 壁纸（先确保 swww 守护在运行） ─────────────
-IMG="$WALL/$WALLPAPER"
-if [ -f "$IMG" ] && [ -n "$WP" ]; then
-  ensure_swww
-  "$WP" img "$IMG" 2>/dev/null
-fi
-
-# ── Waybar（整份重写 style.css + 重启） ─────────
-# GTK CSS 不支持 :root / var()，必须写具体颜色值。
-# style.css 默认是指向 store 的软链，先摘掉再写常规文件。
-mkdir -p "$XDG_CONFIG_HOME/waybar"
-rm -f "$XDG_CONFIG_HOME/waybar/style.css"
-rm -f "$XDG_CONFIG_HOME/waybar/theme.css"
-cat > "$XDG_CONFIG_HOME/waybar/style.css" <<CSS
-* {
-  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC", sans-serif;
-  font-size: 13px;
-  color: #${WB_FG};
-  border: none;
-  border-radius: 0;
-}
-window#waybar { background: transparent; }
-window#waybar > box {
-  background: #${WB_BG};
-  border-radius: 12px;
-  padding: 2px 8px;
-  margin: 0 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-}
-/* workspaces：胶囊 + hover */
-#workspaces button { padding: 0 8px; margin: 2px 1px; color: #${WB_WS}; border-radius: 8px; }
-#workspaces button:hover { color: #${WB_WSAFG}; background: #${WB_WSABG}; }
-#workspaces button.active { color: #${WB_WSAFG}; background: #${WB_WSABG}; }
-#workspaces button.urgent { color: #${WB_URGENT}; }
-/* 中间窗口标题：独立胶囊 */
-#window { background: #${WB_BG}; border-radius: 10px; padding: 0 12px; color: #${WB_WS}; }
-/* 分组胶囊（与 Hyprland rounding=10 对齐） */
-#group-hardware, #group-media, #group-clock {
-  background: #${WB_WSABG};
-  border: 1px solid #${WB_WSAFG};
-  border-radius: 10px;
-  padding: 0 8px;
-  margin: 4px 3px;
-}
-#group-hardware:hover, #group-media:hover, #group-clock:hover { background: #${WB_WS}; }
-#network, #tray { border: 1px solid #${WB_WSAFG}; border-radius: 10px; padding: 0 8px; margin: 4px 3px; }
-#network:hover { background: #${WB_WSABG}; }
-#clock { color: #${WB_CLOCK}; }
-#cpu { color: #${WB_CPU}; }
-#memory { color: #${WB_MEM}; }
-#battery { color: #${WB_BAT}; }
-#pulseaudio { color: #${WB_PULSE}; }
-#custom-agent-usage { color: #${WB_AGENT}; padding: 0 6px; }
-CSS
-# 在跑就重启（换肤生效），没跑就拉起（登录后 CSS 被旧缓存打断等场景）。
-# 注意匹配方式：NixOS 包装的 waybar 进程 comm 是 ".waybar-wrapped"，
-# pgrep -x waybar 永远匹配不上（旧实例杀不掉会堆叠），须用对 comm 子串匹配的
-# 无标志 pgrep/pkill waybar。
-# flock 串行化：exec-once 的 restore 与配置自动 reload 触发的 restore 可能并发，
-# 不加锁会 pkill/setsid 交错导致状态栏堆叠出多份。
-(
-  flock -x 200
-  if pgrep waybar >/dev/null 2>&1; then
-    pkill waybar 2>/dev/null
-    sleep 0.4
-  fi
-  setsid waybar >/dev/null 2>&1 < /dev/null 200>&- &   # 200>&- 防止子进程继承锁 fd
-) 200>"$RUNTIME/theme-next/waybar.lock"
-
-# ── fuzzel 启动器（替换 [colors] 段，其余保持仓库配置） ──
-# fuzzel 即用即读配置，无需重启。fuzzel.ini 默认是 store 软链，摘链后写常规文件。
-FUZZEL="$XDG_CONFIG_HOME/fuzzel/fuzzel.ini"
-if [ -f "$FUZZEL" ]; then
-  if [ -L "$FUZZEL" ]; then FSRC=$(readlink -f "$FUZZEL"); else FSRC="$FUZZEL"; fi
-  mkdir -p "$XDG_CONFIG_HOME/fuzzel"
-  # 先写临时文件，非空才替换（store 中间链接未就绪等异常时不留 0 字节配置）
-  awk -v bg="${WB_BG}ff" -v fg="${WB_FG}ff" -v mtc="${WB_WSAFG}ff" \
-      -v sel="${WB_WSABG}ff" -v seltxt="${WB_FG}ff" -v selmtc="${WB_PULSE}ff" \
-      -v border="${WB_WSAFG}ff" '
-    /^\[colors\]/ { inblk=1
-      print "[colors]"
-      print "background=" bg
-      print "text=" fg
-      print "match=" mtc
-      print "selection=" sel
-      print "selection-text=" seltxt
-      print "selection-match=" selmtc
-      print "border=" border
-      next }
-    /^\[/ { inblk=0 }
-    !inblk { print }
-  ' "$FSRC" > "$FUZZEL.tmp" 2>/dev/null || true
-  if [ -s "$FUZZEL.tmp" ]; then
-    mv -f "$FUZZEL.tmp" "$FUZZEL"
-  else
-    rm -f "$FUZZEL.tmp"
-  fi
-fi
-
-# ── 颜色工具：mixhex <A> <B> <pct> → #RRGGBB，pct% 偏向 B ──────────────
-mixhex() {
-  local a=${1#\#} b=${2#\#} p=$3 i x y v out=""
-  for i in 0 2 4; do
-    x=$((16#${a:i:2})); y=$((16#${b:i:2}))
-    v=$(( (x * (100 - p) + y * p + 50) / 100 ))
-    printf -v out '%s%02X' "$out" "$v"
-  done
-  printf '#%s' "$out"
-}
-
-# ── swaync（通知中心 + 控制中心；整份 CSS 重写，reload 热加载）────────────
-# 从 mako 迁移：卡片底 = 主题底向正文提亮 8%，描边 = 底×强调色 28%，
-# 与 waybar/hyprtoolkit 共用同一套推导，视觉不割裂。
-SN_BG2="$(mixhex "$WB_BG" "$WB_FG" 8 | cut -c2-)"
-# 正文色：muted 向 fg 提 35%（原始 muted 在卡片底上对比度只有 2.8:1，几乎看不见）
-SN_FMT="$(mixhex "$WB_WS" "$WB_FG" 35 | cut -c2-)"
-SWAYNC="$XDG_CONFIG_HOME/swaync/style.css"
-mkdir -p "$XDG_CONFIG_HOME/swaync"
-cat > "$SWAYNC.tmp.$$" <<SWAYNCCSS
-/* 由 theme-next 生成，勿手改；改配色请改主题表 */
-@define-color bg      #${WB_BG};
-@define-color bg2     #${SN_BG2};
-@define-color fg      #${WB_FG};
-@define-color muted   #${SN_FMT};
-@define-color accent  #${HA1};
-@define-color accent2 #${HA2};
-@define-color border  alpha(#${HA1}, 0.38);
-@define-color urgent  #${WB_URGENT};
-
-* {
-  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC", sans-serif;
-  font-size: 13px;
-}
-
-.control-center {
-  background: alpha(@bg, 0.94);
-  border: 1px solid @border;
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 32px rgba(0, 0, 0, 0.45);
-}
-.control-center-list { background: transparent; }
-
-.widget-title { color: @accent; font-weight: bold; margin: 8px 12px 4px 12px; }
-.widget-title > button {
-  background: alpha(@bg2, 0.55); color: @muted;
-  border: 1px solid @border; border-radius: 8px; padding: 2px 10px;
-}
-.widget-title > button:hover { color: @urgent; }
-
-.widget-dnd { color: @fg; margin: 4px 14px; }
-.widget-dnd > switch { background: alpha(@bg2, 0.55); border: 1px solid @border; border-radius: 999px; }
-.widget-dnd > switch:checked { background: @accent; }
-
-.notification-row { background: transparent; outline: none; }
-.notification {
-  background: alpha(@bg2, 0.72);
-  border: 1px solid @border;
-  border-radius: 12px;
-  margin: 6px 8px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-}
-.notification-content { padding: 10px 12px; }
-.summary { color: @fg; font-weight: bold; }
-.body { color: @muted; }
-.time { color: @muted; }
-.close-button { background: transparent; color: @muted; border-radius: 999px; }
-.close-button:hover { color: @urgent; }
-.notification.critical { border-color: @urgent; }
-
-.widget-buttons-grid { margin: 6px 8px; background: transparent; }
-.widget-buttons-grid > flowbox > flowboxchild > button {
-  background: alpha(@bg2, 0.55);
-  border: 1px solid @border;
-  border-radius: 10px;
-  color: @fg;
-  padding: 8px 4px;
-  min-height: 26px;
-  font-size: 12px;
-}
-.widget-buttons-grid > flowbox > flowboxchild > button:hover {
-  background: alpha(@accent, 0.18); color: @accent; border-color: alpha(@accent, 0.5);
-}
-.widget-buttons-grid > flowbox > flowboxchild > button:checked {
-  background: alpha(@accent, 0.28); color: @accent;
-}
-
-.widget-mpris {
-  background: alpha(@bg2, 0.72);
-  border: 1px solid @border; border-radius: 12px;
-  margin: 6px 8px; color: @fg;
-}
-.widget-volume {
-  background: alpha(@bg2, 0.72);
-  border: 1px solid @border; border-radius: 12px;
-  margin: 6px 8px; padding: 6px 10px; color: @accent;
-}
-.widget-volume > box > label { color: @fg; }
-SWAYNCCSS
-if [ -s "$SWAYNC.tmp.$$" ]; then
-  mv -f "$SWAYNC.tmp.$$" "$SWAYNC"
-  swaync-client -rs >/dev/null 2>&1 || true
-else
-  rm -f "$SWAYNC.tmp.$$"
-fi
-
-# ── eww（日历/会话弹窗；整份 scss 重写，eww reload 热加载）───────────────
-# 用带引号的 heredoc（不做 shell 展开）+ sed 占位替换：scss 的 $var 与
-# theme 的 ${...} 混在一起时，无引号 heredoc 会在 set -u 下炸掉。
-EW="$XDG_CONFIG_HOME/eww/eww.scss"
-mkdir -p "$XDG_CONFIG_HOME/eww"
-cat > "$EW.tmp.$$" <<'EWWSCSS'
-// 由 theme-next 生成，勿手改
-$bg: #@BG@;
-$bg2: #@BG2@;
-$fg: #@FG@;
-$muted: #@MUTED@;
-$accent: #@ACCENT@;
-$accent2: #@ACCENT2@;
-$border: rgba(#@ACCENT@, 0.28);
-
-* { all: unset; font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC"; }
-.card { background: $bg; border: 1px solid $border; border-radius: 14px; padding: 12px; color: $fg; }
-.card-title { color: $accent; font-weight: bold; font-size: 14px; padding-bottom: 6px; }
-.cal { color: $fg; }
-.cal:selected { background: $accent; color: $bg; }
-.card-btn { background: $bg2; border: 1px solid $border; border-radius: 8px; padding: 6px 10px; color: $fg; }
-.card-btn:hover { color: $accent; border-color: $accent; }
-EWWSCSS
-sed -i -e "s/@BG@/$WB_BG/g" -e "s/@BG2@/$SN_BG2/g" -e "s/@FG@/$WB_FG/g" \
-       -e "s/@MUTED@/$WB_WS/g" -e "s/@ACCENT@/$HA1/g" -e "s/@ACCENT2@/$HA2/g" \
-       "$EW.tmp.$$" 2>/dev/null || true
-if [ -s "$EW.tmp.$$" ]; then
-  mv -f "$EW.tmp.$$" "$EW"
-  eww reload >/dev/null 2>&1 || true
-else
-  rm -f "$EW.tmp.$$"
-fi
-
-# ── hyprshell（overview / switch / launcher；GTK4 CSS 变量，自动热重载）──────
-# 官方样式用 var(--bg-window-color) 之类的自定义属性，所以只要在 * 上覆盖变量即可，
-# 不必猜它的类名；文件会被 mv 覆盖成实体文件（install.sh 建的是指向 store 的软链）。
-HS_STYLE="$XDG_CONFIG_HOME/hyprshell/styles.css"
-mkdir -p "$XDG_CONFIG_HOME/hyprshell"
-HS_BG2="$(mixhex "$WB_BG" "$WB_FG" 10 | cut -c2-)"
-HS_BG2H="$(mixhex "$WB_BG" "$WB_FG" 16 | cut -c2-)"
-cat > "$HS_STYLE.tmp.$$" <<HSCSS
-/* 由 theme-next 生成，勿手改；改配色请改主题表 */
-* {
-  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK SC";
-  --border-radius: 12px;
-  --border-size: 2px;
-  --border-style: solid;
-  --window-padding: 6px;
-  --bg-window-color: rgba(${WB_BG}, 0.72);   /* ç»çï¼éåºæ¡é¢ */
-  --bg-color: rgba(${HS_BG2}, 0.55);
-  --bg-color-hover: rgba(${HA1}, 0.18);
-  --border-color: rgba(${HA1}, 0.38);
-  --border-color-active: rgba(${HA1}, 0.95);
-}
-.monitor, .launcher {
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 10px 30px rgba(0,0,0,0.45);
-}
-.workspace, .client, .launcher-item-name { color: #${WB_FG}; }
-HSCSS
-if [ -s "$HS_STYLE.tmp.$$" ]; then
-  mv -f "$HS_STYLE.tmp.$$" "$HS_STYLE"
-else
-  rm -f "$HS_STYLE.tmp.$$"
-fi
-# ── swayosd OSD（值替换 + 重启 swayosd-server） ──
-# 注意 comm 是 .swayosd-server（包装器改名），与 waybar 同理用无标志 pgrep/pkill
-OSD="$XDG_CONFIG_HOME/swayosd/style.css"
-if [ -f "$OSD" ]; then
-  if [ -L "$OSD" ]; then SSRC=$(readlink -f "$OSD"); else SSRC="$OSD"; fi
-  mkdir -p "$XDG_CONFIG_HOME/swayosd"
-  sed -e "s/#0f2438/#${WB_BG}/" \
-      -e "s/#0e7fa8/#${WB_WSAFG}/" \
-      -e "s/#d7e7f5/#${WB_FG}/" \
-      -e "s/#1e9bd8/#${WB_PULSE}/" \
-      -e "s/#1b3d5f/#${WB_WSABG}/" \
-      "$SSRC" > "$OSD.tmp" 2>/dev/null || true
-  (
-    flock -x 201
-    if [ -s "$OSD.tmp" ]; then
-      mv -f "$OSD.tmp" "$OSD"
-    else
-      rm -f "$OSD.tmp"
-    fi
-    if pgrep swayosd-server >/dev/null 2>&1; then
-      pkill swayosd-server 2>/dev/null
-      sleep 0.3
-      setsid swayosd-server >/dev/null 2>&1 < /dev/null 201>&- &
-    fi
-  ) 201>"$RUNTIME/theme-next/osd.lock"
-fi
-
-# ── Kitty（include 持久化 + 实时 set-colors） ───
-mkdir -p "$XDG_CONFIG_HOME/kitty"
-cat > "$XDG_CONFIG_HOME/kitty/theme.inc.conf" <<KITTY
-foreground #${K_FG}
-background #${K_BG}
-cursor #${K_CURSOR}
-cursor_text_color #${K_BG}
-selection_background #${K_FG}
-selection_foreground #${K_BG}
-color0  #${K0}
-color1  #${K1}
-color2  #${K2}
-color3  #${K3}
-color4  #${K4}
-color5  #${K5}
-color6  #${K6}
-color7  #${K7}
-color8  #${K8}
-color9  #${K9}
-color10 #${K10}
-color11 #${K11}
-color12 #${K12}
-color13 #${K13}
-color14 #${K14}
-color15 #${K15}
-KITTY
-if command -v kitty >/dev/null 2>&1; then
-  kitty @ set-colors -a \
-    background=#${K_BG} foreground=#${K_FG} cursor=#${K_CURSOR} \
-    color0=#${K0} color1=#${K1} color2=#${K2} color3=#${K3} color4=#${K4} color5=#${K5} color6=#${K6} color7=#${K7} \
-    color8=#${K8} color9=#${K9} color10=#${K10} color11=#${K11} color12=#${K12} color13=#${K13} color14=#${K14} color15=#${K15} \
-    2>/dev/null || true
-fi
-
-# ── fastfetch（hypr-menu「系统信息」弹窗；配色随主题）──────────────
-# 主题名/壁纸在写入时烘焙进去（切主题即重写），agent 用量与世代每次现取。
-FFCFG=$XDG_CONFIG_HOME/fastfetch/config.jsonc
-mkdir -p "$XDG_CONFIG_HOME/fastfetch"
-THEME_POS=$((idx + 1))
-cat > "$FFCFG.tmp.$$" <<FFCFG
-{
-  "\$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
-  "logo": {
-    "type": "builtin",
-    "source": "NixOS",
-    "padding": { "right": 2 },
-    "color": { "1": "#${HA1}", "2": "#${HA2}" }
-  },
-  "display": {
-    "separator": ": ",
-    "color": { "keys": "#${HA1}", "output": "#${WB_FG}", "separator": "#${HI}" }
-  },
-    "modules": [
-    { "type": "title" },
-    "separator",
-    { "type": "command", "key": "OS", "text": "sysinfo-os" },
-    "host",
-    "kernel",
-    "uptime",
-    "packages",
-    "shell",
-    "display",
-    "de",
-    "wm",
-    { "type": "command", "key": "Theme", "text": "echo '${NAME} (${THEME_POS}/${N})'" },
-    { "type": "command", "key": "Agent", "text": "command -v agent-usage >/dev/null 2>&1 && agent-usage --text || true" },
-    "icons",
-    "font",
-    "cursor",
-    "terminal",
-    "terminalfont",
-    "cpu",
-    "gpu",
-    "memory",
-    "swap",
-    "disk",
-    "localip",
-    "battery",
-    "poweradapter",
-    "locale"
-  ]
-}
-FFCFG
-if [ -s "$FFCFG.tmp.$$" ]; then
-  mv -f "$FFCFG.tmp.$$" "$FFCFG"
-else
-  rm -f "$FFCFG.tmp.$$"
-fi
-
-# ── hyprlock 锁屏（只写变量；控件块在 hyprlock.conf 里，写控件块会因 source 追加出重复控件） ──
-mkdir -p "$XDG_CONFIG_HOME/hypr"
-cat > "$XDG_CONFIG_HOME/hypr/theme-hyprlock.conf" <<LOCK
-\$hl_bg = rgba(${WB_BG}ff)
-\$hl_fg = rgba(${WB_FG}ff)
-\$hl_inner = rgba(${WB_BG}e6)
-\$hl_outer = rgba(${WB_AGENT}ff)
-\$hl_dots = rgba(${WB_FG}ff)
-\$hl_bgpath = ${HOME}/Pictures/wallpapers/${WALLPAPER}
-LOCK
-
-# ── hyprtoolkit（hyprpolkitagent 0.2.0 认证框的配色）────────────
-# 0.2.0 起认证框改由 hyprtoolkit 渲染，颜色/圆角/字体取自这个文件；
-# agent 每次弹窗前重读，所以切主题不需要重启 polkit 代理。
-# 键名见 hyprtoolkit wiki：background/base/alternate_base/text/bright_text/
-# accent/accent_secondary/rounding_large/rounding_small/font_family/font_size
-cat > "$XDG_CONFIG_HOME/hypr/hyprtoolkit.conf" <<HTK
-background = rgba(${WB_BG}ff)
-base = rgba($(mixhex "$WB_BG" "$WB_FG" 6 | cut -c2-)ff)
-alternate_base = rgba($(mixhex "$WB_BG" "$WB_FG" 3 | cut -c2-)ff)
-text = rgba(${WB_FG}ff)
-bright_text = rgba($(mixhex "$WB_FG" FFFFFF 25 | cut -c2-)ff)
-accent = rgba(${HA1}ff)
-accent_secondary = rgba(${HA2}ff)
-rounding_large = 14
-rounding_small = 8
-font_family = JetBrainsMono Nerd Font
-font_size = 11
-HTK
-
-# agent 主题跟随（agent 层未启用时脚本不存在，静默跳过）
-# 明暗：按 waybar 背景亮度判断（浅色主题 WB_BG 接近 #FFF），agent 界面据此跟随
+# agent 主题跟随（agent 层未启用时脚本不存在，静默跳过）；
+# 明暗按背景亮度判断，与 v0 一致
 AGENT_MODE=dark
-if [ $(( (16#${WB_BG:0:2} * 299 + 16#${WB_BG:2:2} * 587 + 16#${WB_BG:4:2} * 114) / 1000 )) -ge 140 ]; then
+if [ $(( (16#${T_BG:0:2} * 299 + 16#${T_BG:2:2} * 587 + 16#${T_BG:4:2} * 114) / 1000 )) -ge 140 ]; then
   AGENT_MODE=light
 fi
 [ -x "@HOME@/.local/bin/agent-theme-sync" ] && "@HOME@/.local/bin/agent-theme-sync" "$AGENT_MODE" >/dev/null 2>&1 || true
 
-# restore（登录 exec-once + 配置重载 exec 各触发一次）不弹通知，避免同一
-# 主题重复弹窗；手动切换主题才提示。
-command -v notify-send >/dev/null 2>&1 && [ "$req" != "restore" ] && notify-send -a theme-next "主题 -> $NAME" 2>/dev/null || true
+# restore 不弹通知，避免登录时同一主题重复弹窗
+command -v notify-send >/dev/null 2>&1 && [ "$req" != "restore" ] && timeout 3 notify-send -a theme-next "主题 -> $T_NAME" 2>/dev/null || true
 
-echo "theme: $NAME ($((idx+1))/$N)"
+echo "theme: $T_NAME ($((idx+1))/$N)"

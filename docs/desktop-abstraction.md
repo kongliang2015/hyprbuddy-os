@@ -57,7 +57,7 @@ Hyprland 退役 = 删 `exporters/hyprland/`，主题资产不受影响。
 |---|---|---|
 | P0 | 并存骨架：`sessions`/`default` 选项、`modules/desktop/cosmic.nix`、portal 分会话 | **已完成（cosmic 默认关）** |
 | P1 | 能力层 `scripts/lib/de.sh`，21 处 hyprctl 收敛到 8 个能力；`hypr-check` → `desktop-check` | **已完成（2026-10-26，见文末）** |
-| P2 | `themes/*/tokens.json` + exporters 拆分，新增 cosmic exporter | 待做 |
+| P2 | `themes/*/tokens.json` + exporters 拆分，新增 cosmic exporter | **已完成（2026-10-27，见文末）** |
 | P3 | COSMIC 功能对齐（配置部署、壁纸/截图/锁屏/OSD/夜间/键位） | 待做 |
 | P4 | `default = "cosmic"`，Hyprland 降为可选 | 部分达成：vmware host 已 default = cosmic（2026-10-27） |
 | P5 | 删 `hyprland.nix` + `exporters/hyprland/` + 相关包，打 tag 留回退 | 待做 |
@@ -164,3 +164,60 @@ desktop-check cosmic     # 显式指定
 - `de_keybinds_help`：COSMIC 无等价物，需自建文本速查
 - `de_theme_apply`：依赖 P2 的 token/exporters 拆分
 - 夜间模式：COSMIC 需要引入 gammastep 或等 cosmic 上游支持
+
+## P2 落地（2026-10-27）
+
+### 文件结构
+
+```
+themes/<slug>/tokens.json          8 套主题的语义令牌（bg/fg/accent/accent2/inactive/
+                                   surface/muted/urgent + bar.* + terminal.*，
+                                   含 order 字段沿用 v0 索引顺序、dark 字段）
+exporters/lib.sh                   公共库：theme_list / theme_env_load（jq 展开
+                                   为 T_* 环境变量）/ mixhex
+exporters/hyprland/*.sh            12 个 writer（自 theme-next 拆分，逻辑原样）：
+                                   hyprland-border / wallpaper / waybar / fuzzel /
+                                   swaync / eww / hyprshell / swayosd / kitty /
+                                   fastfetch / hyprlock / hyprtoolkit
+exporters/cosmic/theme.sh          cosmic_theme_apply：生成 cosmic-themes RON
+```
+
+部署：home/default.nix 把 themes/ 与 exporters/ 落到
+`~/.local/share/hyprland-nixos/{themes,exporters}/`；jq 进 home 包。
+
+### theme-next（编排器）
+
+只做索引管理 + tokens 展开 + 按 序 source exporters。对 theme-picker 的
+`--print-themes` 5 字段契约不变；`theme-next <idx>` 保留。已知行为修正：
+kitty 色板 v0 只有 15 项（K15 缺失），缺省位回落终端前景色。
+
+### cosmic exporter
+
+- 写 Dark/Light 目录由 tokens.dark 决定，并同步 `Mode/v1/is_dark`
+- accent 系（accent/accent_button）：base=T_ACCENT，hover=×0.88、
+  pressed=×0.62（实测 libcosmic 派生幅度后取整）
+- background/primary/secondary：base 与 component 各态 = bg↔fg 线性 mix
+  （pct 从现有主题实测：0.13/0.23/0.33 等，浅色主题同样成立）
+- button：mix(bg,fg,0.64) α0.25，各态只变 alpha；selected_text/focus=accent
+- destructive/success/warning 系：语义色（亮红/绿/黄）不随主题变
+- palette/spacing：保留现有文件（palette.name 换主题 slug）
+- 壁纸绑定复用 de_wallpaper_set
+- 测试：`COSMIC_THEME_DIR_OVERRIDE=<目录>` 重定向写入，不碰真实配置
+
+### 已实测
+
+- 沙箱全流程：theme-next 0 → 12 个 exporter 全部产物正确（waybar/kitty/
+  fastfetch/hyprlock 等抽查）、state 写入、无旧变量残留
+- cosmic exporter：HyprBuddy 注入测试目录，background/accent/button 等值与
+  结构（括号配对）全部正确
+
+### 限制（留 P3）
+
+- 浅色主题（WorkBuddy）会翻转全局明暗模式，primary/secondary 的深色中性
+  百分比常数为暗色实测值，浅色下未调优
+- cosmic-themes 无 CSS/层模糊概念，主题的模糊/胶囊样式不迁移（能力降级）
+- de_theme_apply 已入 de.sh 并提供 CLI 入口 de-theme-apply（scripts/），COSMIC 会话实测通过
+- **大坑留档（2026-10-27 实测）**：生成的 RON 若缺嵌套结构闭合的尾逗号（`base: (...)` 后
+  少 `,`），整份主题反序列化失败，libcosmic **静默回落默认主题**（日志
+  `RonSpanned(ExpectedComma)`），表现为"切主题颜色不变"。RON 要求：嵌套字段闭合
+  括号后必须有逗号；仅文件末尾最后一个字段可省略。修复后 COSMIC 实测配色跟随正常
