@@ -1,4 +1,4 @@
-# 本机：GTX 1050 Ti（Pascal）/ 台式机 / 保留 XFCE + Window Maker。
+# 本机：GTX 1050 Ti（Pascal）/ 台式机 / Hyprland + COSMIC 双会话（X11 会话已退役）。
 # 只写 distro.*，不直接写 NixOS 选项。
 { pkgs, ... }:
 {
@@ -29,7 +29,6 @@
       };
     };
     desktop = {
-      extraSessions = [ "xfce" "windowmaker" ];
       # HyprBuddy 配套 SDDM 登录界面：Plymouth 开屏 → 登录 → 桌面 同一套视觉
       sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
       theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名

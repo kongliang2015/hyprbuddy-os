@@ -25,8 +25,6 @@
       };
     };
 
-    desktop.extraSessions = [ @EXTRA_SESSIONS@ ];
-
     hardware.battery = @BATTERY@;
     hardware.backlight = @BACKLIGHT@;
 

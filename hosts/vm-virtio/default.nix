@@ -8,7 +8,6 @@
 
   distro = {
     gpu.vendor = "virtio";
-    desktop.extraSessions = [ ];
     user.name = "nixos";
     hardware.battery = false;
     # 验证 agent-usage：开启 agent 层（对齐 leonard，排除 claude-code 防构建期拉取失败）

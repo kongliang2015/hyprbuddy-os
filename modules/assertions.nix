@@ -6,10 +6,6 @@ in
 {
   assertions = [
     {
-      assertion = cfg.desktop.enable || cfg.desktop.extraSessions == [ ];
-      message = "distro.desktop.enable = false 时不能指定 distro.desktop.extraSessions。";
-    }
-    {
       assertion = cfg.gpu.vendor != "none" || !cfg.desktop.enable;
       message = "distro.gpu.vendor = \"none\"（headless）时请同时设置 distro.desktop.enable = false。";
     }

@@ -15,7 +15,7 @@ flake 化的桌面配置：SDDM → 桌面会话（Hyprland / COSMIC 可并存�
 
 ### leonard（x86_64 真机）
 - NVIDIA GTX 1050 Ti，闭源驱动 legacy_580（580.178.04）+ nvidia-drm.modeset=1
-- 双会话并存：Hyprland（默认）+ COSMIC（评估中）；额外保留 XFCE / Window Maker
+- 双会话并存：Hyprland（默认）+ COSMIC（评估中）；X11 会话（XFCE / Window Maker）已退役
 - agent 层开启（opencode + codebuddy，含 usage 统计）
 
 ### vmware（x86_64 虚机，COSMIC 实测机）
@@ -141,7 +141,6 @@ hyprland-nixos/
     desktop = {
       sessions = [ "hyprland" "cosmic" ];   # 装哪些桌面（断言 default 必须在其中）
       default = "cosmic";                    # SDDM 默认登录哪个
-      extraSessions = [ ];                   # 额外 X11 会话（xfce / windowmaker）
     };
     user.name = "leonard";
     hardware.battery = false;
@@ -159,7 +158,6 @@ hyprland-nixos/
 |---|---|---|
 | distro.desktop.sessions | hyprland / cosmic 列表 | 装哪些桌面提供方（可并存） |
 | distro.desktop.default | hyprland / cosmic | SDDM 默认登录会话 |
-| distro.desktop.extraSessions | xfce / windowmaker | 额外 X11 会话 |
 | distro.hypervisor | none / vmware / qemu | 虚拟化平台（兼容设置） |
 | distro.gpu.vendor | nvidia / amd / intel / virtio / none | 选择 GPU 模块 |
 | distro.gpu.nvidia.branch | auto / legacy_580 / production / beta | auto 按 pciIds 判断 |

@@ -110,12 +110,6 @@ in
 
     desktop = {
       enable = mkOption { type = types.bool; default = true; };
-      extraSessions = mkOption {
-        type = types.listOf (types.enum [ "xfce" "windowmaker" ]);
-        default = [ ];
-        description = "除 Hyprland 外额外保留的 X11 会话";
-      };
-
       # 同时安装的 Wayland 桌面会话。两个提供方实现同一组能力契约
       # （见 docs/desktop-abstraction.md），可并存、可逐步退役。
       sessions = mkOption {

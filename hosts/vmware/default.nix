@@ -48,7 +48,6 @@
       # v1 抽象层：Hyprland + COSMIC 并存；本机日常使用 COSMIC
       sessions = [ "hyprland" "cosmic" ];
       default = "cosmic";
-      extraSessions = [ ];
       # HyprBuddy 配套 SDDM 登录界面（pkgs/sddm-theme-hyprbuddy）
       sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
       theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名
