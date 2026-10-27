@@ -26,6 +26,9 @@
 
   distro = {
     user.name = "leonard";
+    # 注意：COSMIC 需在宿主机关闭「加速 3D 图形」——vmwgfx 的 dmabuf 导入
+    # 残缺，开启 3D 加速时 Workspaces 缩略图等客户端会因协议错误 7 崩溃；
+    # 关闭后 mesa 探测失败自动全栈回落 swrast，dmabuf 两端一致。
     hypervisor = "vmware";
 
     boot.loader = "grub";
@@ -42,6 +45,9 @@
     };
 
     desktop = {
+      # v1 抽象层：Hyprland + COSMIC 并存；本机日常使用 COSMIC
+      sessions = [ "hyprland" "cosmic" ];
+      default = "cosmic";
       extraSessions = [ ];
       # HyprBuddy 配套 SDDM 登录界面（pkgs/sddm-theme-hyprbuddy）
       sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
