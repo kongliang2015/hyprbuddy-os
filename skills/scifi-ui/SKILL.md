@@ -158,14 +158,46 @@ PY
 - 数值保留单位并用小号字：`72%`、`3.2G`、`48°C`
 - 告警用词直接：`过热`、`离线`，不用"哎呀"这类语气词
 
-## 六、COSMIC 的限制
+## 六、COSMIC 能用到什么程度
 
-COSMIC 没有 CSS，只能：
-- `is_frosted: true` 获得毛玻璃（对应我们的玻璃拟态）
-- `neutral_0..10` 做明暗阶梯、`accent_*` 上主色
-- `radius_*` / `gaps` 调形状
+COSMIC 没有 CSS，但 `cosmic-themes/<name>.ron` 的能力比想象强。逐项对照：
 
-→ 想套 sci-fi 风格，COSMIC 侧只改 palette；**不要**试图在 COSMIC 上实现切角/扫描线。
+### 6.1 可落地（改 RON 即可）
+
+| 令牌 | COSMIC 字段 | 说明 |
+|---|---|---|
+| 深空底 | `bg_color` | 直接指定基底色（如 `#0B0F14`） |
+| 冷调灰阶 | `neutral_tint` | **关键**：给全部中性色染色，偏青/蓝即 HUD 观感 |
+| 霓虹主色 | `accent` + `accent_blue/purple/…` | 单一强调色 |
+| 告警/成功 | `destructive` / `warning` / `success` | 语义色 |
+| 圆角阶梯 | `corner_radii`（0/4/8/16/32/160） | 用 s=8/m=16 做"柔和硬边" |
+| 间距阶梯 | `spacing`（0/4/8/12/16/24/32/48/64/128） | 收紧到 12/16 更紧凑 |
+| 毛玻璃 | `is_frosted: true` | 对应玻璃拟态 |
+| 窗口间隙 | `gaps: (h, v)` | 小间隙更"仪表盘" |
+| 文字色 | `text_tint` | 可给正文加轻微冷调 |
+
+### 6.2 做不到（不要尝试）
+
+| 令牌 | 原因 |
+|---|---|
+| 切角（8px chamfer） | 只支持圆角，无 clip-path 概念 |
+| 霓虹描边发光 | 无 box-shadow / 样式注入 |
+| 扫描线 / 网格底纹 | 无背景纹理层 |
+| 逐组件样式 | 同一套 palette 全局生效 |
+| 等宽/HUD 字体 | 字体走 fontconfig 全局，不能只给 COSMIC 用等宽 |
+| 焦点环样式 | 由 toolkit 绘制，主题不可改 |
+
+### 6.3 结论
+
+**可以用，但只到"配色 + 形状 + 间距 + 毛玻璃"这一层。**
+
+推荐做法：同一个 `tokens.json` 派生两套输出——
+`exporters/hyprland/*` 出完整科幻风（切角/发光/等宽），
+`exporters/cosmic/theme.sh` 出"科幻配色"（bg_color + neutral_tint + accent + is_frosted），
+两边色调一致，但 COSMIC 侧承认降级。
+
+**验收标准**：COSMIC 侧只看两件事——主色是否一致、深色底是否同色系；
+不要拿"有没有发光/切角"去验收 COSMIC。
 
 ## 七、反模式
 
