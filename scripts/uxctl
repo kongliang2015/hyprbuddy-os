@@ -551,24 +551,184 @@ def read_layout(path: str) -> dict:
 
 
 def cmd_layout(args) -> int:
-    if not os.path.isdir(LAYOUT_DIR):
-        print(f"uxctl: 未找到系统布局模板目录 {LAYOUT_DIR}", file=sys.stderr)
-        return 1
-    items = [read_layout(os.path.join(LAYOUT_DIR, d))
-             for d in sorted(os.listdir(LAYOUT_DIR))
-             if os.path.isdir(os.path.join(LAYOUT_DIR, d))]
+    if args.action == "apply":
+        if not args.id:
+            print("uxctl layout apply <id>", file=sys.stderr)
+            return 2
+        path = find_layout(args.id)
+        if path is None:
+            print(f"uxctl: 找不到模板 {args.id}", file=sys.stderr)
+            return 1
+        tree = layout_tree(path)
+        meta = read_layout(path)
+        print(f"模板: {args.id}  ({meta['name']})  {path}")
+        return apply_tree(tree, f"layout:{args.id}", args.yes)
+
+    if args.action == "save":
+        if not args.id:
+            print("uxctl layout save <name>", file=sys.stderr)
+            return 2
+        return save_layout(args.id)
+
+    # list
+    items = []
+    for base in (LAYOUT_DIR, LAYOUT_USER_DIR):
+        if not os.path.isdir(base):
+            continue
+        for d in sorted(os.listdir(base)):
+            p = os.path.join(base, d)
+            if not os.path.isdir(p):
+                continue
+            it = read_layout(p)
+            it["source"] = "system" if base == LAYOUT_DIR else "user"
+            items.append(it)
+    if not items:
+        print("（没有可用模板）")
+        return 0
     if args.json:
         print(json.dumps(items, ensure_ascii=False, indent=2))
         return 0
     for it in items:
-        n = sum(len(v) for v in it["keys"].values())
-        print(f"{it['id']:<28} {it['name']}")
+        tag = "" if it["source"] == "system" else "  [用户]"
+        print(f"{it['id']:<28} {it['name']}{tag}")
         for ns, keys in it["keys"].items():
             short = ns.replace("com.system76.", "")
             print(f"    {short}: {len(keys)} 键")
-        if n == 0:
-            print("    （空模板）")
-    print(f"\n来源: {LAYOUT_DIR}（cosmic-initial-setup 自带）")
+    print(f"\n系统模板: {LAYOUT_DIR}")
+    print(f"用户模板: {LAYOUT_USER_DIR}")
+    return 0
+
+
+LAYOUT_USER_DIR = os.path.join(os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share"), "cosmic-layouts")
+
+
+def find_layout(lid: str) -> str | None:
+    for base in (LAYOUT_USER_DIR, LAYOUT_DIR):
+        p = os.path.join(base, lid)
+        if os.path.isdir(p):
+            return p
+    return None
+
+
+def layout_tree(path: str) -> dict:
+    """{ns: {key: raw}}，ns 用 uxctl 的短名（panel/dock/panels）。"""
+    rev = {v: k for k, v in NS.items()}
+    tree = {}
+    for ns_full in sorted(os.listdir(path)):
+        v1 = os.path.join(path, ns_full, "v1")
+        if not os.path.isdir(v1) or ns_full not in rev:
+            continue
+        keys = {}
+        for k in sorted(os.listdir(v1)):
+            p = os.path.join(v1, k)
+            if os.path.isfile(p):
+                with open(p, "r", encoding="utf-8") as fh:
+                    keys[k] = fh.read().strip()
+        if keys:
+            tree[rev[ns_full]] = keys
+    return tree
+
+
+def apply_tree(tree: dict, reason: str, yes: bool) -> int:
+    changes = []
+    for ns, keys in tree.items():
+        for key, raw in keys.items():
+            cur = read_key(ns, key)
+            if cur is not None and norm(cur) == norm(raw):
+                continue
+            changes.append({"ns": ns, "key": key, "current": cur, "desired": raw})
+
+    if not changes:
+        print("模板为空，无变更")
+        return 0
+
+    w = max(len(f"{c['ns']}.{c['key']}") for c in changes)
+    for c in changes[:40]:
+        name = f"{c['ns']}.{c['key']}"
+        cur = " ".join((c["current"] or "(不存在)").split())[:38]
+        des = " ".join(c["desired"].split())[:38]
+        print(f"  {name:<{w}}  {cur}  →  {des}")
+    if len(changes) > 40:
+        print(f"  … 其余 {len(changes) - 40} 项省略")
+
+    if not yes:
+        print(f"\n共 {len(changes)} 处变更，未写入（加 --yes 应用）")
+        return 0
+
+    sid = make_snapshot(changes, reason)
+    print(f"\n快照: {sid}")
+    for c in changes:
+        write_atomic(os.path.join(ns_dir(c["ns"]), c["key"]), c["desired"])
+
+    bad = [c for c in changes
+           if (b := read_key(c["ns"], c["key"])) is None or norm(b) != norm(c["desired"])]
+    if bad:
+        print("校验失败，正在回滚：", file=sys.stderr)
+        for c in bad:
+            print(f"  {c['ns']}.{c['key']}", file=sys.stderr)
+        restore_snapshot(sid)
+        return 1
+    print(f"已应用 {len(changes)} 个键，校验通过")
+    print(f"回滚: uxctl snapshot restore {sid}")
+    return 0
+
+
+def save_layout(name: str) -> int:
+    if not name or "/" in name or name.startswith("."):
+        print("uxctl: 模板名不合法", file=sys.stderr)
+        return 2
+    dst = os.path.join(LAYOUT_USER_DIR, name)
+    if os.path.exists(dst):
+        print(f"uxctl: 模板已存在: {dst}", file=sys.stderr)
+        return 1
+
+    tree = {}
+    for ns in ("panels", "panel", "dock"):
+        d = ns_dir(ns)
+        if not os.path.isdir(d):
+            continue
+        keys = {}
+        for k in sorted(os.listdir(d)):
+            p = os.path.join(d, k)
+            if os.path.isfile(p):
+                with open(p, "r", encoding="utf-8") as fh:
+                    keys[k] = fh.read().strip()
+        if keys:
+            tree[ns] = keys
+
+    if not tree:
+        print("uxctl: 当前没有任何面板配置可保存", file=sys.stderr)
+        return 1
+
+    next_id = 0
+    for base in (LAYOUT_DIR, LAYOUT_USER_DIR):
+        if not os.path.isdir(base):
+            continue
+        for d in os.listdir(base):
+            kdl = os.path.join(base, d, "layout.kdl")
+            if os.path.isfile(kdl):
+                with open(kdl, "r", encoding="utf-8") as fh:
+                    for line in fh:
+                        if line.startswith("id "):
+                            try:
+                                next_id = max(next_id, int(line.split()[1]) + 1)
+                            except ValueError:
+                                pass
+                            break
+
+    for ns, keys in tree.items():
+        ns_dir_path = os.path.join(dst, NS[ns], "v1")
+        os.makedirs(ns_dir_path, exist_ok=True)
+        for k, raw in keys.items():
+            with open(os.path.join(ns_dir_path, k), "w", encoding="utf-8") as fh:
+                fh.write(raw + "\n")
+
+    with open(os.path.join(dst, "layout.kdl"), "w", encoding="utf-8") as fh:
+        fh.write(f'id {next_id}\nname en="{name}"\n')
+
+    total = sum(len(v) for v in tree.values())
+    print(f"已保存模板: {dst}（{len(tree)} 个命名空间 / {total} 个键，id {next_id}）")
+    print("提示：未生成 icon.png，COSMIC 设置页会显示为无缩略图")
     return 0
 
 
@@ -598,8 +758,10 @@ def main(argv: list[str]) -> int:
     s.add_argument("id", nargs="?")
     s.set_defaults(func=cmd_snapshot)
 
-    l = sub.add_parser("layout", help="系统布局模板（只读列举）")
-    l.add_argument("action", nargs="?", default="list", choices=["list"])
+    l = sub.add_parser("layout", help="布局模板：list / apply <id> / save <name>")
+    l.add_argument("action", nargs="?", default="list", choices=["list", "apply", "save"])
+    l.add_argument("id", nargs="?", help="模板 id（apply）或名称（save）")
+    l.add_argument("--yes", action="store_true", help="apply 时真正写入")
     l.add_argument("--json", action="store_true")
     l.set_defaults(func=cmd_layout)
 

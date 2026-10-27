@@ -112,12 +112,18 @@ uxctl layout                # 列出系统模板 + 各命名空间键数
 uxctl layout --json         # 含完整键值，可直接转 profile
 ```
 
-### 待实现（U2）
+### 已实现（U2，2026-10-27）
 
 ```bash
-uxctl layout apply top-panel-and-bottom-dock   # 整树铺到 ~/.config/cosmic
-uxctl layout save <name>                       # 把当前配置存成模板
+uxctl layout apply bottom-panel                # 整树铺到 ~/.config/cosmic（默认 dry-run）
+uxctl layout apply bottom-panel --yes          # 真正写入（带快照 + 写后校验 + 自动回滚）
+uxctl layout save leonard-current              # 把当前配置存成用户模板
 ```
+
+- `apply` 不套用 12 键预算（模板本身就是全量重置，属于显式操作），但**必须 `--yes`**
+- 与 `apply` 共用快照/校验/回滚链路
+- 用户模板写到 `~/.local/share/cosmic-layouts/<name>/`，`layout` 列表里标 `[用户]`
+- `save` 目前不生成 `icon.png`（COSMIC 设置页会显示无缩略图）
 
 实现要点：模板树的键名与 `uxctl` 的 schema 完全重叠（21 键 × 命名空间），
 所以 `layout apply` 可以直接走 `apply` 的快照 + 校验 + 回滚链路，
