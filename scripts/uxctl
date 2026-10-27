@@ -655,6 +655,10 @@ def layout_tree(path: str) -> dict:
 
 
 def apply_tree(tree: dict, reason: str, yes: bool) -> int:
+    if not tree:
+        print("模板为空（没有可读的 cosmic-config 键）")
+        return 1
+
     changes = []
     for ns, keys in tree.items():
         for key, raw in keys.items():
@@ -664,7 +668,7 @@ def apply_tree(tree: dict, reason: str, yes: bool) -> int:
             changes.append({"ns": ns, "key": key, "current": cur, "desired": raw})
 
     if not changes:
-        print("模板为空，无变更")
+        print("无变更（当前配置已与模板一致）")
         return 0
 
     w = max(len(f"{c['ns']}.{c['key']}") for c in changes)
