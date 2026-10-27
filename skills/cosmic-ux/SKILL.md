@@ -48,20 +48,26 @@ uxctl layout save <name>                         # 当前布局存为模板
 # 1. 读现状（只读）
 uxctl dump --ns panel --json
 
-# 2. 写 partial profile：只写要改的键（写到 /tmp 或 ~/.cache）
-cat > /tmp/ux-$(date +%s).json <<EOF
-{"version":1,"panel":{"autohide":{"wait_time":500,"transition_time":200,"handle_size":2}},"panel_radius":0}
+# 2. 写 partial profile：只写要改的键
+cat > /tmp/ux-panel.json <<EOF
+{
+  "version": 1,
+  "panel": {
+    "autohide": { "wait_time": 500, "transition_time": 200, "handle_size": 2 },
+    "border_radius": 12,
+    "opacity": 0.92
+  }
+}
 EOF
-# 注意：正确写法是嵌套在 panel 里，上面只是示意
 
 # 3. 出差异，贴给用户看
-uxctl diff /tmp/ux-XXX.json
+uxctl diff /tmp/ux-panel.json
 
 # 4. 用户确认后才写入
-uxctl apply /tmp/ux-XXX.json --yes --reason "自动隐藏顶栏"
+uxctl apply /tmp/ux-panel.json --yes --reason "自动隐藏顶栏"
 
 # 5. 复核
-uxctl dump --ns panel | grep -E "autohide|border_radius"
+uxctl dump --ns panel | grep -E "autohide|border_radius|opacity"
 ```
 
 **diff 输出示例**（回复用户时保持这个形态）：
