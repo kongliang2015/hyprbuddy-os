@@ -256,6 +256,12 @@ cosmic_theme_apply() {
     # 文件可能存在也可能不存在（新装只有 auto_switch），都要能创建
     local cur; cur=$(cat "$mode_file" 2>/dev/null | tr -d "[:space:]")
     [ "$cur" = "$mode_flag" ] || printf "%s" "$mode_flag" > "$mode_file"
+    # auto_switch 开着会按时间把明暗切回去（晚上自动变暗），导致浅色主题"不生效"
+    local auto_file="$HOME/.config/cosmic/com.system76.CosmicTheme.Mode/v1/auto_switch"
+    if [ -f "$auto_file" ]; then
+      local autov; autov=$(cat "$auto_file" 2>/dev/null | tr -d "[:space:]")
+      [ "$autov" = "false" ] || printf "false" > "$auto_file"
+    fi
   fi
 
   # 壁纸绑定：复用能力层（cosmic-bg 热加载）
