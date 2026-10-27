@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# @command: start-menu-apps
+# @summary: 输出应用清单 JSON（供 eww 开始菜单渲染）
+# @category: runtime
+# @usage: start-menu-apps [filter]
+# @effect: 只读，打印 JSON 数组
+# 解析 .desktop 文件，输出 [{name, exec, icon, comment}]
+filter="$1"
+dirs="/run/current-system/sw/share/applications $HOME/.local/share/applications"
+python3 - "$filter" $dirs <<'PY'
+import json, os, re, sys
+flt = (sys.argv[1] or "").lower()
+dirs = sys.argv[2:]
+seen, out = set(), []
+for d in dirs:
+    if not os.path.isdir(d):
+        continue
+    for fn in sorted(os.listdir(d)):
+        if not fn.endswith(".desktop"):
+            continue
+        path = os.path.join(d, fn)
+        name = exec_ = icon = comment = None
+        nodisplay = False
+        try:
+            with open(path, encoding="utf-8", errors="ignore") as fh:
+                in_entry = False
+                for line in fh:
+                    line = line.strip()
+                    if line.startswith("["):
+                        in_entry = (line == "[Desktop Entry]")
+                        continue
+                    if not in_entry or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    if k == "Name" and not name:
+                        name = v
+                    elif k == "Exec" and not exec_:
+                        exec_ = v
+                    elif k == "Icon" and not icon:
+                        icon = v
+                    elif k == "Comment" and not comment:
+                        comment = v
+                    elif k == "NoDisplay" and v.lower() == "true":
+                        nodisplay = True
+        except OSError:
+            continue
+        if nodisplay or not name or not exec_ or name in seen:
+            continue
+        seen.add(name)
+        exec_clean = re.sub(r"%[fFuUdDnNickvm]", "", exec_).strip()
+        if flt and flt not in name.lower() and flt not in (comment or "").lower():
+            continue
+        out.append({"name": name, "exec": exec_clean, "icon": icon or "", "comment": comment or ""})
+out.sort(key=lambda x: x["name"].lower())
+print(json.dumps(out[:200], ensure_ascii=False))
+PY

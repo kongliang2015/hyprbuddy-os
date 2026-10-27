@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""生成 eww 开始菜单的静态 yuck（应用网格）。"""
+import json, os, re, sys
+
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/.config/eww/start-menu.yuck")
+DIRS = ["/run/current-system/sw/share/applications", os.path.expanduser("~/.local/share/applications")]
+PER_ROW = 6
+SKIP = {"com.system76.CosmicScreenshot"}
+
+
+def parse_desktop(path):
+    name = exec_ = icon = None
+    nodisplay = False
+    in_entry = False
+    try:
+        with open(path, encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                line = line.strip()
+                if line.startswith("["):
+                    in_entry = line == "[Desktop Entry]"
+                    continue
+                if not in_entry or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                if k == "Name" and not name:
+                    name = v
+                elif k == "Exec" and not exec_:
+                    exec_ = v
+                elif k == "Icon" and not icon:
+                    icon = v
+                elif k == "NoDisplay" and v.lower() == "true":
+                    nodisplay = True
+    except OSError:
+        return None
+    if nodisplay or not name or not exec_:
+        return None
+    return {"name": name, "exec": re.sub(r"%[fFuUdDnNickvm]", "", exec_).strip(), "icon": icon or ""}
+
+
+apps, seen = [], set()
+for d in DIRS:
+    if not os.path.isdir(d):
+        continue
+    for fn in sorted(os.listdir(d)):
+        stem = fn[:-8] if fn.endswith(".desktop") else ""
+        if not stem or stem in SKIP:
+            continue
+        app = parse_desktop(os.path.join(d, fn))
+        if not app or app["name"] in seen:
+            continue
+        seen.add(app["name"])
+        apps.append(app)
+
+apps.sort(key=lambda a: a["name"].lower())
+rows = [apps[i:i + PER_ROW] for i in range(0, len(apps), PER_ROW)]
+
+L = ['(defwidget sm-grid []', '  (box :class "grid" :orientation "vertical" :space-evenly false']
+for row in rows:
+    L.append('    (box :class "row" :orientation "horizontal" :space-evenly false')
+    for a in row:
+        L.append('      (button :class "app" :onclick ' + json.dumps(a["exec"] + " &"))
+        L.append('        (box :class "app-inner" :orientation "vertical" :space-evenly false')
+        L.append('          (image :class "app-icon" :icon ' + json.dumps(a["icon"]) + ' :icon-size "large-toolbar")')
+        L.append('          (label :class "app-name" :text ' + json.dumps(a["name"], ensure_ascii=False) + ' :limit-width 11)))')
+    L.append('    )')
+L += ['  ))', '']
+
+os.makedirs(os.path.dirname(OUT), exist_ok=True)
+with open(OUT, "w", encoding="utf-8") as fh:
+    fh.write("\n".join(L))
+print("start-menu-gen: %d 个应用 -> %s" % (len(apps), OUT))
