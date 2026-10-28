@@ -9,11 +9,14 @@ de_name() {
   case "${XDG_CURRENT_DESKTOP:-}" in
     *COSMIC*)      echo cosmic ;;
     *Hyprland*)    echo hyprland ;;
+    *niri*|*Niri*) echo niri ;;
     *)
       if command -v hyprctl >/dev/null 2>&1 && hyprctl version >/dev/null 2>&1; then
         echo hyprland
       elif pgrep -x cosmic-session >/dev/null 2>&1; then
         echo cosmic
+      elif pgrep -x niri >/dev/null 2>&1; then
+        echo niri
       else
         echo unknown
       fi
@@ -25,7 +28,7 @@ de_name() {
 de_wallpaper_set() {
   local img="$1"
   case "$(de_name)" in
-    hyprland)
+    hyprland|niri)
       # nixpkgs 26.05 起 swww 更名 awww，两者都兼容
       local wp wpd
       if command -v awww >/dev/null 2>&1; then wp=awww; wpd=awww-daemon
@@ -58,7 +61,7 @@ EOF
 # 区域截图 + 标注（swappy）
 de_screenshot_annotate() {
   case "$(de_name)" in
-    hyprland)
+    hyprland|niri)
       command -v grim >/dev/null 2>&1 && command -v slurp >/dev/null 2>&1 || return 1
       grim -g "$(slurp)" - | swappy -f -
       ;;
@@ -88,7 +91,7 @@ de_screenshot_annotate() {
 de_lock() {
   case "$(de_name)" in
     hyprland) hyprlock ;;
-    cosmic)   loginctl lock-session ;;
+    cosmic|niri) loginctl lock-session ;;
     *) return 1 ;;
   esac
 }
@@ -109,6 +112,20 @@ de_monitors() {
     cosmic)
       # cosmic-randr 输出为人类可读格式，这里只做透传
       cosmic-randr list 2>/dev/null
+      ;;
+    niri)
+      # niri IPC：{name: {modes: [{width, height}], current_mode: idx}}
+      niri msg -j outputs 2>/dev/null | python3 -c 'import json,sys
+d = json.load(sys.stdin)
+for name, o in d.items():
+    modes = o.get("modes") or []
+    idx = o.get("current_mode")
+    if idx is not None and idx < len(modes):
+        w = modes[idx]["width"]
+        h = modes[idx]["height"]
+        print(f"{name} {w}x{h}")
+    else:
+        print(f"{name} ?")'
       ;;
     *) return 1 ;;
   esac
@@ -135,6 +152,11 @@ de_theme_apply() {
       theme_env_load "$slug" || return 1
       . "$THEME_LIB_DIR/cosmic/theme.sh"
       cosmic_theme_apply
+      ;;
+    niri)
+      theme_env_load "$slug" || return 1
+      . "$THEME_LIB_DIR/niri/theme.sh"
+      noctalia_theme_apply
       ;;
     hyprland)
       local i=0 found="" s

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # @command: desktop-check
-# @summary: 按当前桌面跑自检（Hyprland → hypr-check；COSMIC → 基础检查）
+# @summary: 按当前桌面跑自检（Hyprland → hypr-check；COSMIC / niri → 基础检查）
 # @category: check
-# @usage: desktop-check [hyprland|cosmic]
+# @usage: desktop-check [hyprland|cosmic|niri]
 # @effect: 只读检查，返回 1 表示有告警
 # @doc: desktop-abstraction.md
 # 桌面自检入口：Hyprland 沿用 hypr-check（8 组检查），COSMIC 跑本文件内的基础项。
@@ -62,8 +62,59 @@ case "$de" in
       command -v "$c" >/dev/null 2>&1 && info "命令 $c 可用" || bad "命令 $c 缺失"
     done
     ;;
+  niri)
+    info "桌面: niri + Noctalia"
+
+    # 1) 核心进程
+    for p in niri noctalia-shell; do
+      if pgrep -f "$p" >/dev/null 2>&1; then
+        info "进程 $p 在运行"
+      else
+        bad "进程 $p 未运行"
+      fi
+    done
+    if pgrep -f xwayland-satellite >/dev/null 2>&1; then
+      info "Xwayland (xwayland-satellite) 在运行"
+    else
+      info "xwayland-satellite 未运行（无 X11 应用时正常）"
+    fi
+
+    # 2) portal（niri 走 gnome 门户：录屏/文件选择）
+    if busctl --user list 2>/dev/null | grep -q 'impl.portal.desktop.gnome'; then
+      info "gnome portal 已注册（impl.portal.desktop.gnome）"
+    else
+      bad "gnome portal 未注册（截图/录屏会失败）"
+    fi
+
+    # 3) 壁纸守护
+    if command -v awww >/dev/null 2>&1 && pgrep -f awww-daemon >/dev/null 2>&1; then
+      info "awww 壁纸守护在运行"
+    else
+      bad "awww-daemon 未运行（壁纸不会生效）"
+    fi
+
+    # 4) 中文字体解析
+    cjk=$(fc-match ":lang=zh-cn" -f "%{family}" 2>/dev/null)
+    case "$cjk" in
+      *"文泉驿"*) info "中文解析: $cjk" ;;
+      *) bad "中文解析为 $cjk（期望文泉驿）" ;;
+    esac
+
+    # 5) 常用命令
+    for c in niri noctalia-shell grim slurp swappy; do
+      command -v "$c" >/dev/null 2>&1 && info "命令 $c 可用" || bad "命令 $c 缺失"
+    done
+
+    # 6) 主题与配置
+    if [ -f "$HOME/.config/noctalia/colors.json" ]; then
+      info "Noctalia 配色已应用（colors.json 存在）"
+    else
+      info "Noctalia 配色未应用（首次运行后生成）"
+    fi
+    [ -f "$HOME/.config/niri/config.kdl" ] && info "niri 配置存在" || bad "缺少 niri config.kdl"
+    ;;
   *)
-    bad "未识别的桌面: $de（可用: hyprland / cosmic）"
+    bad "未识别的桌面: $de（可用: hyprland / cosmic / niri）"
     ;;
 esac
 
