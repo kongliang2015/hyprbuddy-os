@@ -132,7 +132,8 @@ let
     ++ lib.optional (distro.hypervisor == "vmware") { name = "bin/kitty"; path = pkgs.writeShellScript "kitty-software-egl" (builtins.readFile ./kitty-egl.sh); }
     ++ themeEntries
     ++ exporterEntries
-    ++ lib.singleton { name = "bin/jq"; path = "${pkgs.jq}/bin/jq"; };
+    ++ lib.singleton { name = "bin/jq"; path = "${pkgs.jq}/bin/jq"; }
+    ++ lib.singleton { name = "bin/python3"; path = "${pkgs.python3}/bin/python3"; };
   # agent skills（skills/<name>/…）：install.sh 链接到 ~/.codebuddy/skills/
   skillsDir = ../skills;
   skillEntries = lib.concatLists (
