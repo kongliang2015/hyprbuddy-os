@@ -175,6 +175,19 @@ fi
 if [ -f "$conf" ] && grep -qE '^[[:space:]]*exec-once[[:space:]]*=[[:space:]]*mako' "$conf"; then
   warn "hyprland.conf 仍在启动 mako：它与 swaync 抢通知服务，只能留一个"
 fi
+# 8) 状态栏外壳（waybar）：登录后必须真的有 layer surface
+# 2026-10-28 踩过：theme-next 重构丢掉 exporter 编排 → waybar 从未被拉起，
+# 而 hyprland.lua 只调 theme-next restore，于是「进程没有、图层没有」。
+if command -v hyprctl >/dev/null 2>&1 && hyprctl version >/dev/null 2>&1; then
+  # 只认图层：pgrep -f waybar 会把「命令行里带 waybar 字样的进程」也算进来（误判过）
+  if hyprctl layers 2>/dev/null | grep -q "namespace: waybar"; then
+    info "waybar 已创建图层（状态栏可见）"
+  else
+    warn "状态栏缺失：waybar 没有创建图层（未启动，或配置/样式加载失败）"
+    echo "      排查：pgrep -af waybar；journalctl --user -b | grep -i waybar"
+    echo "      修复：theme-next restore    # 它 source exporters/hyprland/waybar.sh 拉起 waybar"
+  fi
+fi
 if [ "$status" -eq 0 ]; then
   echo "  - 自检通过"
 fi

@@ -55,7 +55,17 @@ case "$de" in
       bad "awww-daemon 未运行（壁纸不会生效）"
     fi
 
-    # 4) 中文字体解析
+# 4) Noctalia 状态栏图层（按输出建 surface；启动早于显示器就绪会没有）
+    if command -v niri >/dev/null 2>&1 && niri msg layers >/dev/null 2>&1; then
+      if niri msg layers 2>/dev/null | grep -q "noctalia-bar-content"; then
+        info "Noctalia 状态栏图层已创建"
+      else
+        bad "Noctalia 未创建 bar 图层（检查 ~/.config/niri/config.kdl 里 spawn 是否带 sleep 2）"
+      fi
+    else
+      info "niri IPC 不可用，跳过图层检查"
+    fi
+    # 5) 中文字体解析
     cjk=$(fc-match ":lang=zh-cn" -f "%{family}" 2>/dev/null)
     case "$cjk" in
       *"文泉驿"*) info "中文解析: $cjk" ;;
