@@ -76,6 +76,17 @@ theme_env_load "$slug" || exit 1
 [ "$req" = "restore" ] && sleep 1
 
 # ── 编排 ──────────────────────────────────────────────────────────────
+# Hyprland 栈 exporters（同进程 source，T_* 直接可见）：重写各组件配置并拉起 waybar 等。
+# niri 会话跳过——那边由 de_theme_apply → exporters/niri/theme.sh 负责 Noctalia 配色。
+# 缺了这段，登录后没有状态栏（waybar 由 exporters/hyprland/waybar.sh 拉起）。
+case "${XDG_CURRENT_DESKTOP:-}" in
+  *niri*|*Niri*) : ;;
+  *)
+    for e in hyprland-border wallpaper waybar fuzzel swaync eww hyprshell swayosd kitty fastfetch hyprlock hyprtoolkit; do
+      [ -r "$LIB_DIR/hyprland/$e.sh" ] && . "$LIB_DIR/hyprland/$e.sh"
+    done
+    ;;
+esac
 
 # agent 主题跟随（agent 层未启用时脚本不存在，静默跳过）；
 # 明暗按背景亮度判断，与 v0 一致
