@@ -117,7 +117,7 @@ in
       # 同时安装的 Wayland 桌面会话。两个提供方实现同一组能力契约
       # （见 docs/desktop-abstraction.md），可并存、可逐步退役。
       sessions = mkOption {
-        type = types.listOf (types.enum [ "hyprland" "cosmic" ]);
+        type = types.listOf (types.enum [ "hyprland" "cosmic" "niri" ]);
         default = [ "hyprland" ];
         description = "启用的桌面提供方；SDDM 会为每一项生成登录会话";
       };

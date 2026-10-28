@@ -49,7 +49,7 @@
 
     desktop = {
       # v1 抽象层：Hyprland + COSMIC 并存；本机日常使用 COSMIC
-      sessions = [ "hyprland" "cosmic" ];
+      sessions = [ "hyprland" "cosmic" "niri" ];
       default = "cosmic";
       # 试验：COSMIC 追官方最新（epoch 1.11），vmwgfx 软渲染兼容性待验证
       cosmicUnstable = true;

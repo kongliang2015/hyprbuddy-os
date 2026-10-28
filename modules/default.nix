@@ -6,6 +6,7 @@
     ./assertions.nix
     ./desktop/hyprland.nix
     ./desktop/cosmic.nix
+    ./desktop/niri.nix
     ./base.nix
     ./boot.nix
     ./users.nix
