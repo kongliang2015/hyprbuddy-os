@@ -52,6 +52,52 @@ L0 选项层  distro.desktop.sessions += "niri"            （N1）
 
 验收：本节补「调研结果」小节，三项都给出确定结论；结论推翻假设时同步调整 N1–N3。
 
+#### N0 调研结果（2026-10-28，noctalia-shell 4.7.6 产物静态分析）
+
+**配置位置（全部支持环境变量覆盖，便于无副作用测试）**
+
+| 项 | 路径 | 覆盖变量 |
+|---|---|---|
+| 配置目录 | `$XDG_CONFIG_HOME/noctalia/` | `NOCTALIA_CONFIG_DIR` |
+| 设置 | `~/.config/noctalia/settings.json` | `NOCTALIA_SETTINGS_FILE` |
+| 当前配色（运行时缓存） | `~/.config/noctalia/colors.json` | 跟随配置目录 |
+
+**配色注入协议（N3 exporter 直接采用）**
+
+1. 写 `colors.json`：`{ "dark": { ... }, "light": { ... } }`，键为 Material 风格：
+   `mPrimary/mOnPrimary/mSecondary/mOnSecondary/mTertiary/mOnTertiary/mError/
+   mOnError/mSurface/mOnSurface/mSurfaceVariant/mOnSurfaceVariant/mOutline/
+   mShadow/mHover/mOnHover` + `terminal.normal/bright`（8+8 色）
+2. 映射关系（tokens → noctalia）：`mSurface ← bg`、`mOnSurface ← fg`、
+   `mSurfaceVariant ← surface`、`mOnSurfaceVariant ← muted`、`mPrimary ← accent`、
+   `mSecondary ← accent2`、`mTertiary ← accent`、`mError ← urgent`、
+   `terminal ← terminal.*`（15 色板 → normal 8 + bright 7/8）
+3. **必须先关闭预设方案**：settings.json 的 `colorSchemes.predefinedScheme`
+   非空时，启动会重新 apply 预设并覆盖 colors.json。exporter 用 jq 合并写：
+   `useWallpaperColors=false, predefinedScheme=null`（保留其余键）
+4. 热更新：配置目录有目录级 watcher，colors.json 写入即生效（N3 实测确认）
+5. 附带收益：Noctalia 会把配色分发给 kitty/gtk-3.0/foot/ghostty 等
+   （TemplateRegistry），与我们的 kitty 主题写盘形成双写——N3 需实测冲突
+
+**Noctalia 内置能力（settings.json 键，直接进能力层判定）**
+
+`nightLight`（夜间模式）、`idle`、`notifications`、`sessionMenu`（注销/锁屏）、
+`osd`、`bar`、`dock`、`controlCenter`、`dock`、`appLauncher`——即 N2 的
+de_lock / de_osd / 夜间模式全部为原生，无需额外包。
+
+**内置配色方案**：Ayu / Catppuccin / Dracula / Eldritch / Gruvbox / Kanagawa /
+Noctalia-default / Nord / Rosepine / Tokyo-Night（与我们的 10 套主题 6 套同名，
+可作为 N3 的对照基准）。
+
+**niri 模块事实（26.05）**
+
+- `programs.niri` 注册 SDDM 会话；默认 `useNautilus = true`（装 nautilus 供
+  portal 文件选择，本项目可关掉改用 Thunar + gtk 门户）
+- 默认启用 gnome-keyring；**不装 Xwayland**——需在 systemPackages 加
+  `xwayland-satellite`（niri 会自动拉起 PATH 中的它，N1 实测确认）
+- 上游推荐门户：`xdg-desktop-portal-gnome`（录屏/文件选择）+
+  `xdg-desktop-portal-gtk`
+
 ### N1 选项与提供方骨架（0.5 天）
 
 1. `modules/options.nix`：`desktop.sessions` 的类型 enum 加 `"niri"`；
