@@ -93,6 +93,23 @@ lib.mkIf cfg.desktop.enable {
 
   programs.firefox.enable = true;
 
+  # 默认打开方式：图片 → imv，PDF → zathura，视频 → mpv
+  xdg.mime.defaultApplications = {
+    "image/png" = [ "imv.desktop" ];
+    "image/jpeg" = [ "imv.desktop" ];
+    "image/gif" = [ "imv.desktop" ];
+    "image/webp" = [ "imv.desktop" ];
+    "application/pdf" = [ "org.pwmt.zathura.desktop" ];
+    "video/mp4" = [ "mpv.desktop" ];
+    "video/x-matroska" = [ "mpv.desktop" ];
+    "video/webm" = [ "mpv.desktop" ];
+  };
+
+  # 可移动介质：Thunar 侧栏挂载 U 盘/手机（udisks2 + gvfs）
+  services.udisks2.enable = true;
+  # 电源配置：笔记本/台式都受益（balanced/performance/power-saver）
+  services.power-profiles-daemon.enable = true;
+
   # 桌面门户：niri 的具体后端在 desktop/niri.nix 里声明，这里只保证服务启用
   xdg.portal.enable = true;
 
@@ -126,6 +143,11 @@ lib.mkIf cfg.desktop.enable {
     swappy # 截图标注
     libnotify # notify-send
     thunar # 文件管理器
+    mpv # 视频播放
+    imv # 图片查看
+    zathura # PDF 阅读
+    wlr-randr # 显示器配置（CLI，niri 无 GUI）
+    gvfs # Thunar 的挂载/回收站支持
     swww # 壁纸守护（26.05 更名 awww，二进制 awww-daemon）
     polkitAgent # polkit 认证代理（实现由 distro.polkitAgent 选择）
   ];
