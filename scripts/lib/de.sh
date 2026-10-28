@@ -156,7 +156,7 @@ de_theme_apply() {
     niri)
       theme_env_load "$slug" || return 1
       . "$THEME_LIB_DIR/niri/theme.sh"
-      noctalia_theme_apply
+      noctalia_theme_apply "$slug"
       ;;
     hyprland)
       local i=0 found="" s

@@ -10,10 +10,12 @@
 #   - darkMode 跟随 tokens.dark（两段写同一色板，明暗由 darkMode 决定）
 
 noctalia_theme_apply() {
+  local slug="${1:-theme}"
   local dir="${NOCTALIA_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/noctalia}"
   dir="${dir%/}"
-  mkdir -p "$dir" || return 1
-  local colors="$dir/colors.json" settings="$dir/settings.json"
+  local sdir="$dir/colorschemes/$slug"
+  mkdir -p "$sdir" || return 1
+  local colors="$sdir/$slug.json" settings="$dir/settings.json"
 
   # 终端色板：tokens.terminal.colors 为 16 项标准排布
   # （[0]=黑/底色，[1..7]=red..white，[8..15]=bright black..bright white）
@@ -68,17 +70,39 @@ noctalia_theme_apply() {
   local mode=false
   [ "$T_DARK" = true ] && mode=true
   if [ -f "$settings" ]; then
-    jq --argjson dark "$mode" \
+    jq --arg s "$slug" --argjson dark "$mode" \
       '.colorSchemes.useWallpaperColors = false
-       | .colorSchemes.predefinedScheme = null
+       | .colorSchemes.predefinedScheme = $s
        | .colorSchemes.darkMode = $dark' \
       "$settings" > "$settings.tmp.$$" 2>/dev/null && [ -s "$settings.tmp.$$" ] \
       && mv -f "$settings.tmp.$$" "$settings" || rm -f "$settings.tmp.$$"
   else
-    jq -n --argjson dark "$mode" \
-      '{colorSchemes: {useWallpaperColors: false, predefinedScheme: null, darkMode: $dark}}' \
+    jq -n --arg s "$slug" --argjson dark "$mode" \
+      '{colorSchemes: {useWallpaperColors: false, predefinedScheme: $s, darkMode: $dark}}' \
       > "$settings.tmp.$$" 2>/dev/null && mv -f "$settings.tmp.$$" "$settings" || rm -f "$settings.tmp.$$"
   fi
 
-  echo "noctalia: $T_NAME -> $dir"
+  # 热应用：已在运行的 Noctalia 立即切换
+  # 运行中的 shell 只认启动时扫描到的方案列表；新方案（首次使用）不在列表里，
+  # IPC set 会失败。detect：colors.json 未在 1.5s 内更新则重启 shell
+  # （重启后启动扫描会收录新方案，并按 settings.predefinedScheme 应用）。
+  local marker="$dir/colors.json"
+  local before=""
+  [ -f "$marker" ] && before=$(stat -c %Y "$marker" 2>/dev/null)
+  if command -v noctalia-shell >/dev/null 2>&1; then
+    noctalia-shell ipc call colorScheme set "$slug" >/dev/null 2>&1 || true
+  fi
+  if pgrep -f 'bin/quickshell -p' >/dev/null 2>&1; then
+    sleep 1.5
+    local after=""
+    [ -f "$marker" ] && after=$(stat -c %Y "$marker" 2>/dev/null)
+    if [ "$before" = "$after" ]; then
+      pkill -f 'bin/quickshell -p' 2>/dev/null
+      sleep 0.5
+      setsid noctalia-shell >/dev/null 2>&1 < /dev/null &
+      echo "noctalia: scheme 未在运行实例中，已重启 shell（首次使用该方案）"
+    fi
+  fi
+
+  echo "noctalia: $T_NAME ($slug) -> $colors"
 }

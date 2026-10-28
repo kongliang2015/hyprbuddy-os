@@ -238,3 +238,26 @@ Web 无输出）。COSMIC 在此环境下能跑是因为它接受软件渲染。
 ### 待办
 
 - 渲染阻塞解除后重跑 N5 清单（desktop-check / 主题跟随 / 键位 / portal）
+
+### N5 补充：Noctalia 配色热更新的真实机制（实测修正 N0 结论）
+
+N0 的判断「写 colors.json 即热加载」**不成立**——colors.json 是服务写的运行时
+输出（扁平结构，无 dark/light 包裹），直接写不会触发重读。真实机制：
+
+1. **方案文件**：`~/.config/noctalia/colorschemes/<slug>/<slug>.json`
+   （结构 `{"dark": {...}, "light": {...}}`，与内置 Assets/ColorScheme 相同）
+2. **启动扫描**：shell 启动时 `find -mindepth 2 -name '*.json'` 扫描内置 +
+   `colorschemes/`，方案列表只在此刻建立
+3. **应用**：`settings.json colorSchemes.predefinedScheme = <slug>` →
+   启动时自动 applyScheme；运行中经
+   `noctalia-shell ipc call colorScheme set <slug>` 切换（仅限已扫描到的方案）
+4. **首次使用新方案的兜底**：运行中新建的方案不在列表 → IPC 报 Scheme not
+   found。exporter 检测 colors.json 未在 1.5s 内更新 → 重启 shell，重启后的
+   扫描收录新方案并自动应用
+
+### N5 已知遗留
+
+- **壁纸**：Noctalia 报 `Wallpaper Scan failed for Virtual-1`（settings.wallpaper
+  目录未配置）；de-theme-apply 的 niri 分支目前只做配色，主题→壁纸绑定未接
+  （可走 awww 或 Noctalia 壁纸服务，待定）
+- Noctalia 首启有隐私对话框，需手动确认一次
