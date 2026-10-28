@@ -91,6 +91,27 @@ echo "==> 壁纸"
 mkdir -p "$HOME/Pictures/wallpapers"
 cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
 
+echo "==> 运行时样式"
+# style.css 归 theme-next 生成（登录/切主题时按 tokens 重写），不再走 Nix 链接，
+# 否则每次 install.sh 都会把主题色刷回 store 里的默认样式。
+css="$HOME/.config/waybar/style.css"
+if [ -L "$css" ]; then
+  case "$(readlink "$css")" in
+    /nix/store/*)
+      rm -f "$css"
+      echo "  - 移除 style.css 的 Nix 链接（改由 theme-next 生成）"
+      ;;
+  esac
+fi
+# 在活的 Hyprland 会话里立刻重生成一次，避免装完还是旧样式
+if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -x "$HOME/.local/bin/theme-next" ]; then
+  if "$HOME/.local/bin/theme-next" restore >/dev/null 2>&1; then
+    echo "  - 已按当前主题重生成组件样式"
+  else
+    echo "  - 组件样式重生成失败（可手动运行 theme-next restore）"
+  fi
+fi
+
 echo "==> 桌面自检"
 # desktop-check 按当前桌面分派：Hyprland → hypr-check，niri → 基础项
 if [ -x "$HOME/.local/bin/desktop-check" ]; then

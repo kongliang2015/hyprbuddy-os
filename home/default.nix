@@ -52,7 +52,8 @@ let
     "hypr/hypridle.conf" = if distro.hypervisor == "vmware" then "" else read ./hypr/hypridle.conf;
     "hypr/hyprlock.conf" = read ./hypr/hyprlock.conf;
     "waybar/config" = builtins.toJSON waybar.config;
-    "waybar/style.css" = waybar.css;
+    # waybar/style.css 不在这里部署：它由 exporters/hyprland/waybar.sh 在登录/切主题时
+    # 按 tokens 生成。若在此链接 store 里的默认样式，install.sh 会把主题色刷回默认。
     "fuzzel/fuzzel.ini" = read ./fuzzel/fuzzel.ini;
     "kitty/kitty.conf" = read ./kitty/kitty.conf;
     "swaync/config.json" = read ./swaync/config.json;

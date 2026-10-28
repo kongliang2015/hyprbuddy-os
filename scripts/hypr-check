@@ -187,6 +187,15 @@ if command -v hyprctl >/dev/null 2>&1 && hyprctl version >/dev/null 2>&1; then
     echo "      排查：pgrep -af waybar；journalctl --user -b | grep -i waybar"
     echo "      修复：theme-next restore    # 它 source exporters/hyprland/waybar.sh 拉起 waybar"
   fi
+  # style.css 必须是运行时生成的实体文件；指向 store 说明还是 Nix 链接（主题色不会生效）
+  css="${XDG_CONFIG_HOME:-$HOME/.config}/waybar/style.css"
+  if [ -L "$css" ]; then
+    case "$(readlink "$css")" in
+      /nix/store/*) warn "waybar/style.css 仍是指向 store 的链接（主题配色不会生效），安装时已移除该链接，重跑 install.sh 或 theme-next restore" ;;
+    esac
+  elif [ ! -f "$css" ]; then
+    warn "waybar/style.css 缺失（waybar 启动会失败）"
+  fi
 fi
 if [ "$status" -eq 0 ]; then
   echo "  - 自检通过"
