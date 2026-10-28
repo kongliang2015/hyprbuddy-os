@@ -1,23 +1,20 @@
-# NixOS 桌面配置（Hyprland + niri 双桌面 · distro/v1）
+# NixOS 桌面配置（niri + Noctalia · distro/v1-nn）
 
-flake 化的桌面配置：SDDM → 桌面会话（Hyprland / niri 可并存、可指定默认；
-COSMIC 已在本分支退役，COSMIC 版见 `distro/v1-cosmic`），
-按 host 选择架构 / GPU / 桌面提供方。桌面能力通过 \`scripts/lib/de.sh\` 抽象层
-收敛（壁纸 / 截图 / 锁屏 / 通知 / 显示器…），脚本不直接依赖具体桌面。
+flake 化的桌面配置：SDDM → 桌面会话（当前只有 **niri**；COSMIC 于 2026-10-28 退役，
+Hyprland 于同分支退役，历史版本见 `distro/v1-cosmic`），按 host 选择架构 / GPU / 桌面提供方。
+桌面能力通过 `scripts/lib/de.sh` 抽象层收敛（壁纸 / 截图 / 锁屏 / 通知 / 显示器…），
+脚本不直接依赖具体桌面。
 
-- Hyprland 栈：uwsm 托管，Lua 配置管理器（hyprland.lua），Waybar / fuzzel /
-  swaync / eww / hyprshell / SwayOSD，9 套主题热切换（新增 Deepin Blue）
-- niri 栈：niri 26.04 + Noctalia 外壳（面板 / launcher / 通知 / 锁屏 / OSD），
-  由 \`distro.desktop.sessions\` 控制安装，与 Hyprland 共用 agent 层与技能层
-- 分支：`distro/v1-cosmic`（Hyprland + COSMIC）/ `distro/v1-nn`（Hyprland + niri，当前）。
-  桌面提供方抽象 P0/P1 在两个分支均已完成（见
-  docs/desktop-abstraction.md），后续按 P2–P5 渐进推进
+- 桌面栈：niri 26.04 + Noctalia 外壳（面板 / launcher / 通知 / 锁屏 / OSD / 夜间模式），
+  共用的底座（SDDM / fcitx5 / Qt / polkit / 通用 CLI）在 `modules/desktop/hyprbuddy.nix`
+- 主题：`themes/<slug>/tokens.json` → `exporters/niri/theme.sh` → Noctalia 配色方案 + IPC 热更新
+- 分支：`distro/v1-cosmic`（Hyprland + COSMIC，历史）/ `distro/v1-nn`（niri，当前）
 
 ## 环境
 
 ### leonard（x86_64 真机）
 - NVIDIA GTX 1050 Ti，闭源驱动 legacy_580（580.178.04）+ nvidia-drm.modeset=1
-- 双会话并存：Hyprland + niri（vmware 虚机默认 niri）；COSMIC / X11 会话已退役
+- 单会话：niri（vmware 虚机同样 niri）；Hyprland / COSMIC / X11 会话均已退役
 - agent 层开启（opencode + codebuddy，含 usage 统计）
 
 ### vmware（x86_64 虚机，niri 实测机）

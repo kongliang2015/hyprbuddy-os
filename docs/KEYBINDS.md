@@ -1,8 +1,9 @@
 # 快捷键
 
-主修饰键 `$mainMod = SUPER`（Windows 键）。
+主修饰键 `SUPER`（Windows 键）。
 
-> COSMIC 桌面的默认键位、与 Hyprland 的冲突项见文末「COSMIC 桌面（默认键位）」。
+> **v1-nn 起只有 niri 提供方**（Hyprland / COSMIC 已退役）。本文正文为 niri 键位
+> （`home/niri/config.kdl`）；Hyprland 时代的旧表仅作历史参考，见文末章节。
 
 ## 启动 / 窗口
 

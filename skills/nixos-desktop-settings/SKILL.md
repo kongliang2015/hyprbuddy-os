@@ -5,7 +5,9 @@ description: hyprland-nixos 桌面配置入口：改仓库 → 求值构建 → 
 
 # nixos-desktop-settings
 
-hyprland-nixos 发行版（NixOS + Hyprland）的桌面配置入口。
+hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 niri + Noctalia**
+（Hyprland / COSMIC 均已退役，见 `docs/desktop-retire-hyprland.md`）；
+共享底座（SDDM / fcitx5 / Qt / polkit / 通用 CLI）在 `modules/desktop/hyprbuddy.nix`。
 仓库：`~/hyprland-nixos`（`HYPRLAND_NIXOS_REPO` 可覆盖）；host 名默认 `$(hostname)`。
 
 ## 铁律
