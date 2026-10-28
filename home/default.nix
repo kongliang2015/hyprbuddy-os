@@ -13,56 +13,12 @@ let
 
   agentEnabled = distro.agent.enable;
   usageEnabled = agentEnabled && distro.agent.usage;
-  # agent-usage 既给 waybar 用（需要 store 路径字符串），也部署到 ~/.local/bin
-  # 供 fastfetch 的 command 模块调用（需要 package 类型）
+  # agent-usage 部署到 ~/.local/bin，供 fastfetch 的 command 模块调用
   agentUsage = if usageEnabled then import ../lib/agent-usage.nix { inherit pkgs; } else null;
-  agentUsageCmd = if agentUsage != null then "${agentUsage}" else null;
-
-  waybar = import ../lib/waybar.nix {
-    inherit lib;
-    battery = distro.hardware.battery;
-    inherit agentUsageCmd;
-  };
-
-  # 按硬件/功能开关生成的 Hyprland 片段（Lua 版，由 hyprland.lua dofile 加载）
-  extraHypr = ''
-    -- 由发行版生成（home/default.nix），不要手改
-  '' + concatStringsSep "
-" (
-    optionals distro.hardware.backlight [
-      ''hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("swayosd-client --brightness raise"))''
-      ''hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("swayosd-client --brightness lower"))''
-    ]
-    ++ (if distro.hypervisor == "vmware" then [
-      ''hl.monitor({ output = "", mode = "1920x1080@60", position = "auto", scale = 1 })''
-      ''hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("env LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe kitty"))''
-    ] else [ ''hl.bind("SUPER + RETURN", hl.dsp.exec_cmd("kitty"))'' ])
-    ++ (if distro.hypervisor == "vmware" then [ ] else [ ''hl.bind("SUPER + L", hl.dsp.exec_cmd("hyprlock"))'' ])
-    ++ optional agentEnabled
-      ''hl.bind("SUPER + SHIFT + CTRL + A", hl.dsp.exec_cmd("${home}/.local/bin/agent-menu"))''
-  ) + "
-";
 
   textFiles = {
-    "uwsm/env" = read ./uwsm/env;
-    "hypr/hyprland.lua" = read ./hypr/hyprland.lua;
-    # 保留 .conf 仅作参考/回退：Lua 存在时 Hyprland 会忽略它
-    "hypr/hyprland.conf" = read ./hypr/hyprland.conf;
-    "hypr/extra.lua" = extraHypr;
-    "hypr/hypridle.conf" = if distro.hypervisor == "vmware" then "" else read ./hypr/hypridle.conf;
-    "hypr/hyprlock.conf" = read ./hypr/hyprlock.conf;
-    "waybar/config" = builtins.toJSON waybar.config;
-    # waybar/style.css 不在这里部署：它由 exporters/hyprland/waybar.sh 在登录/切主题时
-    # 按 tokens 生成。若在此链接 store 里的默认样式，install.sh 会把主题色刷回默认。
     "fuzzel/fuzzel.ini" = read ./fuzzel/fuzzel.ini;
     "kitty/kitty.conf" = read ./kitty/kitty.conf;
-    "swaync/config.json" = read ./swaync/config.json;
-    "swaync/style.css" = read ./swaync/style.css;
-    "eww/eww.yuck" = read ./eww/eww.yuck;
-    "eww/eww.scss" = read ./eww/eww.scss;
-    "hyprshell/config.ron" = read ./hyprshell/config.ron;
-    "hyprshell/styles.css" = read ./hyprshell/styles.css;
-    "swayosd/style.css" = read ./swayosd/style.css;
     "Thunar/uca.xml" = read ./thunar/uca.xml;
     "niri/config.kdl" = read ./niri/config.kdl;
     "fastfetch/config.jsonc" = read ./fastfetch/config.jsonc;
@@ -88,10 +44,6 @@ let
   exporterFiles = {
     "lib.sh" = ../exporters/lib.sh;
   } // builtins.listToAttrs (map (n: {
-        name = "hyprland/${n}";
-        value = ../exporters/hyprland + "/${n}";
-      }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/hyprland))))
-        // builtins.listToAttrs (map (n: {
         name = "niri/${n}";
         value = ../exporters/niri + "/${n}";
       }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/niri))));

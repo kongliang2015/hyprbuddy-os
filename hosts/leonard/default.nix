@@ -10,8 +10,8 @@
   distro = {
     # 并存会话：Hyprland（默认）+ COSMIC。COSMIC 仅用于评估，
     # niri 与 Hyprland 并存；COSMIC 已于 2026-10-28 退役（见 docs/desktop-abstraction.md）。
-    desktop.sessions = [ "hyprland" "niri" ];
-    desktop.default = "hyprland";
+    desktop.sessions = [ "niri" ];
+    desktop.default = "niri";
 
     user.name = "leonard";
     boot.windowsEntry = true;   # ESP 上有 /EFI/Microsoft/Boot/bootmgfw.efi（nvme1n1 上的 Windows）

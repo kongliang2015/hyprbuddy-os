@@ -6,6 +6,5 @@ in
 lib.mkIf cfg.enable {
   # SDDM 默认会话：只有默认项本身被启用时才设置，否则交给 SDDM 自己挑
   services.displayManager.defaultSession =
-    lib.mkIf (builtins.elem cfg.default cfg.sessions)
-      (if cfg.default == "niri" then "niri" else "hyprland-uwsm");
+    lib.mkIf (builtins.elem cfg.default cfg.sessions) cfg.default;
 }
