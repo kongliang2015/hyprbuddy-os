@@ -144,13 +144,12 @@ in
     };
 
     polkitAgent = mkOption {
-      type = types.enum [ "qt" "hyprtoolkit" ];
-      default = "qt";
+      type = types.enum [ "kde" "gnome" ];
+      default = "kde";
       description = ''
-        polkit 认证代理实现。qt = 26.05 stable 的 hyprpolkitagent 0.1.3（Qt，
-        配色受 Adwaita 影响、无法跟随主题）；hyprtoolkit = 从 nixpkgs-unstable 取
-        0.2.0，认证框颜色由 ~/.config/hypr/hyprtoolkit.conf 决定，可由 theme-next
-        按当前主题重写。
+        polkit 认证代理实现。kde = polkit-kde-agent-1（Qt，Wayland 可用）；
+        gnome = polkit-gnome（GTK）。
+        原 hyprpolkitagent 在 niri 会话下会 SIGABRT（实测），已弃用。
       '';
     };
 

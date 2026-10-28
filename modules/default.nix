@@ -4,6 +4,7 @@
   imports = [
     ./options.nix
     ./assertions.nix
+    ./desktop/hyprbuddy.nix
     ./desktop/hyprland.nix
     ./desktop/niri.nix
     ./base.nix

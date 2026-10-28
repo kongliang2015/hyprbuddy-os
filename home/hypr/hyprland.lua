@@ -13,7 +13,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("eww daemon")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("hyprsunset")
-    hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("swayosd-server")
     hl.exec_cmd("hyprshell run")   -- 窗口总览 Super+`；热键由 hyprshell 自己注册（需 Lua 管理器）
     hl.exec_cmd("nm-applet --indicator")

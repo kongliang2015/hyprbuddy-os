@@ -34,7 +34,7 @@
       theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名
     };
     # polkit 认证框跟随桌面主题：hyprtoolkit 实现（0.2.0，取 nixpkgs-unstable）
-    polkitAgent = "hyprtoolkit";
+    polkitAgent = "kde";
     agent = {
       enable = true;
       # claude-code 的二进制从 downloads.claude.ai 拉取，本机网络不可达（构建期失败）；
