@@ -94,15 +94,16 @@ cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
 echo "==> 运行时样式"
 # style.css 归 theme-next 生成（登录/切主题时按 tokens 重写），不再走 Nix 链接，
 # 否则每次 install.sh 都会把主题色刷回 store 里的默认样式。
-css="$HOME/.config/waybar/style.css"
-if [ -L "$css" ]; then
-  case "$(readlink "$css")" in
-    /nix/store/*)
-      rm -f "$css"
-      echo "  - 移除 style.css 的 Nix 链接（改由 theme-next 生成）"
-      ;;
-  esac
-fi
+for fz in "$HOME/.config/waybar/style.css" "$HOME/.config/fuzzel/fuzzel.ini"; do
+  if [ -L "$fz" ]; then
+    case "$(readlink "$fz")" in
+      /nix/store/*)
+        rm -f "$fz"
+        echo "  - 移除 ${fz#$HOME/.config/} 的 Nix 链接（改由 theme-next 生成）"
+        ;;
+    esac
+  fi
+done
 # 在活的 Hyprland 会话里立刻重生成一次，避免装完还是旧样式
 if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -x "$HOME/.local/bin/theme-next" ]; then
   if "$HOME/.local/bin/theme-next" restore >/dev/null 2>&1; then

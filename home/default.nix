@@ -17,7 +17,8 @@ let
   agentUsage = if usageEnabled then import ../lib/agent-usage.nix { inherit pkgs; } else null;
 
   textFiles = {
-    "fuzzel/fuzzel.ini" = read ./fuzzel/fuzzel.ini;
+    # fuzzel/fuzzel.ini 不在这里部署：由 exporters/niri/theme.sh 按主题整份生成
+    # （[colors] 必须跟随 tokens；若在此链接 store 版本，install.sh 会把主题色刷回默认）
     "kitty/kitty.conf" = read ./kitty/kitty.conf;
     "Thunar/uca.xml" = read ./thunar/uca.xml;
     "niri/config.kdl" = read ./niri/config.kdl;

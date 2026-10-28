@@ -10,6 +10,41 @@
 #   - darkMode 跟随 tokens.dark（两段写同一色板，明暗由 darkMode 决定）
 
 
+# fuzzel：整份重写（fuzzel 每次启动都重读配置，不需要热加载）。
+# [main]/[border] 保持不变，[colors] 由 tokens 派生；fuzzel 的颜色是 rrggbb[aa]，不带 #。
+fuzzel_theme_apply() {
+  local dir="${XDG_CONFIG_HOME:-$HOME/.config}/fuzzel"
+  local f="$dir/fuzzel.ini"
+  mkdir -p "$dir" || return 1
+  rm -f "$f"   # 可能是 install.sh 链接过来的 store 软链
+  cat > "$f.tmp.$$" <<FUZZEL && mv -f "$f.tmp.$$" "$f" || { rm -f "$f.tmp.$$"; return 1; }
+# fuzzel 启动器配置（由 exporters/niri/theme.sh 生成，勿手改）
+[main]
+font=JetBrainsMono Nerd Font:size=12
+prompt="  "
+icons-enabled=yes
+terminal=kitty
+lines=12
+width=40
+line-height=28
+
+[colors]
+background=@BG@ff
+text=@FG@ff
+match=@ACCENT@ff
+selection=@SURFACE@ff
+selection-text=@FG@ff
+selection-match=@ACCENT2@ff
+border=@ACCENT@ff
+
+[border]
+width=2
+radius=10
+FUZZEL
+  sed -i -e "s/@BG@/$T_BG/" -e "s/@FG@/$T_FG/" -e "s/@ACCENT2@/$T_ACCENT2/" \
+         -e "s/@ACCENT@/$T_ACCENT/" -e "s/@SURFACE@/$T_SURFACE/" "$f"
+}
+
 # kitty：把 tokens 的终端 16 色写成 include 文件并热加载已运行实例。
 # 终端用 tokens 的色板而不是 Material 键：16 个 ANSI 色是专为终端调的，
 # 从 Material 的 10 来个键反推只会更差。两者同源（同一份 tokens），不会漂移。
@@ -150,5 +185,6 @@ noctalia_theme_apply() {
   fi
 
   kitty_theme_apply && echo "kitty: theme.inc.conf <- $T_NAME" || echo "kitty: 写入失败（终端配色未更新）"
+  fuzzel_theme_apply && echo "fuzzel: fuzzel.ini <- $T_NAME" || echo "fuzzel: 写入失败（启动器配色未更新）"
   echo "noctalia: $T_NAME ($slug) -> $colors"
 }
