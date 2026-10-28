@@ -2,8 +2,9 @@
 
 主修饰键 `SUPER`（Windows 键）。
 
-> **v1-nn 起只有 niri 提供方**（Hyprland / COSMIC 已退役）。本文正文为 niri 键位
-> （`home/niri/config.kdl`）；Hyprland 时代的旧表仅作历史参考，见文末章节。
+> **v1-nn 起只有 niri 提供方**（Hyprland / COSMIC 已退役）。
+> 当前生效的键位在 `home/niri/config.kdl`，速查见文末「niri 当前键位」；
+> 中间的表格是 Hyprland 时代的历史对照。
 
 ## 启动 / 窗口
 
@@ -180,3 +181,25 @@ COSMIC 的键位不写在仓库里，来源是 cosmic-comp 自带的默认表：
 1. COSMIC 默认偏「应用启动器」：`T/B/F/A` 全是开应用，与我们的窗口操作冲突最大的是 `Super+T`、`Super+F`。
 2. `Super+Space` 已被输入法占用，hypr-menu 在 COSMIC 下应换键（如 `Super+Shift+Space`）。
 3. 键位可用 RON 声明式部署，P3 计划用同一份定义生成 Hyprland 绑定与 COSMIC 快捷键，避免两套肌肉记忆。
+
+## niri 当前键位（v1-nn 生效）
+
+| 快捷键 | 动作 |
+|---|---|
+| `Mod+Return` | kitty |
+| `Mod+D` | Noctalia 启动器 |
+| `Mod+Space` | fuzzel（dmenu 管道/备用） |
+| `Mod+Q` / `Mod+F` | 关窗口 / 全屏 |
+| `Mod+Shift+C` | 控制中心 |
+| `Mod+Shift+P` | 会话菜单 |
+| `Mod+Shift+S` | Noctalia 设置 |
+| `Mod+L` | 锁屏（loginctl lock-session → Noctalia 锁屏） |
+| `Mod+Shift+T` | 主题选择器 |
+| `Mod+V` | 剪贴板历史（cliphist + fuzzel） |
+| `Print` / `Mod+Shift+A` | 截图（整屏 / 窗口） |
+| `XF86Audio{Raise,Lower}Volume` | 音量 ±5%（wpctl） |
+| `XF86AudioMute` / `XF86AudioMicMute` | 静音 / 麦克风静音 |
+| `XF86MonBrightness{Up,Down}` | 亮度 ±5%（brightnessctl） |
+| `XF86Audio{Play,Next,Prev}` | 播放控制（playerctl） |
+
+> 空闲行为（Noctalia idle）：10 分钟熄屏、11 分钟锁屏、**不自动挂起**。

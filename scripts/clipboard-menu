@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# @command: clipboard-menu
+# @summary: 剪贴板历史选择器（cliphist + fuzzel）
+# @category: runtime
+# @usage: clipboard-menu
+# @effect: 选中历史条目写回剪贴板
+# 依赖 wl-paste --watch cliphist store（niri spawn-at-startup 负责记录）
+set -uo pipefail
+command -v cliphist >/dev/null 2>&1 || { echo "cliphist 未安装" >&2; exit 1; }
+command -v fuzzel >/dev/null 2>&1 || { echo "fuzzel 未安装" >&2; exit 1; }
+command -v wl-copy >/dev/null 2>&1 || { echo "wl-clipboard 未安装" >&2; exit 1; }
+
+# cliphist list 每行是 "<id>\t<预览>"；用 fuzzel 选行后再 decode 回原文
+sel=$(cliphist list | fuzzel --dmenu --prompt "剪贴板: " --width 70) || exit 0
+[ -n "$sel" ] || exit 0
+printf "%s" "$sel" | cliphist decode | wl-copy

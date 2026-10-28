@@ -8,6 +8,9 @@
 // 同时把 stdout/stderr 落到 ~/.cache，便于登录后排查。
 spawn-at-startup "sh" "-c" "sleep 2; exec noctalia-shell >>\"$HOME/.cache/noctalia-shell.log\" 2>&1"
 spawn-at-startup "awww-daemon"
+// 剪贴板历史：cliphist 只负责存储，需要 watcher 持续喂数据（text + image 两路）
+spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
+spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 
 input {
     keyboard {
@@ -67,6 +70,20 @@ binds {
     Mod+Shift+C { spawn "noctalia-shell" "ipc" "call" "controlCenter" "toggle"; }
     Mod+Shift+P { spawn "noctalia-shell" "ipc" "call" "sessionMenu" "toggle"; }
     Mod+Shift+S { spawn "noctalia-shell" "ipc" "call" "settings" "toggle"; }
+
+    // 媒体键（niri 不内置硬件键处理，必须显式绑定）
+    XF86AudioRaiseVolume  { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+    XF86AudioLowerVolume  { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+    XF86AudioMute         { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    XF86AudioMicMute      { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    XF86MonBrightnessUp   { spawn "brightnessctl" "set" "5%+"; }
+    XF86MonBrightnessDown { spawn "brightnessctl" "set" "5%-"; }
+    XF86AudioPlay         { spawn "playerctl" "play-pause"; }
+    XF86AudioNext         { spawn "playerctl" "next"; }
+    XF86AudioPrev         { spawn "playerctl" "previous"; }
+
+    // 剪贴板历史
+    Mod+V        { spawn "clipboard-menu"; }
 
     // 锁屏 / 主题 / 截图
     Mod+L        { spawn "loginctl" "lock-session"; }
