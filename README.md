@@ -1,7 +1,7 @@
 # NixOS 桌面配置（Hyprland + niri 双桌面 · distro/v1）
 
 flake 化的桌面配置：SDDM → 桌面会话（Hyprland / niri 可并存、可指定默认；
-COSMIC 已于 v1-nn 分支退役，见 `distro/v1-dev` 历史），
+COSMIC 已在本分支退役，COSMIC 版见 `distro/v1-cosmic`），
 按 host 选择架构 / GPU / 桌面提供方。桌面能力通过 \`scripts/lib/de.sh\` 抽象层
 收敛（壁纸 / 截图 / 锁屏 / 通知 / 显示器…），脚本不直接依赖具体桌面。
 
@@ -9,7 +9,8 @@ COSMIC 已于 v1-nn 分支退役，见 `distro/v1-dev` 历史），
   swaync / eww / hyprshell / SwayOSD，9 套主题热切换（新增 Deepin Blue）
 - niri 栈：niri 26.04 + Noctalia 外壳（面板 / launcher / 通知 / 锁屏 / OSD），
   由 \`distro.desktop.sessions\` 控制安装，与 Hyprland 共用 agent 层与技能层
-- 当前分支 distro/v1-dev：桌面提供方抽象 P0/P1 已完成（见
+- 分支：`distro/v1-cosmic`（Hyprland + COSMIC）/ `distro/v1-nn`（Hyprland + niri，当前）。
+  桌面提供方抽象 P0/P1 在两个分支均已完成（见
   docs/desktop-abstraction.md），后续按 P2–P5 渐进推进
 
 ## 环境
