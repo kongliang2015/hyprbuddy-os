@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 # @command: notif-dnd
-# @summary: 切换 mako 勿扰模式
+# @summary: 切换 swaync 勿扰模式
 # @category: runtime
 # @usage: notif-dnd
-# @effect: makoctl mode 切换 dnd
+# @effect: swaync-client -D 切换 dnd
 # @doc: bar-notify.md
-# 切换 mako 勿扰模式（Do Not Disturb）
-if makoctl mode 2>/dev/null | grep -qx 'dnd'; then
-  makoctl mode -r dnd
-  notify-send "通知" "勿扰模式：关闭"
-else
-  makoctl mode -a dnd
-  notify-send "通知" "勿扰模式：开启"
-fi
+# 切换 swaync 勿扰模式（Do Not Disturb）。-D 为 toggle，输出切换后的状态。
+# 旧实现走 makoctl，通知栈已迁移 swaync，makoctl 静默失效。
+state="$(swaync-client -D 2>/dev/null)"
+case "$state" in
+  true)  notify-send "通知" "勿扰模式：开启" ;;
+  false) notify-send "通知" "勿扰模式：关闭" ;;
+esac

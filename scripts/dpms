@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# @command: dpms
+# @summary: 显示器电源开关 on|off（hypridle 熄屏/恢复用）
+# @category: runtime
+# @usage: dpms on|off
+# @arg act: on 或 off，默认 on
+# @effect: hyprctl output power 直连路径设置显示器电源状态
+# 为什么不直接 hyprctl dispatch dpms：0.55.4 configProvider=lua 时 hyprctl
+# dispatch 走 Lua 桥接，参数不加引号——"dpms off" 被翻译成
+# hl.dispatch(dpms off) 直接语法错误，熄屏静默失效。改走 output power
+# 直连路径，显示器名动态解析适配各机型（Virtual-1/eDP-1/DP-1...）。
+set -uo pipefail
+act="${1:-on}"
+mon="$(hyprctl monitors -j 2>/dev/null | tr ',' '\n' | grep -m1 '"name"' | cut -d'"' -f4)"
+[ -n "$mon" ] || exit 0
+exec hyprctl output power "$mon" "$act"
