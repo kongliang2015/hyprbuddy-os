@@ -34,9 +34,11 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 | 文件 | 内容 |
 |---|---|
 | `workflow.md` | 四步流程、生效方式、备份与回滚、agent-apply 输出判读 |
+| `niri.md` | 键位、window-rule、输出/缩放、输入法（fcitx5 启动顺序）、已知坑 |
+| `bar-notify.md` | Noctalia bar 组件、CustomButton JSON 协议、通知/勿扰、OSD |
+| `theming.md` | tokens → colorschemes → IPC 链路、壁纸、新增主题、坑 |
 | `agent.md` | `distro.agent.*` 开关、agent-usage 口径、诊断、本地模型 |
 | `troubleshooting.md` | 常见故障（待重写为 niri/Noctalia 版） |
-| `hyprland.md` / `bar-notify.md` / `theming.md` | ⚠️ **已过时**（Hyprland 时代内容）。键位看 `home/niri/config.kdl`；bar/通知/OSD 走 Noctalia；壁纸走 `wallpaper set` IPC |
 
 ## 示例表
 

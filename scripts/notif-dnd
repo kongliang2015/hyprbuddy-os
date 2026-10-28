@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # @command: notif-dnd
-# @summary: 切换 swaync 勿扰模式
+# @summary: 切换通知勿扰模式（Noctalia IPC）
 # @category: runtime
 # @usage: notif-dnd
-# @effect: swaync-client -D 切换 dnd
+# @effect: 切换 Noctalia 的 DND
 # @doc: bar-notify.md
-# 切换 swaync 勿扰模式（Do Not Disturb）。-D 为 toggle，输出切换后的状态。
-# 旧实现走 makoctl，通知栈已迁移 swaync，makoctl 静默失效。
-state="$(swaync-client -D 2>/dev/null)"
-case "$state" in
-  true)  notify-send "通知" "勿扰模式：开启" ;;
-  false) notify-send "通知" "勿扰模式：关闭" ;;
-esac
+# 通知栈已并入 Noctalia（swaync/mako 均已移除），勿扰走 notifications IPC。
+set -uo pipefail
+if ! command -v noctalia-shell >/dev/null 2>&1; then
+  echo "noctalia-shell 不可用" >&2
+  exit 1
+fi
+noctalia-shell ipc call notifications toggleDND >/dev/null 2>&1 || exit 1
+# DND 开启时通知本身会被吞，提示仅供参考
+notify-send "通知" "勿扰模式已切换" 2>/dev/null || true
