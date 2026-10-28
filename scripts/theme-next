@@ -5,7 +5,7 @@
 # @usage: theme-next [restore | <idx>]
 # @arg restore: 应用已保存主题（登录时调用，不前进索引）
 # @arg <idx>: 直接应用第 idx 套主题（theme-picker 使用）
-# @effect: 按 exporters/hyprland/* 重写各应用配置并重启对应服务
+# @effect: 按 exporters/niri/* 重写 Noctalia 配色并热更新
 # @doc: theming.md
 # theme-next: 主题切换编排器
 #   theme-next          切换到下一套
@@ -13,9 +13,8 @@
 #   theme-next <idx>    直接指定（主题预览选择器使用）
 #   theme-next --print-themes  输出主题清单（选择器数据源）
 #
-# P2 重构：主题定义在 themes/<slug>/tokens.json（唯一真相），写入逻辑在
-# exporters/hyprland/*.sh；本脚本只做索引管理 + tokens 环境展开 + 编排。
-# niri 栈的主题应用走 de_theme_apply → exporters/niri/。
+# 主题定义在 themes/<slug>/tokens.json（唯一真相），写入逻辑在 exporters/niri/theme.sh；
+# 本脚本只做索引管理 + tokens 环境展开 + 编排（Hyprland 已于 v1-nn 退役）。
 set -uo pipefail
 
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -72,20 +71,18 @@ fi
 
 slug=${SLUGS[$idx]}
 theme_env_load "$slug" || exit 1
-# restore 时 hyprctl reload 前先等会话就绪（沿用 v0 行为）
+# restore 时先等会话就绪（沿用 v0 行为）
 [ "$req" = "restore" ] && sleep 1
 
 # ── 编排 ──────────────────────────────────────────────────────────────
-# Hyprland 栈 exporters（同进程 source，T_* 直接可见）：重写各组件配置并拉起 waybar 等。
-# niri 会话跳过——那边由 de_theme_apply → exporters/niri/theme.sh 负责 Noctalia 配色。
-# 缺了这段，登录后没有状态栏（waybar 由 exporters/hyprland/waybar.sh 拉起）。
+# 只有一个提供方（niri）：配色/壁纸由 exporters/niri/theme.sh 写入 Noctalia 方案目录并 IPC 热更新。
+# 非图形会话（TTY）只更新索引，不动运行时。
 case "${XDG_CURRENT_DESKTOP:-}" in
-  *niri*|*Niri*) : ;;
-  *)
-    for e in hyprland-border wallpaper waybar fuzzel swaync eww hyprshell swayosd kitty fastfetch hyprlock hyprtoolkit; do
-      [ -r "$LIB_DIR/hyprland/$e.sh" ] && . "$LIB_DIR/hyprland/$e.sh"
-    done
+  *niri*|*Niri*)
+    . "$LIB_DIR/niri/theme.sh"
+    noctalia_theme_apply "$slug" || exit 1
     ;;
+  *) : ;;
 esac
 
 # agent 主题跟随（agent 层未启用时脚本不存在，静默跳过）；

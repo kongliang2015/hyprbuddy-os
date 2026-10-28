@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # @command: night-mode
-# @summary: 夜间模式：4000K 暖色与正常色温切换（hyprsunset）
+# @summary: 夜间模式开关（Noctalia 内置 nightLight）
 # @category: runtime
 # @usage: night-mode
-# @effect: 切换 hyprsunset 色温
-# 夜间模式：在 4000K 暖色与正常色温之间切换
-#   Hyprland → hyprsunset；niri → Noctalia 内置夜间模式（nightLight IPC）
+# @effect: 通过 Noctalia IPC 切换夜间模式
+# 夜间模式：niri + Noctalia 内置 nightLight（Hyprland 已退役）
 DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
 . "$DE_LIB"
@@ -15,15 +14,5 @@ if [ "$de" = "niri" ]; then
   noctalia-shell ipc call nightLight toggle
   exit 0
 fi
-if [ "$de" != "hyprland" ]; then
-  de_notify "夜间模式" "当前桌面（$de）暂不支持色温切换"
-  exit 1
-fi
-state="${XDG_RUNTIME_DIR:-/tmp}/hyprsunset.on"
-if [ -f "$state" ]; then
-  hyprctl hyprsunset identity >/dev/null 2>&1
-  rm -f "$state"
-else
-  hyprctl hyprsunset temperature 4000 >/dev/null 2>&1
-  : > "$state"
-fi
+de_notify "夜间模式" "当前桌面（$de）不支持色温切换"
+exit 1

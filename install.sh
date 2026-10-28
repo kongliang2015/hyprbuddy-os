@@ -113,13 +113,11 @@ if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -x "$HOME/.local/bin/theme-nex
 fi
 
 echo "==> 桌面自检"
-# desktop-check 按当前桌面分派：Hyprland → hypr-check，niri → 基础项
+# desktop-check：当前只有 niri 提供方（Hyprland 于 v1-nn 退役）
 if [ -x "$HOME/.local/bin/desktop-check" ]; then
   "$HOME/.local/bin/desktop-check" || true
-elif [ -x "$HOME/.local/bin/hypr-check" ]; then
-  "$HOME/.local/bin/hypr-check" || true
 else
-  echo "  - 跳过（desktop-check / hypr-check 未安装）"
+  echo "  - 跳过（desktop-check 未安装）"
 fi
 
 echo

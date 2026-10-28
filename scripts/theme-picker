@@ -3,7 +3,7 @@
 # @summary: 主题预览与选择（桌面平铺截图预览，Omarchy 风格）
 # @category: runtime
 # @usage: theme-picker [--list | --preview <idx>]
-# @effect: 选择后应用整套主题（waybar/mako/fuzzel/swayosd/壁纸/边框）
+# @effect: 选择后应用整套主题（Noctalia 配色 + 壁纸）
 # @interactive: true
 # 主题预览：kitty 内 fzf 浏览主题列表（当前主题带 ← 当前 标记），
 # 右侧显示该主题下桌面（终端/浏览器/文件管理器平铺）的实拍截图，Enter 应用。

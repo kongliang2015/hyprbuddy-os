@@ -7,16 +7,9 @@
 
 de_name() {
   case "${XDG_CURRENT_DESKTOP:-}" in
-    *Hyprland*)    echo hyprland ;;
     *niri*|*Niri*) echo niri ;;
     *)
-      if command -v hyprctl >/dev/null 2>&1 && hyprctl version >/dev/null 2>&1; then
-        echo hyprland
-      elif pgrep -x niri >/dev/null 2>&1; then
-        echo niri
-      else
-        echo unknown
-      fi
+      if pgrep -x niri >/dev/null 2>&1; then echo niri; else echo unknown; fi
       ;;
   esac
 }
@@ -25,7 +18,7 @@ de_name() {
 de_wallpaper_set() {
   local img="$1"
   case "$(de_name)" in
-    hyprland|niri)
+    niri)
       # nixpkgs 26.05 起 swww 更名 awww，两者都兼容
       local wp wpd
       if command -v awww >/dev/null 2>&1; then wp=awww; wpd=awww-daemon
@@ -41,7 +34,7 @@ de_wallpaper_set() {
 # 区域截图 + 标注（swappy）
 de_screenshot_annotate() {
   case "$(de_name)" in
-    hyprland|niri)
+    niri)
       command -v grim >/dev/null 2>&1 && command -v slurp >/dev/null 2>&1 || return 1
       grim -g "$(slurp)" - | swappy -f -
       ;;
@@ -52,8 +45,7 @@ de_screenshot_annotate() {
 # 锁屏
 de_lock() {
   case "$(de_name)" in
-    hyprland) hyprlock ;;
-    niri) loginctl lock-session ;;
+    niri) loginctl lock-session ;; # Noctalia 锁屏接管
     *) return 1 ;;
   esac
 }
@@ -68,9 +60,6 @@ de_notify() {
 # 显示器信息（统一成 name/WxH 行，供脚本解析）
 de_monitors() {
   case "$(de_name)" in
-    hyprland)
-      hyprctl monitors -j 2>/dev/null | python3 -c 'import json,sys; [print(f"{m['name']} {m['width']}x{m['height']}") for m in json.load(sys.stdin)]'
-      ;;
     niri)
       # niri IPC：{name: {modes: [{width, height}], current_mode: idx}}
       niri msg -j outputs 2>/dev/null | python3 -c 'import json,sys
@@ -111,15 +100,6 @@ de_theme_apply() {
       . "$THEME_LIB_DIR/niri/theme.sh"
       noctalia_theme_apply "$slug"
       ;;
-    hyprland)
-      local i=0 found="" s
-      for s in $(theme_list); do
-        [ "$s" = "$slug" ] && found=$i
-        i=$((i + 1))
-      done
-      [ -n "$found" ] || { echo "de_theme_apply: 未知主题 $slug" >&2; return 1; }
-      theme-next "$found"
-      ;;
     *)
       echo "de_theme_apply: 未知桌面" >&2
       return 1
@@ -130,13 +110,7 @@ de_theme_apply() {
 # 整屏截图（区域截图见 de_screenshot_annotate）
 de_screenshot_output() {
   case "$(de_name)" in
-    hyprland)
-      if command -v hyprshot >/dev/null 2>&1; then
-        hyprshot -m output >/dev/null 2>&1 || return 1
-      else
-        grim "$HOME/Pictures/Screenshot_$(date +%Y%m%d_%H%M%S).png" || return 1
-      fi
-      ;;
+    niri) grim "$HOME/Pictures/Screenshot_$(date +%Y%m%d_%H%M%S).png" || return 1 ;;
     *) return 1 ;;
   esac
 }

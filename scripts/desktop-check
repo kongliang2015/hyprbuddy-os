@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # @command: desktop-check
-# @summary: 按当前桌面跑自检（Hyprland → hypr-check；niri → 基础检查）
+# @summary: 桌面自检（niri + Noctalia）
 # @category: check
-# @usage: desktop-check [hyprland|niri]
+# @usage: desktop-check [niri]
 # @effect: 只读检查，返回 1 表示有告警
 # @doc: desktop-abstraction.md
-# 桌面自检入口：Hyprland 沿用 hypr-check（8 组检查），niri 跑本文件内的基础项。
-# COSMIC 已于 2026-10-28 退役（v1-nn 分支）。
+# COSMIC 于 2026-10-28 退役，Hyprland 于 v1-nn 退役；当前只有 niri 提供方。
 set -uo pipefail
 self=$(dirname "$(readlink -f "$0")")
 DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
@@ -19,11 +18,6 @@ bad()  { printf '  ! %s\n' "$1"; warn=$((warn+1)); }
 
 de="${1:-$(de_name)}"
 case "$de" in
-  hyprland)
-    if [ -x "$self/hypr-check" ]; then exec "$self/hypr-check"; fi
-    if command -v hypr-check >/dev/null 2>&1; then exec hypr-check; fi
-    bad "找不到 hypr-check"
-    ;;
   niri)
     info "桌面: niri + Noctalia"
 
@@ -86,7 +80,7 @@ case "$de" in
     [ -f "$HOME/.config/niri/config.kdl" ] && info "niri 配置存在" || bad "缺少 niri config.kdl"
     ;;
   *)
-    bad "未识别的桌面: $de（可用: hyprland / niri）"
+    bad "未识别的桌面: $de（当前仅支持 niri）"
     ;;
 esac
 
