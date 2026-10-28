@@ -42,14 +42,19 @@ case "$de" in
       bad "gnome portal 未注册（截图/录屏会失败）"
     fi
 
-    # 3) 壁纸守护
-    if command -v awww >/dev/null 2>&1 && pgrep -f awww-daemon >/dev/null 2>&1; then
-      info "awww 壁纸守护在运行"
+    # 3) 壁纸：Noctalia 内置服务（awww 已于 v1-nn P3 移除，不再检查外部守护）
+    if command -v noctalia-shell >/dev/null 2>&1; then
+      wp=$(noctalia-shell ipc call wallpaper get all 2>/dev/null | head -n1)
+      if [ -n "$wp" ]; then
+        info "壁纸由 Noctalia 提供（$(printf "%s" "$wp" | sed "s|$HOME|~|")）"
+      else
+        bad "Noctalia 未报告壁纸（屏幕可能没有壁纸）"
+      fi
     else
-      bad "awww-daemon 未运行（壁纸不会生效）"
+      bad "noctalia-shell 不可用（壁纸与面板都会缺失）"
     fi
 
-# 4) Noctalia 状态栏图层（按输出建 surface；启动早于显示器就绪会没有）
+    # 4) Noctalia 状态栏图层（按输出建 surface；启动早于显示器就绪会没有）
     if command -v niri >/dev/null 2>&1 && niri msg layers >/dev/null 2>&1; then
       if niri msg layers 2>/dev/null | grep -q "noctalia-bar-content"; then
         info "Noctalia 状态栏图层已创建"
