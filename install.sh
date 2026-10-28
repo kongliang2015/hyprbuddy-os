@@ -92,7 +92,7 @@ mkdir -p "$HOME/Pictures/wallpapers"
 cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
 
 echo "==> 桌面自检"
-# desktop-check 按当前桌面分派：Hyprland → hypr-check，COSMIC → 基础项
+# desktop-check 按当前桌面分派：Hyprland → hypr-check，niri → 基础项
 if [ -x "$HOME/.local/bin/desktop-check" ]; then
   "$HOME/.local/bin/desktop-check" || true
 elif [ -x "$HOME/.local/bin/hypr-check" ]; then

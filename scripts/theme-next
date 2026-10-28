@@ -15,7 +15,7 @@
 #
 # P2 重构：主题定义在 themes/<slug>/tokens.json（唯一真相），写入逻辑在
 # exporters/hyprland/*.sh；本脚本只做索引管理 + tokens 环境展开 + 编排。
-# COSMIC 栈的主题应用走 de_theme_apply → exporters/cosmic/。
+# niri 栈的主题应用走 de_theme_apply → exporters/niri/。
 set -uo pipefail
 
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -76,17 +76,6 @@ theme_env_load "$slug" || exit 1
 [ "$req" = "restore" ] && sleep 1
 
 # ── 编排 ──────────────────────────────────────────────────────────────
-# COSMIC 会话只跑 cosmic exporter：Hyprland 栈的 exporter 会调 hyprctl、重启
-# waybar/swaync，在 COSMIC 下既报错又会把无关组件拉起来。
-if [ "${XDG_CURRENT_DESKTOP:-}" != "${XDG_CURRENT_DESKTOP#*COSMIC}" ]; then
-  . "$LIB_DIR/cosmic/theme.sh"
-  cosmic_theme_apply || exit 1
-else
-  # Hyprland 栈 exporters（同进程 source，T_* 直接可见）
-  for e in hyprland-border wallpaper waybar fuzzel swaync eww hyprshell swayosd kitty fastfetch hyprlock hyprtoolkit; do
-    . "$LIB_DIR/hyprland/$e.sh"
-  done
-fi
 
 # agent 主题跟随（agent 层未启用时脚本不存在，静默跳过）；
 # 明暗按背景亮度判断，与 v0 一致

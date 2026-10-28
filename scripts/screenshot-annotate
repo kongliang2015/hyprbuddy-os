@@ -3,10 +3,10 @@
 # @summary: 区域截图并交给 swappy 标注
 # @category: runtime
 # @usage: screenshot-annotate
-# @effect: 生成截图文件/剪贴板（Hyprland: grim+slurp；COSMIC: portal）
+# @effect: 生成截图文件/剪贴板（Hyprland/niri: grim+slurp）
 # @interactive: true
 # 区域截图并交给 swappy 标注（保存/复制由 swappy 处理）
-# Hyprland 走 grim+slurp，COSMIC 走 portal，差异封装在能力层
+# Hyprland / niri 走 grim+slurp，差异封装在能力层
 DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
 . "$DE_LIB"

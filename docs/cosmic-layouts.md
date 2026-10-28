@@ -1,3 +1,7 @@
+> **已退役（2026-10-28，v1-nn 分支）**：COSMIC 桌面已从本分支移除，
+> 第三桌面提供方改为 niri + Noctalia（见 `docs/niri-noctalia-plan.md`）。
+> 本文保留为历史调研记录。
+
 # COSMIC 布局模板（可参考的 UX 模板）
 
 来源：`cosmic-initial-setup 1.2.0` 自带，安装到

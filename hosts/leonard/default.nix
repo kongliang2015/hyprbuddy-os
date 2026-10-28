@@ -9,8 +9,8 @@
 
   distro = {
     # 并存会话：Hyprland（默认）+ COSMIC。COSMIC 仅用于评估，
-    # 验证没问题后再考虑把 default 改成 "cosmic"（见 docs/desktop-abstraction.md）。
-    desktop.sessions = [ "hyprland" "cosmic" ];
+    # niri 与 Hyprland 并存；COSMIC 已于 2026-10-28 退役（见 docs/desktop-abstraction.md）。
+    desktop.sessions = [ "hyprland" "niri" ];
     desktop.default = "hyprland";
 
     user.name = "leonard";

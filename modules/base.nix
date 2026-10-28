@@ -24,7 +24,7 @@
     pkgs.nerd-fonts.jetbrains-mono   # Waybar / fuzzel / kitty 图标字体
   ];
 
-  # 中文统一走文泉驿（COSMIC 的 cosmic-text 静态链接了 fontconfig，同样吃这份配置）：
+  # 中文统一走文泉驿（cosmic-text 静态链接了 fontconfig，同样吃这份配置）：
   # - 对 lang=zh 的查询把文泉驿 prepend 到最前，避免 Noto Sans CJK 被优先选中
   # - monospace 链里显式排到 Noto CJK 之前（否则终端中文会落成 Noto Sans CJK JP）
   fonts.fontconfig = {
@@ -37,7 +37,7 @@
       <?xml version="1.0"?>
       <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
       <fontconfig>
-        <!-- 中文（zh-*）优先文泉驿：COSMIC / GTK / Qt 一致 -->
+        <!-- 中文（zh-*）优先文泉驿：cosmic-text / GTK / Qt 一致 -->
         <match target="pattern">
           <test name="lang" compare="contains"><string>zh</string></test>
           <edit name="family" mode="prepend" binding="strong"><string>WenQuanYi Zen Hei</string></edit>

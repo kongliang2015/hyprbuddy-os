@@ -1,12 +1,13 @@
-# NixOS 桌面配置（Hyprland + COSMIC 双桌面 · distro/v1）
+# NixOS 桌面配置（Hyprland + niri 双桌面 · distro/v1）
 
-flake 化的桌面配置：SDDM → 桌面会话（Hyprland / COSMIC 可并存、可指定默认），
+flake 化的桌面配置：SDDM → 桌面会话（Hyprland / niri 可并存、可指定默认；
+COSMIC 已于 v1-nn 分支退役，见 `distro/v1-dev` 历史），
 按 host 选择架构 / GPU / 桌面提供方。桌面能力通过 \`scripts/lib/de.sh\` 抽象层
 收敛（壁纸 / 截图 / 锁屏 / 通知 / 显示器…），脚本不直接依赖具体桌面。
 
 - Hyprland 栈：uwsm 托管，Lua 配置管理器（hyprland.lua），Waybar / fuzzel /
   swaync / eww / hyprshell / SwayOSD，9 套主题热切换（新增 Deepin Blue）
-- COSMIC 栈：System76 COSMIC 1.2（comp / panel / settings 自带全套外壳），
+- niri 栈：niri 26.04 + Noctalia 外壳（面板 / launcher / 通知 / 锁屏 / OSD），
   由 \`distro.desktop.sessions\` 控制安装，与 Hyprland 共用 agent 层与技能层
 - 当前分支 distro/v1-dev：桌面提供方抽象 P0/P1 已完成（见
   docs/desktop-abstraction.md），后续按 P2–P5 渐进推进
@@ -15,16 +16,16 @@ flake 化的桌面配置：SDDM → 桌面会话（Hyprland / COSMIC 可并存�
 
 ### leonard（x86_64 真机）
 - NVIDIA GTX 1050 Ti，闭源驱动 legacy_580（580.178.04）+ nvidia-drm.modeset=1
-- 双会话并存：Hyprland（默认）+ COSMIC（评估中）；X11 会话（XFCE / Window Maker）已退役
+- 双会话并存：Hyprland + niri（vmware 虚机默认 niri）；COSMIC / X11 会话已退役
 - agent 层开启（opencode + codebuddy，含 usage 统计）
 
-### vmware（x86_64 虚机，COSMIC 实测机）
+### vmware（x86_64 虚机，niri 实测机）
 - VMware Workstation：BIOS/MBR + GRUB + plymouth（HyprBuddy 主题）+ open-vm-tools
 - 显卡：VMware SVGA（modesetting）。**必须在宿主机关闭「加速 3D 图形」**：
-  vmwgfx 的 dmabuf 导入残缺，开启 3D 加速时 COSMIC Workspaces 缩略图等客户端
+  **必须开启 3D 加速**（niri 跳过软件 EGL 渲染器）；vmwgfx 的 dmabuf 导入残缺，开启 3D 加速时 COSMIC Workspaces 缩略图等客户端
   会因协议错误 7 崩溃循环；关闭后 mesa 全栈自动回落 swrast（详见
   hosts/vmware/default.nix 注释）
-- 会话：Hyprland + COSMIC，默认登录 COSMIC
+- 会话：Hyprland + niri，默认登录 niri
 - 登录器：SDDM（HyprBuddy 主题）；输入法 fcitx5 + 拼音
 
 ### vm-virtio（aarch64，v0 实测目标）
@@ -42,10 +43,10 @@ hyprland-nixos/
 ├── flake.nix            # nixosConfigurations / packages(per-host home + iso / liveIso) / checks
 ├── flake.lock           # nixpkgs 指向清华 nixos-26.05 nixexprs
 ├── install.sh           # 构建 home 配置树并软链到 ~/.config / ~/.local/bin / ~/.codebuddy/skills
-├── modules/             # options / base / boot / users / desktop(hyprland+cosmic+sessions) / hardware-gpu / agent
+├── modules/             # options / base / boot / users / desktop(hyprland+niri+sessions) / hardware-gpu / agent
 ├── hosts/
 │   ├── leonard/         # x86_64 + NVIDIA（双会话并存）
-│   ├── vmware/          # x86_64 + VMware SVGA（COSMIC 默认）
+│   ├── vmware/          # x86_64 + VMware SVGA（niri 默认）
 │   ├── vm-virtio/       # aarch64 + virtio（v0 实测）
 │   └── _template/       # 模板（不参与构建）
 ├── home/                # hypr(hyprland.lua) / waybar / fuzzel / swaync / eww / hyprshell / fastfetch / kitty / swayosd
@@ -64,7 +65,7 @@ hyprland-nixos/
 - docs/IMPLEMENTATION-PLAN.md：flake + options + host 的目标结构与实施步骤
 - docs/AGENT-LAYER.md：agent 六层架构与实测状态
 - docs/ng-shell.md：hyprshell / 外壳组件设计与实测状态
-- docs/KEYBINDS.md：Hyprland 键位全表 + COSMIC 默认键位对照
+- docs/KEYBINDS.md：Hyprland 键位全表（niri 键位见 home/niri/config.kdl）
 - docs/niri-noctalia-plan.md：niri + Noctalia 第三提供方接入实施方案（N0–N5）
 
 ## 已实现的功能
@@ -72,11 +73,11 @@ hyprland-nixos/
 ### 系统层（modules/）
 - 桌面提供方抽象：\`distro.desktop.sessions\`（装哪些）+ \`distro.desktop.default\`
   （默认登录哪个，断言必须在 sessions 内）；SDDM 为每项生成会话
-  （hyprland → hyprland-uwsm，cosmic → cosmic），\`sessions.nix\` 分发默认会话
+  （hyprland → hyprland-uwsm，niri → niri），\`sessions.nix\` 分发默认会话
 - Hyprland 提供方：programs.hyprland（withUWSM）、Lua 配置管理器（hyprland.lua，
   为 hyprshell 的 eval 键位铺路）、0.55 规则语法（match: 前缀）
-- COSMIC 提供方：services.desktopManager.cosmic + cosmic 门户（与 Hyprland
-  门户分会话声明，避免截图/共享抢占）；COSMIC 自带 panel/launcher/通知/
+- niri 提供方：programs.niri + noctalia-shell + gnome/gtk 门户（与 Hyprland
+  门户分会话声明，避免截图/共享抢占）；Noctalia 自带 panel/launcher/通知/
   settings/bg/screenshot/osd/lock，无需外壳组件
 - SDDM：主题 HyprBuddy（自绘上拉菜单会话选择）/ catppuccin-mocha-mauve；
   greeter 分辨率跟随 DRM preferred
@@ -95,13 +96,13 @@ hyprland-nixos/
 - eww 弹窗：日历 / 会话面板 / 系统信息（跟随焦点显示器）
 - fastfetch：配置随主题联动（OS / 主题 / Agent 三项定制）
 - 能力层 de.sh：壁纸 / 截图标注 / 锁屏 / 通知 / 显示器 / 主题应用等能力分派
-  （Hyprland / COSMIC 双实现），wallpaper-next / screenshot-annotate /
+  （Hyprland / niri 双实现），wallpaper-next / screenshot-annotate /
   night-mode 已接入
 - 主题系统（P2）：`themes/<slug>/tokens.json` 唯一真相 + `exporters/{hyprland,
-  cosmic}/*` 输出端拆分；theme-next 只做编排；COSMIC 经 `de_theme_apply`
-  生成 cosmic-themes RON（详见 docs/desktop-abstraction.md）
+  niri}/*` 输出端拆分；theme-next 只做编排；niri 经 `de_theme_apply`
+  生成 Noctalia 配色方案 + 壁纸（详见 docs/niri-noctalia-plan.md）
 - desktop-check：按桌面分派的自检（Hyprland → hypr-check 原有 8 组；
-  COSMIC → 12 项：进程 / portal / 壁纸 / 字体 / 常用命令）
+  niri → 13 项：进程 / portal / 壁纸守护 / 字体 / 命令 / 配色配置）
 - theme-next：8 套主题热切换（编排器），联动 waybar / fuzzel / swaync / eww /
   hyprshell / swayosd / fastfetch / 壁纸；登录时 restore；theme-picker 预览选择器
 - 其他：SwayOSD / hypridle / 夜间模式 / 录屏 / 截图标注 / 壁纸轮换（awww）
@@ -140,8 +141,8 @@ hyprland-nixos/
     hypervisor = "vmware";            # none / vmware / qemu
     gpu.vendor = "virtio";
     desktop = {
-      sessions = [ "hyprland" "cosmic" ];   # 装哪些桌面（断言 default 必须在其中）
-      default = "cosmic";                    # SDDM 默认登录哪个
+      sessions = [ "hyprland" "niri" ];     # 装哪些桌面（断言 default 必须在其中）
+      default = "niri";                      # SDDM 默认登录哪个
     };
     user.name = "leonard";
     hardware.battery = false;
@@ -157,8 +158,8 @@ hyprland-nixos/
 
 | 选项 | 取值 | 作用 |
 |---|---|---|
-| distro.desktop.sessions | hyprland / cosmic 列表 | 装哪些桌面提供方（可并存） |
-| distro.desktop.default | hyprland / cosmic | SDDM 默认登录会话 |
+| distro.desktop.sessions | hyprland / niri 列表 | 装哪些桌面提供方（可并存） |
+| distro.desktop.default | hyprland / niri | SDDM 默认登录会话 |
 | distro.hypervisor | none / vmware / qemu | 虚拟化平台（兼容设置） |
 | distro.gpu.vendor | nvidia / amd / intel / virtio / none | 选择 GPU 模块 |
 | distro.gpu.nvidia.branch | auto / legacy_580 / production / beta | auto 按 pciIds 判断 |
@@ -166,7 +167,7 @@ hyprland-nixos/
 | distro.agent.* | enable / agents / usage / diagnostics / localModels / model | agent 层 |
 
 > NVIDIA 必须留在 580 LTSB：26.05 的 nvidiaPackages.stable 已指向 595.x，该分支不支持 Pascal，误用会黑屏。
-> COSMIC 会话在 VMware 上需要宿主机关闭 3D 加速（见「环境 · vmware」）。
+> niri 会话在 VMware 上需要宿主**开启** 3D 加速（niri 跳过软件 EGL，见「环境 · vmware」）。
 
 ## 部署
 
@@ -197,9 +198,9 @@ agent 或自动化改动走统一入口 \`scripts/agent-apply <host>\`：\`git d
 
 - vm-virtio（aarch64）：v0 端到端验证完成（构建 / 部署 / 登录 / live ISO，
   详见 git 历史与 docs/KEYBINDS.md）
-- vmware（x86_64）：COSMIC 桌面日用中；Workspaces 缩略图问题已通过宿主机
+- vmware（x86_64）：niri 桌面日用中（Noctalia 外壳，主题/壁纸跟随）；历史 COSMIC 的 Workspaces 缩略图问题已通过宿主机
   关闭 3D 加速解决（vmwgfx dmabuf 上游缺陷，排查记录见 hosts/vmware/default.nix）
-- leonard（x86_64 + NVIDIA）：COSMIC 并存会话已构建，默认仍登录 Hyprland
+- leonard（x86_64 + NVIDIA）：Hyprland 默认；niri 会话已构建（待实测）
   （NVIDIA + smithay 组合待实测，见 desktop-abstraction.md 风险表）
 
 ### 注意事项
@@ -214,7 +215,7 @@ agent 或自动化改动走统一入口 \`scripts/agent-apply <host>\`：\`git d
 - 改外观/键位 → 改 home/ 或 home/default.nix，再 ./install.sh --host <host>
 - 改系统能力 → 改 modules/，再 sudo nixos-rebuild switch --flake .#<host>
 - 改机器参数 → 改 hosts/<host>/default.nix（只写 distro.*）
-- 改桌面能力 → 改 scripts/lib/de.sh（Hyprland / COSMIC 双实现同步维护）
+- 改桌面能力 → 改 scripts/lib/de.sh（Hyprland / niri 双实现同步维护）
 - 改技能 → 改 skills/，install.sh 会自动重新链接
 - 不确定入口 → agent-commands list（或 --json）查询命令、参数、副作用、是否需 sudo
 - 完整工作流与示例见技能 \`nixos-desktop-settings\`（docs/SKILL-REDESIGN.md 为设计说明）
@@ -236,7 +237,7 @@ installer 镜像启动后以 root 登录，分区并挂载到 /mnt，然后执�
 
 ## 快捷键
 
-完整列表见 docs/KEYBINDS.md（含 COSMIC 默认键位对照）。常用：Super+Return（kitty）、
+完整列表见 docs/KEYBINDS.md（niri 键位见 home/niri/config.kdl）。常用：Super+Return（kitty）、
 Super+D（fuzzel）、Super+Space（系统菜单）、Super+Shift+T（切换主题）、Super+L（锁屏）、
 Super+Q（关闭）、Super+V（剪贴板）、Print（截图）。
 

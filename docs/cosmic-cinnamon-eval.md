@@ -1,3 +1,7 @@
+> **已退役（2026-10-28，v1-nn 分支）**：COSMIC 桌面已从本分支移除，
+> 第三桌面提供方改为 niri + Noctalia（见 `docs/niri-noctalia-plan.md`）。
+> 本文保留为历史调研记录。
+
 # 参考 Cinnamon 设计 COSMIC 布局：可行性评估
 
 结论：**三者之中最容易实现的**。Cinnamon 是"单条底部面板 + 一群 applet"的传统布局，

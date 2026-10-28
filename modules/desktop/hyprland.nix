@@ -94,7 +94,7 @@ lib.mkIf cfg.desktop.enable {
   security.pam.services.hyprlock = { };
 
   # polkit 认证代理（GUI 提权）
-  # 注意：不挂 wantedBy=graphical-session.target——否则 niri/COSMIC 会话也会
+  # 注意：不挂 wantedBy=graphical-session.target——否则 niri 会话也会
   # 拉起它（niri 下会 SIGABRT 崩溃）。Hyprland 的 exec-once 里显式
   # systemctl --user start hyprpolkitagent 负责启动。
   systemd.user.services.hyprpolkitagent = {

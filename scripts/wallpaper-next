@@ -3,7 +3,7 @@
 # @summary: 循环切换 ~/Pictures/wallpapers 壁纸
 # @category: runtime
 # @usage: wallpaper-next
-# @effect: 设置壁纸（Hyprland: awww；COSMIC: cosmic-bg）
+# @effect: 设置壁纸（Hyprland/niri: awww）
 # @doc: theming.md
 # 循环切换 ~/Pictures/wallpapers 里的壁纸
 dir="$HOME/Pictures/wallpapers"
@@ -19,5 +19,5 @@ DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
 . "$DE_LIB"
 
-# 桌面差异（awww / cosmic-bg）由能力层处理
+# 桌面差异由能力层处理
 de_wallpaper_set "$img" || exit 0

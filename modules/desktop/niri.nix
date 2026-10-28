@@ -16,7 +16,7 @@ lib.mkIf (cfg.enable && builtins.elem "niri" cfg.sessions) {
   ];
 
   # 门户分会话：niri 走 gnome（录屏/文件选择）+ gtk，避免与
-  # hyprland / cosmic 的门户互相抢占
+  # hyprland 的门户互相抢占
   xdg.portal.extraPortals = [
     pkgs.xdg-desktop-portal-gnome
     pkgs.xdg-desktop-portal-gtk

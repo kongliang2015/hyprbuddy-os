@@ -110,21 +110,17 @@ in
 
     desktop = {
       enable = mkOption { type = types.bool; default = true; };
-      # COSMIC 系列包整体改用 nixpkgs-unstable（26.05 锁定 epoch 1.2.0，
-      # 官方已迭代到 1.11+；开启后仅 cosmic 系列换源，系统其余仍 26.05）
-      cosmicUnstable = mkOption { type = types.bool; default = false; };
-
       # 同时安装的 Wayland 桌面会话。两个提供方实现同一组能力契约
       # （见 docs/desktop-abstraction.md），可并存、可逐步退役。
       sessions = mkOption {
-        type = types.listOf (types.enum [ "hyprland" "cosmic" "niri" ]);
+        type = types.listOf (types.enum [ "hyprland" "niri" ]);
         default = [ "hyprland" ];
         description = "启用的桌面提供方；SDDM 会为每一项生成登录会话";
       };
 
       # 默认登录的会话，必须在 sessions 里。
       default = mkOption {
-        type = types.enum [ "hyprland" "cosmic" ];
+        type = types.enum [ "hyprland" "niri" ];
         default = "hyprland";
         description = "SDDM 默认选中的桌面（hyprland 映射到 hyprland-uwsm 会话）";
       };

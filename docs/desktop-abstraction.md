@@ -1,3 +1,7 @@
+> **v1-nn 分支状态（2026-10-28）**：COSMIC 已退役，第三提供方改为
+> niri + Noctalia（见 `docs/niri-noctalia-plan.md`）。本文中 COSMIC 相关章节
+> 为历史记录；当前 `distro.desktop.sessions = [ "hyprland" "niri" ]`。
+
 # 桌面抽象层：COSMIC 接入与 Hyprland 渐进退役
 
 目标：**不是迁移**，而是把 COSMIC 当作与 Hyprland 并列的桌面提供方接入现有

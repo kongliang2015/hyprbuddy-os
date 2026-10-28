@@ -83,6 +83,9 @@
 
 ## COSMIC 桌面（默认键位）
 
+> **已退役（v1-nn 分支）**：COSMIC 已移除，本节保留为历史对照。niri 键位见
+> `home/niri/config.kdl`（Mod+D launcher / Mod+L 锁屏 / Print 截图等）。
+
 COSMIC 的键位不写在仓库里，来源是 cosmic-comp 自带的默认表：
 
 ```

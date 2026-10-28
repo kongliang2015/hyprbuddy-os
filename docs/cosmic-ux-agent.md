@@ -1,3 +1,7 @@
+> **已退役（2026-10-28，v1-nn 分支）**：COSMIC 桌面已从本分支移除，
+> 第三桌面提供方改为 niri + Noctalia（见 `docs/niri-noctalia-plan.md`）。
+> 本文保留为历史调研记录。
+
 # Agent 驱动的 COSMIC UX 定制方案
 
 > 前置调研见 `docs/cosmic-customization.md`。本文补充实测细节，并给出一套

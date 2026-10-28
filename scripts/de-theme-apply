@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # @command: de-theme-apply
-# @summary: 应用指定主题（slug），按当前桌面自动分派（Hyprland / COSMIC）
+# @summary: 应用指定主题（slug），按当前桌面自动分派（Hyprland / niri）
 # @category: runtime
 # @usage: de-theme-apply <slug>
 # @arg slug: 主题目录名（见 themes/<slug>/tokens.json，如 hyprbuddy）；缺省列出可选主题
-# @effect: Hyprland 重写各应用配置并热加载；COSMIC 重写 cosmic-themes RON + 壁纸
+# @effect: Hyprland 重写各应用配置并热加载；niri 重写 Noctalia 配色方案 + 壁纸
 # @doc: theming.md
 # de-theme-apply: de_theme_apply 能力的命令行入口（能力本身在 scripts/lib/de.sh）
 set -uo pipefail

@@ -1,3 +1,7 @@
+> **已退役（2026-10-28，v1-nn 分支）**：COSMIC 桌面已从本分支移除，
+> 第三桌面提供方改为 niri + Noctalia（见 `docs/niri-noctalia-plan.md`）。
+> 本文保留为历史调研记录。
+
 # COSMIC Applet 开发调研
 
 结论：**可行，官方有现成模板与 hook**。成本不在"写"，而在"首次编译 + 长期跟进 API"。

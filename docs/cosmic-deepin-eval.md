@@ -1,3 +1,7 @@
+> **已退役（2026-10-28，v1-nn 分支）**：COSMIC 桌面已从本分支移除，
+> 第三桌面提供方改为 niri + Noctalia（见 `docs/niri-noctalia-plan.md`）。
+> 本文保留为历史调研记录。
+
 # 参考 Deepin 设计 COSMIC 主题：可行性评估与方案
 
 结论：**比参考 Windows 11 更容易**——同为 Linux、同样重"大圆角 + 蓝色强调 + 居中 Dock"，

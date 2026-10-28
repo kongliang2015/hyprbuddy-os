@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # @command: screenshot-output
-# @summary: 整屏截图（Hyprland: hyprshot output；COSMIC: cosmic-screenshot）
+# @summary: 整屏截图（Hyprland: hyprshot output；niri: grim）
 # @category: runtime
 # @usage: screenshot-output
 # @effect: 在 ~/Pictures 生成截图并通知

@@ -90,11 +90,7 @@ let
         name = "hyprland/${n}";
         value = ../exporters/hyprland + "/${n}";
       }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/hyprland))))
-    // builtins.listToAttrs (map (n: {
-        name = "cosmic/${n}";
-        value = ../exporters/cosmic + "/${n}";
-      }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/cosmic))))
-    // builtins.listToAttrs (map (n: {
+        // builtins.listToAttrs (map (n: {
         name = "niri/${n}";
         value = ../exporters/niri + "/${n}";
       }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/niri))));
