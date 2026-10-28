@@ -168,7 +168,22 @@ lib.mkIf cfg.desktop.enable {
     # 名字写错时 After 会静默失效；waitenv 是无实例的固定单元名，语义也正好是"等变量"。
     after = [ "wayland-session-waitenv.service" ];
     serviceConfig = {
-      ExecStart = "${config.i18n.inputMethod.package}/bin/fcitx5";
+      # 光靠 After 不够：niri 会话里 wayland-session-waitenv.service 不存在（uwsm 专属），
+      # 而 niri.service 的 READY 早于创建 wayland socket（实测 21:19:30.235 起 fcitx5，
+      # 21:19:30.709 才 listening），于是抢跑 → waylandmodule "Failed to open wayland connection"。
+      # 因此用包装脚本主动等「环境变量 + socket 文件」双双就绪再 exec。
+      ExecStart = pkgs.writeShellScript "fcitx5-start" ''
+        export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnused ]}:$PATH
+        wd=""
+        for _ in $(seq 1 100); do   # 最多等 10 秒，通常 0.3–1 秒
+          wd=$(${config.systemd.package}/bin/systemctl --user show-environment 2>/dev/null \
+                | sed -n 's/^WAYLAND_DISPLAY=//p' | head -n1)
+          [ -n "$wd" ] && [ -S "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/$wd" ] && break
+          sleep 0.1
+        done
+        if [ -n "$wd" ]; then export WAYLAND_DISPLAY="$wd"; fi
+        exec ${config.i18n.inputMethod.package}/bin/fcitx5
+      '';
       Restart = "on-failure";
     };
     wantedBy = [ "graphical-session.target" ];
