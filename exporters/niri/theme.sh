@@ -65,7 +65,11 @@ kitty_theme_apply() {
       printf 'color%-2s #%s\n' "$i" "${v:-$T_TERM_FG}"
     done
   } > "$f.tmp.$$" && mv -f "$f.tmp.$$" "$f" || { rm -f "$f.tmp.$$"; return 1; }
-  command -v kitty >/dev/null 2>&1 && timeout 3 kitty @ set-colors -a "$f" >/dev/null 2>&1 || true
+  # 只在 kitty 内部执行（KITTY_LISTEN_ON 存在才有可用 socket）；
+  # 且必须 -k：客户端卡在失效 socket 上时 SIGTERM 不会返回，会把登录钩子一起拖死（实测 3 分钟）。
+  if [ -n "${KITTY_LISTEN_ON:-}" ] && command -v kitty >/dev/null 2>&1; then
+    timeout -k 2 3 kitty @ set-colors -a "$f" >/dev/null 2>&1 || true
+  fi
 }
 
 noctalia_theme_apply() {
