@@ -13,6 +13,9 @@
   # VMware 客户机集成（open-vm-tools：分辨率自适应/剪贴板/时间同步）
   virtualisation.vmware.guest.enable = true;
 
+  # 如意玲珑：容器化应用包管理（NixOS 25.11+ 原生模块，ll-cli / 网页商店）
+  services.linyaps.enable = true;
+
   # BIOS + MBR：GRUB 必须装到磁盘，modules/boot.nix 默认 nodev 不适用
   boot.loader.grub.device = lib.mkForce "/dev/sda";
   # 显示 GRUB 菜单，等待 3 秒
@@ -48,6 +51,8 @@
       # v1 抽象层：Hyprland + COSMIC 并存；本机日常使用 COSMIC
       sessions = [ "hyprland" "cosmic" ];
       default = "cosmic";
+      # 试验：COSMIC 追官方最新（epoch 1.11），vmwgfx 软渲染兼容性待验证
+      cosmicUnstable = true;
       # HyprBuddy 配套 SDDM 登录界面（pkgs/sddm-theme-hyprbuddy）
       sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
       theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名

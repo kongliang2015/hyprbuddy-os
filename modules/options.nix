@@ -110,6 +110,10 @@ in
 
     desktop = {
       enable = mkOption { type = types.bool; default = true; };
+      # COSMIC 系列包整体改用 nixpkgs-unstable（26.05 锁定 epoch 1.2.0，
+      # 官方已迭代到 1.11+；开启后仅 cosmic 系列换源，系统其余仍 26.05）
+      cosmicUnstable = mkOption { type = types.bool; default = false; };
+
       # 同时安装的 Wayland 桌面会话。两个提供方实现同一组能力契约
       # （见 docs/desktop-abstraction.md），可并存、可逐步退役。
       sessions = mkOption {

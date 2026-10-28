@@ -121,7 +121,9 @@ Hyprland 退役 = 删 `exporters/hyprland/`，主题资产不受影响。
 - `modules/desktop/cosmic.nix` 已落地，由 `sessions` 控制
 - 已启用的 host：
   - **vmware**（x86_64 虚机）：`sessions = [ hyprland cosmic ]`，`default = cosmic`，
-    **日用中**。前提：宿主机关闭「加速 3D 图形」——vmwgfx 的 dmabuf 导入残缺，
+    **日用中**。2026-10-28 起 COSMIC 系列包经 `cosmicUnstable = true` 切到
+    nixpkgs-unstable（epoch **1.11.0**，26.05 频道仍锁 1.2.0），vmwgfx 软渲染
+    下桌面/主题/布局实测正常。前提：宿主机关闭「加速 3D 图形」——vmwgfx 的 dmabuf 导入残缺，
     开启 3D 加速时 Workspaces 缩略图等客户端因协议错误 7（create_immed failed，
     invalid wl_buffer，pop-os/cosmic-epoch#2978 同类）崩溃循环；关闭后 mesa
     全栈自动回落 swrast。排查过程见 hosts/vmware/default.nix 注释

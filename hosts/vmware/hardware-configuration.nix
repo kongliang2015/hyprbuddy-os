@@ -16,9 +16,9 @@
       fsType = "ext4";
     };
 
-  swapDevices =
-    [ { device = "/dev/disk/by-uuid/82c8964f-f351-466e-9477-80b3d408193a"; }
-    ];
+  # 2026-10-28：原 4G swap 分区（sda2，uuid 82c8964f…）已删除，为根分区让出
+  # 扩容空间（36G → 80G）；交换改为 /var/swapfile 8G，由 NixOS 自动创建。
+  swapDevices = [ { device = "/var/swapfile"; size = 8192; } ];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 }
