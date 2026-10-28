@@ -79,7 +79,8 @@ hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("cliphist list | fuzzel --dmenu | cli
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("swaync-client -t"))
 hl.bind(mainMod .. " + C", hl.dsp.exec_cmd(home .. "/.local/bin/eww-popup calendar"))
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd(home .. "/.local/bin/eww-popup session"))
-hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen())
+
+hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen" }))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))
 
@@ -91,6 +92,8 @@ hl.bind(mainMod .. " + SHIFT + left", hl.dsp.window.move({ direction = "l" }))
 hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "r" }))
 hl.bind(mainMod .. " + SHIFT + up", hl.dsp.window.move({ direction = "u" }))
 hl.bind(mainMod .. " + SHIFT + down", hl.dsp.window.move({ direction = "d" }))
+-- resizeactive 走原生 window.resize（exec_cmd 包 hyprctl dispatch 会被 Lua 桥接
+-- 以未加引号参数翻译成 hl.dispatch(...) 语法错误，键位静默失效）
 hl.bind(mainMod .. " + ALT + left", hl.dsp.window.resize({ x = -30, y = 0, relative = true }))
 hl.bind(mainMod .. " + ALT + right", hl.dsp.window.resize({ x = 30, y = 0, relative = true }))
 hl.bind(mainMod .. " + ALT + up", hl.dsp.window.resize({ x = 0, y = -30, relative = true }))
