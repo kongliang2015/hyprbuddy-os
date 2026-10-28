@@ -9,6 +9,30 @@
 #     预设并覆盖 colors.json → 必须清空（jq 合并写，保留其余键）
 #   - darkMode 跟随 tokens.dark（两段写同一色板，明暗由 darkMode 决定）
 
+
+# kitty：把 tokens 的终端 16 色写成 include 文件并热加载已运行实例。
+# 终端用 tokens 的色板而不是 Material 键：16 个 ANSI 色是专为终端调的，
+# 从 Material 的 10 来个键反推只会更差。两者同源（同一份 tokens），不会漂移。
+kitty_theme_apply() {
+  local dir="${XDG_CONFIG_HOME:-$HOME/.config}/kitty"
+  local f="$dir/theme.inc.conf"
+  mkdir -p "$dir" || return 1
+  {
+    printf 'foreground #%s\n' "$T_TERM_FG"
+    printf 'background #%s\n' "$T_TERM_BG"
+    printf 'cursor #%s\n' "$T_TERM_CURSOR"
+    printf 'cursor_text_color #%s\n' "$T_TERM_BG"
+    printf 'selection_background #%s\n' "$T_TERM_FG"
+    printf 'selection_foreground #%s\n' "$T_TERM_BG"
+    local i
+    for i in $(seq 0 15); do
+      local v; eval "v=\$T_TERM_C$i"
+      printf 'color%-2s #%s\n' "$i" "${v:-$T_TERM_FG}"
+    done
+  } > "$f.tmp.$$" && mv -f "$f.tmp.$$" "$f" || { rm -f "$f.tmp.$$"; return 1; }
+  command -v kitty >/dev/null 2>&1 && timeout 3 kitty @ set-colors -a "$f" >/dev/null 2>&1 || true
+}
+
 noctalia_theme_apply() {
   local slug="${1:-theme}"
   local dir="${NOCTALIA_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/noctalia}"
@@ -125,5 +149,6 @@ noctalia_theme_apply() {
     done
   fi
 
+  kitty_theme_apply && echo "kitty: theme.inc.conf <- $T_NAME" || echo "kitty: 写入失败（终端配色未更新）"
   echo "noctalia: $T_NAME ($slug) -> $colors"
 }

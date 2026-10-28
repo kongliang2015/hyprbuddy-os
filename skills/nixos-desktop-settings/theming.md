@@ -17,6 +17,8 @@ exporters/niri/theme.sh  (noctalia_theme_apply)
    │        colorSchemes.useWallpaperColors = false
    │        colorSchemes.predefinedScheme   = <slug>
    │        colorSchemes.darkMode           = tokens.dark
+   ├─ 写  ~/.config/kitty/theme.inc.conf（16 色 ANSI，来自 tokens.terminal）
+   │        + kitty @ set-colors -a 热加载已运行实例
    ├─ IPC noctalia-shell ipc call colorScheme set <slug>
    └─ IPC noctalia-shell ipc call wallpaper set <绝对路径> all
 ```
