@@ -73,7 +73,8 @@ noctalia_theme_apply() {
     jq --arg s "$slug" --argjson dark "$mode" \
       '.colorSchemes.useWallpaperColors = false
        | .colorSchemes.predefinedScheme = $s
-       | .colorSchemes.darkMode = $dark' \
+       | .colorSchemes.darkMode = $dark
+' \
       "$settings" > "$settings.tmp.$$" 2>/dev/null && [ -s "$settings.tmp.$$" ] \
       && mv -f "$settings.tmp.$$" "$settings" || rm -f "$settings.tmp.$$"
   else
@@ -102,6 +103,26 @@ noctalia_theme_apply() {
       setsid noctalia-shell >/dev/null 2>&1 < /dev/null &
       echo "noctalia: scheme 未在运行实例中，已重启 shell（首次使用该方案）"
     fi
+  fi
+
+  # 壁纸：主题自带 PNG → Noctalia 壁纸服务
+  # （awww 的壁纸层会被 Noctalia 壁纸层盖住，统一以 Noctalia 为准；
+  #   重启后的 shell 需要约 20s 就绪，这里带重试）
+  # 注意：settings.wallpaper.directory 会被 Noctalia 启动时强制重置为默认目录，
+  # 不能靠它做扫描；直接传绝对路径。优先与 Hyprland 栈共用的 ~/Pictures/wallpapers。
+  local wp=""
+  for cand in "$HOME/Pictures/wallpapers/$T_WALLPAPER" "$THEMES_DIR/$T_SLUG/$T_WALLPAPER"; do
+    if [ -f "$cand" ]; then wp="$cand"; break; fi
+  done
+  if [ -n "$wp" ] && command -v noctalia-shell >/dev/null 2>&1; then
+    # 就绪探测：wallpaper get 返回非空说明服务已起来（裸 set 在未就绪时也会返回 0）
+    for _ in $(seq 1 40); do
+      cur=$(noctalia-shell ipc call wallpaper get all 2>/dev/null)
+      if [ -n "$cur" ]; then
+        noctalia-shell ipc call wallpaper set "$wp" all >/dev/null 2>&1 && break
+      fi
+      sleep 1
+    done
   fi
 
   echo "noctalia: $T_NAME ($slug) -> $colors"

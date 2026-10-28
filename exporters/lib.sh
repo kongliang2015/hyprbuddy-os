@@ -43,7 +43,7 @@ theme_slug_at() {
 }
 
 # theme_env_load <slug>：把 tokens.json 展开为 T_* 环境变量。
-# 终端色板 v0 数据只有 15 项（K15 缺失是历史 bug），缺省位回落终端前景色。
+# 终端色板为 16 项标准排布（[0]=黑/底色，[8..15]=bright）。
 theme_env_load() {
   local slug=$1
   local f="$THEMES_DIR/$slug/tokens.json" j i

@@ -261,3 +261,23 @@ N0 的判断「写 colors.json 即热加载」**不成立**——colors.json 是
   目录未配置）；de-theme-apply 的 niri 分支目前只做配色，主题→壁纸绑定未接
   （可走 awww 或 Noctalia 壁纸服务，待定）
 - Noctalia 首启有隐私对话框，需手动确认一次
+
+### N5 壁纸机制（实测）
+
+- Noctalia 每次启动会把 `settings.wallpaper.directory` **强制重置**为默认
+  `~/Pictures/Wallpapers`（大写 W）——写这个键无效，不能靠它换扫描目录
+- 正确做法：`noctalia-shell ipc call wallpaper set <绝对路径> all`，exporter
+  路径解析优先 `~/Pictures/wallpapers/<主题壁纸>`（与 Hyprland 栈共用），
+  回退主题库
+- 就绪探测：裸 `set` 在 shell 未就绪时也返回 0，必须先 `wallpaper get all`
+  探测到非空再 set（重启兜底后约 20s 就绪）
+
+### N5 验收（2026-10-28，全部通过）
+
+| 项 | 结果 |
+|---|---|
+| niri 会话 + Noctalia 自启 | ✅（spawn-at-startup，重启后可自动起） |
+| desktop-check niri | ✅ 13 项全绿 |
+| 主题切换（配色） | ✅ 冷启动应用 + 热切换（新方案走重启兜底） |
+| 主题切换（壁纸） | ✅ 与配色同步（rose-pine/nord 实测） |
+| 方案出现在 Noctalia 设置页 | ✅ 自定义方案与内置方案并列可选 |
