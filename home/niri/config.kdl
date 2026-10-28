@@ -3,7 +3,10 @@
 // 依赖：kitty / fuzzel / noctalia-shell（niri 会话默认栈）。
 
 // 自启：外壳（面板/launcher/通知/锁屏）与壁纸守护
-spawn-at-startup "noctalia-shell"
+// noctalia 必须等显示器就绪后再起：niri 会先跑 spawn、约 0.5s 后才接上 DRM 输出，
+// 抢在输出之前启动时它拿不到 screen，bar 永远不会创建（实测 2026-10-28）。
+// 同时把 stdout/stderr 落到 ~/.cache，便于登录后排查。
+spawn-at-startup "sh" "-c" "sleep 2; exec noctalia-shell >>\"$HOME/.cache/noctalia-shell.log\" 2>&1"
 spawn-at-startup "awww-daemon"
 
 input {
