@@ -18,7 +18,8 @@ exporters/niri/theme.sh  (noctalia_theme_apply)
    │        colorSchemes.predefinedScheme   = <slug>
    │        colorSchemes.darkMode           = tokens.dark
    ├─ 写  ~/.config/kitty/theme.inc.conf（16 色 ANSI，来自 tokens.terminal）
-   │        + kitty @ set-colors -a 热加载已运行实例
+   │        + kitty @ set-colors -a 热加载（仅 KITTY_LISTEN_ON 存在时尝试）
+   ├─ 写  ~/.config/fuzzel/fuzzel.ini（整份重写，[colors] 来自 tokens）
    ├─ IPC noctalia-shell ipc call colorScheme set <slug>
    └─ IPC noctalia-shell ipc call wallpaper set <绝对路径> all
 ```
