@@ -22,4 +22,7 @@ lib.mkIf (cfg.enable && builtins.elem "niri" cfg.sessions) {
     pkgs.xdg-desktop-portal-gtk
   ];
   xdg.portal.config.niri.default = [ "gnome" "gtk" ];
+  # 文件选择器走 gtk 门户：gnome 门户 47+ 默认用 nautilus，我们没装 nautilus，
+  # 不显式指定会让 Flatpak 应用的「打开文件」对话框失败。
+  xdg.portal.config.niri."org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
 }

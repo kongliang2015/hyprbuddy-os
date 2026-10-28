@@ -136,9 +136,6 @@ lib.mkIf cfg.desktop.enable {
     playerctl # 媒体控制
     btop # 系统监视器
     fastfetch # 系统信息
-    networkmanagerapplet # 托盘网络图标
-    blueman # 托盘蓝牙
-    pavucontrol # 图形音量控制
     wf-recorder # 屏幕录制
     swappy # 截图标注
     libnotify # notify-send
@@ -148,7 +145,6 @@ lib.mkIf cfg.desktop.enable {
     zathura # PDF 阅读
     wlr-randr # 显示器配置（CLI，niri 无 GUI）
     gvfs # Thunar 的挂载/回收站支持
-    swww # 壁纸守护（26.05 更名 awww，二进制 awww-daemon）
     polkitAgent # polkit 认证代理（实现由 distro.polkitAgent 选择）
   ];
 

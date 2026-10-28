@@ -3,7 +3,7 @@
 # @summary: 循环切换 ~/Pictures/wallpapers 壁纸
 # @category: runtime
 # @usage: wallpaper-next
-# @effect: 设置壁纸（Hyprland/niri: awww）
+# @effect: 设置壁纸（niri: Noctalia 壁纸服务，经能力层 de_wallpaper_set）
 # @doc: theming.md
 # 循环切换 ~/Pictures/wallpapers 里的壁纸
 dir="$HOME/Pictures/wallpapers"

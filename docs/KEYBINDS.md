@@ -188,7 +188,6 @@ COSMIC 的键位不写在仓库里，来源是 cosmic-comp 自带的默认表：
 |---|---|
 | `Mod+Return` | kitty |
 | `Mod+D` | Noctalia 启动器 |
-| `Mod+Space` | fuzzel（dmenu 管道/备用） |
 | `Mod+Q` / `Mod+F` | 关窗口 / 全屏 |
 | `Mod+Shift+C` | 控制中心 |
 | `Mod+Shift+P` | 会话菜单 |
@@ -197,9 +196,9 @@ COSMIC 的键位不写在仓库里，来源是 cosmic-comp 自带的默认表：
 | `Mod+Shift+T` | 主题选择器 |
 | `Mod+V` | 剪贴板历史（cliphist + fuzzel） |
 | `Print` / `Mod+Shift+A` | 截图（整屏 / 窗口） |
-| `XF86Audio{Raise,Lower}Volume` | 音量 ±5%（wpctl） |
-| `XF86AudioMute` / `XF86AudioMicMute` | 静音 / 麦克风静音 |
-| `XF86MonBrightness{Up,Down}` | 亮度 ±5%（brightnessctl） |
+| `XF86Audio{Raise,Lower}Volume` | 音量 ±（Noctalia IPC，带 OSD） |
+| `XF86AudioMute` / `XF86AudioMicMute` | 静音 / 麦克风静音（Noctalia IPC） |
+| `XF86MonBrightness{Up,Down}` | 亮度 ±（Noctalia IPC，带 OSD） |
 | `XF86Audio{Play,Next,Prev}` | 播放控制（playerctl） |
 
 > 空闲行为（Noctalia idle）：10 分钟熄屏、11 分钟锁屏、**不自动挂起**。

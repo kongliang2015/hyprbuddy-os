@@ -1,13 +1,12 @@
 // niri 基线配置（随 install.sh 部署到 ~/.config/niri/config.kdl）
 // 键位尽量与 docs/KEYBINDS.md 的 Hyprland 表对齐；运行期可自行修改（install.sh 会覆盖）。
-// 依赖：kitty / fuzzel / noctalia-shell（niri 会话默认栈）。
+// 依赖：kitty / noctalia-shell；fuzzel 只用于 dmenu 管道（剪贴板历史），不再作启动器。
 
 // 自启：外壳（面板/launcher/通知/锁屏）与壁纸守护
 // noctalia 必须等显示器就绪后再起：niri 会先跑 spawn、约 0.5s 后才接上 DRM 输出，
 // 抢在输出之前启动时它拿不到 screen，bar 永远不会创建（实测 2026-10-28）。
 // 同时把 stdout/stderr 落到 ~/.cache，便于登录后排查。
 spawn-at-startup "sh" "-c" "sleep 2; exec noctalia-shell >>\"$HOME/.cache/noctalia-shell.log\" 2>&1"
-spawn-at-startup "awww-daemon"
 // 剪贴板历史：cliphist 只负责存储，需要 watcher 持续喂数据（text + image 两路）
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
@@ -38,7 +37,6 @@ binds {
     // 终端 / 启动器 / 系统菜单
     Mod+Return { spawn "kitty"; }
     Mod+D      { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
-    Mod+Space  { spawn "fuzzel"; }
 
     // 窗口
     Mod+Q          { close-window; }
@@ -72,12 +70,13 @@ binds {
     Mod+Shift+S { spawn "noctalia-shell" "ipc" "call" "settings" "toggle"; }
 
     // 媒体键（niri 不内置硬件键处理，必须显式绑定）
-    XF86AudioRaiseVolume  { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
-    XF86AudioLowerVolume  { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
-    XF86AudioMute         { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
-    XF86AudioMicMute      { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    XF86MonBrightnessUp   { spawn "brightnessctl" "set" "5%+"; }
-    XF86MonBrightnessDown { spawn "brightnessctl" "set" "5%-"; }
+    // 走 Noctalia IPC，OSD 才会跟随显示（wpctl/brightnessctl 直连没有 OSD）
+    XF86AudioRaiseVolume  { spawn "noctalia-shell" "ipc" "call" "volume" "increase"; }
+    XF86AudioLowerVolume  { spawn "noctalia-shell" "ipc" "call" "volume" "decrease"; }
+    XF86AudioMute         { spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput"; }
+    XF86AudioMicMute      { spawn "noctalia-shell" "ipc" "call" "volume" "muteInput"; }
+    XF86MonBrightnessUp   { spawn "noctalia-shell" "ipc" "call" "brightness" "increase"; }
+    XF86MonBrightnessDown { spawn "noctalia-shell" "ipc" "call" "brightness" "decrease"; }
     XF86AudioPlay         { spawn "playerctl" "play-pause"; }
     XF86AudioNext         { spawn "playerctl" "next"; }
     XF86AudioPrev         { spawn "playerctl" "previous"; }

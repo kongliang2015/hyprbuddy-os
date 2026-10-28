@@ -19,13 +19,10 @@ de_wallpaper_set() {
   local img="$1"
   case "$(de_name)" in
     niri)
-      # nixpkgs 26.05 起 swww 更名 awww，两者都兼容
-      local wp wpd
-      if command -v awww >/dev/null 2>&1; then wp=awww; wpd=awww-daemon
-      elif command -v swww >/dev/null 2>&1; then wp=swww; wpd=swww-daemon
-      else return 1; fi
-      pgrep -f "$wpd" >/dev/null 2>&1 || { setsid "$wpd" >/dev/null 2>&1 </dev/null & sleep 1; }
-      "$wp" img "$img" >/dev/null 2>&1 || return 1
+      # 壁纸交给 Noctalia 自带服务（awww 已从包集移除）；
+      # 注意必须传绝对路径：settings.wallpaper.directory 会被 Noctalia 启动时重置。
+      command -v noctalia-shell >/dev/null 2>&1 || return 1
+      noctalia-shell ipc call wallpaper set "$img" all >/dev/null 2>&1 || return 1
       ;;
     *) return 1 ;;
   esac
