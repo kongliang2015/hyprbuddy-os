@@ -63,6 +63,7 @@ let
     "hyprshell/styles.css" = read ./hyprshell/styles.css;
     "swayosd/style.css" = read ./swayosd/style.css;
     "Thunar/uca.xml" = read ./thunar/uca.xml;
+    "niri/config.kdl" = read ./niri/config.kdl;
     "fastfetch/config.jsonc" = read ./fastfetch/config.jsonc;
     # 能力层库（scripts/lib/de.sh）：脚本被逐个装进 bin/，无法靠相对路径找兄弟文件，
     # 所以单独落到 ~/.local/share/hyprland-nixos/lib/ 供脚本 source
@@ -92,7 +93,11 @@ let
     // builtins.listToAttrs (map (n: {
         name = "cosmic/${n}";
         value = ../exporters/cosmic + "/${n}";
-      }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/cosmic))));
+      }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/cosmic))))
+    // builtins.listToAttrs (map (n: {
+        name = "niri/${n}";
+        value = ../exporters/niri + "/${n}";
+      }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/niri))));
 
   exporterEntries = lib.mapAttrsToList (name: path: {
     name = "share/hyprland-nixos/exporters/${name}";
