@@ -1,0 +1,160 @@
+# niri + Noctalia 接入实施方案（v1 架构第三提供方）
+
+> 前置评估见本文件第一节；架构分层与阶段方法论沿用
+> `docs/desktop-abstraction.md`（P0–P2 已落地的能力契约 + tokens/exporters 体系）。
+> 目标：在 `distro.desktop.sessions` 中新增 `niri` 提供方，与 Hyprland / COSMIC
+> 并存、可切换、可回退，复用同一套主题资产与能力层。
+
+## 一、已核实的事实（2026-10-28，26.05 锁定频道）
+
+| 组件 | 版本/位置 | 说明 |
+|---|---|---|
+| niri | `26.04`（日期版本制） | 滚动平铺合成器；NixOS 模块 `nixos/modules/programs/wayland/niri.nix`（`programs.niri.enable` 注册会话） |
+| noctalia-shell | `4.7.6` | 面板 / launcher / 通知 / 锁屏 / OSD / 设置全套（quickshell QML） |
+| noctalia-qs / quickshell | ✅ 均在 26.05 | Noctalia 运行时框架 |
+| noctalia-greeter | ✅ | 可选登录器（本项目仍用 SDDM，不启用） |
+| 依赖 | `noctalia-shell` 打包已带运行时依赖 | cliphist、wl-clipboard、brightnessctl、wlsunset（夜间模式）、ddcutil、wlr-randr、imagemagick |
+
+**关键结论**：
+
+- 打包零成本——不需要自建 derivation，不引入 github 输入（本机 github 被阻断）
+- Noctalia 自带剪贴板历史、夜间模式（wlsunset）、亮度控制——COSMIC 路线的
+  P3 "硬缺口"在 Noctalia 路线里是**内置能力**，无需 cliphist/gammastep 拼装
+- niri 为 smithay 系，渲染路径与 COSMIC 同源，vmwgfx 软渲染预期一致（需 N5 实测）
+- niri 无内置 Xwayland，X11 应用依赖 `xwayland-satellite`（N1 需确认模块是否自动拉起）
+
+## 二、分层改动总览
+
+```
+L4 agent   codebuddy/opencode/诊断/usage              （不动）
+L3 skill   nixos-desktop-settings / cosmic-ux           （N5 补桌面矩阵说明）
+L2 运行时  scripts/lib/de.sh + desktop-check            （N2 加 niri 分支）
+           exporters/niri/  ← 新增（N3，唯一真开发项）
+L1 提供方  modules/desktop/niri.nix ← 新增（N1）
+L0 选项层  distro.desktop.sessions += "niri"            （N1）
+```
+
+## 三、阶段与步骤
+
+### N0 调研与可行性（0.5 天）
+
+目标：把三个未知数变成确定值，结论写回本文档。
+
+1. **Noctalia 配置机制**：`noctalia-shell` 首次运行生成的配置路径与格式
+   （预期 `~/.config/noctalia/` JSON）；确认配色/主题是否可从外部注入
+   （决定 N3 exporter 的写入目标）。在临时 HOME 下启动观察生成物，不动真实配置
+2. **主题注入点**：Noctalia 是否有 "colors.json / theme" 类外部配置文件；
+   若只能改 GUI 内部状态，记录其持久化位置与格式（仍可写文件）
+3. **portal 组合**：niri 推荐 `xdg-desktop-portal-gnome`（录屏）+ `gtk`（文件选择）。
+   与现有 cosmic/hyprland 门户做分会话声明（`xdg.portal.config.niri`）
+4. **Xwayland**：确认 `programs.niri` 是否带 `xwayland-satellite`；不带则手动接
+5. **版本行为**：niri 26.04 的 KDL 键位语法与滚动平铺默认行为（对照官方 wiki）
+
+验收：本节补「调研结果」小节，三项都给出确定结论；结论推翻假设时同步调整 N1–N3。
+
+### N1 选项与提供方骨架（0.5 天）
+
+1. `modules/options.nix`：`desktop.sessions` 的类型 enum 加 `"niri"`；
+   断言（default ∈ sessions）无需改动
+2. 新建 `modules/desktop/niri.nix`（仿 cosmic.nix 结构）：
+   - `programs.niri.enable = true`（注册 SDDM 会话 `niri`）
+   - `xdg.portal.extraPortals` + `xdg.portal.config.niri.default`（按 N0 结论）
+   - `environment.systemPackages` 加 `noctalia-shell`（及其运行时依赖，包装已带）
+   - 按需 `xwayland-satellite`
+3. `hosts/vmware/default.nix`：`sessions += "niri"`（保持 `default = "cosmic"`，
+   验证通过后再评估默认值）
+
+验收：`agent-apply` 构建通过；SDDM 出现 Niri 会话；登录后 niri 起位、
+`noctalia-shell` 起壳（面板可见）；`Ctrl+Alt+F2` 可切 TTY 兜底。
+
+### N2 能力层接线（0.5 天）
+
+`scripts/lib/de.sh` 按能力逐项加分支（沿用 P1/P3 的"原生/通用/接线"判定）：
+
+| 能力 | niri 实现 | 说明 |
+|---|---|---|
+| `de_name` | `XDG_CURRENT_DESKTOP` 含 niri / niri 进程 | 新增探测分支 |
+| `de_wallpaper_set` | awww（layer-shell 协议通用）/ Noctalia 壁纸 | 优先 awww（与 hyprland 分支同实现） |
+| `de_screenshot_annotate` | grim + slurp → swappy | niri 支持 wlr-screencopy |
+| `de_lock` | `loginctl lock-session`（Noctalia 锁屏接管） | 同 cosmic 分支 |
+| `de_notify` | notify-send | 同一 DBus |
+| `de_monitors` | `niri msg -j outputs` | niri IPC 输出 JSON |
+| `de_osd` | Noctalia OSD（音量/亮度事件原生监听） | 无需接线，能力直接可用 |
+| `de_theme_apply` | N3 exporter | — |
+
+`scripts/desktop-check`：新增 `niri` 分支（进程 / portal / 壁纸 / 字体 /
+Noctalia 组件 / 常用命令 共约 10 项），`install.sh` 末尾自检自动适配。
+
+验收：沙箱 + 实机逐项验证；`desktop-check --de niri` 全绿；
+在 niri 会话下 `wallpaper-next` / `screenshot-annotate` / `night-mode` 不报错。
+
+### N3 主题 exporter（1 天，唯一真开发项）
+
+1. 新建 `exporters/niri/theme.sh`：`tokens → Noctalia 配置`（目标文件与字段
+   按 N0 结论；沿用 cosmic exporter 的确定性生成 + 原子写 + 测试 override 模式）
+2. `de.sh de_theme_apply`：case 加 `niri`；`scripts/de-theme-apply` 自动覆盖
+3. `home/default.nix`：exporter 部署路径沿用 `share/hyprland-nixos/exporters/`
+   的现有机制（`exporterFiles` 的 readDir 需加 niri 子目录——一行改动）
+
+验收：`de-theme-apply kanagawa` / `hyprbuddy` 切换后 Noctalia 面板、launcher、
+通知配色跟随；10 套主题逐一回归（对照 themes/*/tokens.json 的 accent）。
+
+### N4 home 基线（0.5 天）
+
+1. `home/niri/config.kdl`：15 个常用键位 + 布局/输入基线（声明式，随 install.sh
+   部署；沿用 P3 键位迁移思路，与 `docs/KEYBINDS.md` 对齐）
+2. Noctalia 配置基线：只放**只读基线**（默认布局/壁纸绑定），运行期用户改动
+   留在用户配置目录，不被 install.sh 覆盖（与 uxctl 的"受控写"不同：niri 侧
+   **不复制 uxctl 模式**，cosmic-config 键值体系是 COSMIC 专有）
+3. `home/default.nix`：textFiles 挂载 niri/ 目录
+
+验收：新会话开箱即用（面板布局、键位、壁纸齐全）；键位表与 KEYBINDS.md 一致。
+
+### N5 实测、回归与文档（0.5–1 天）
+
+1. vmware（vmwgfx + 软渲染）实测：滚动平铺、Noctalia 面板/launcher/通知/锁屏、
+   输入法（fcitx5 text-input-v3）、多显示器（如有）
+2. 三桌面并存回归：Hyprland / COSMIC 会话不受影响；`desktop-check` 三套全绿
+3. 文档：`docs/desktop-abstraction.md` 阶段表加 N 阶段记录；README 桌面矩阵；
+   `docs/KEYBINDS.md` 加 niri 段；能力层表格补 niri 列
+
+验收：三桌面可自由切换；各自 `desktop-check` 通过；文档合并。
+
+## 四、风险与缓解
+
+| 风险 | 缓解 |
+|---|---|
+| Noctalia 配色不可外部注入 | N0 第一步验证；不可注入则降级为"仅壁纸+亮暗跟随"，或退回轻量路线 |
+| vmwgfx 软渲染兼容性（未知） | N5 实测；异常则 `sessions` 去掉 niri，一小时内可回退 |
+| niri 26.04 与 Noctalia 4.7.6 版本匹配 | 以 26.05 频道锁定组合为准；不追 unstable（磁盘/编译教训） |
+| Xwayland 缺失导致 X11 应用不可用 | N1 接入 `xwayland-satellite` 并实测（Thunar 等） |
+| 与既有能力层冲突 | de.sh 分支隔离 + `de_name` 严格探测；三桌面回归为 N5 卡点 |
+
+## 五、决策点（开工前拍板）
+
+1. **Noctalia 全家桶 vs 轻量复用**：waybar/fuzzel/swaync/awww 均为合成器无关
+   组件，niri 下直接可用（轻量路线零 exporter 改动）。默认走 Noctalia（整体
+   观感 + 内置剪贴板/夜间/亮度），轻量路线作为 fallback
+2. **版本口径**：先用 26.05 锁定的 niri 26.04 + Noctalia 4.7.6，不引入 unstable
+3. **默认会话**：接入期间 `default` 保持 COSMIC，N5 全绿后再评估
+
+## 六、工作量汇总
+
+| 阶段 | 内容 | 估计 |
+|---|---|---|
+| N0 | 调研（Noctalia 配置/主题注入、portal、Xwayland、版本行为） | 0.5 天 |
+| N1 | 选项 + `modules/desktop/niri.nix` + host 挂载 | 0.5 天 |
+| N2 | de.sh 分支 + desktop-check niri | 0.5 天 |
+| N3 | `exporters/niri/`（tokens → Noctalia 配置） | 1 天 |
+| N4 | home 基线（config.kdl 键位 + Noctalia 只读基线） | 0.5 天 |
+| N5 | 实测、三桌面回归、文档 | 0.5–1 天 |
+| 合计 | | **3–4 天** |
+
+## 七、与既有路线的关系
+
+- **不阻塞 P3/P4/P5**：niri 是并行第三提供方，COSMIC 的退役判据不变
+- `uxctl` 仅服务 cosmic-config 键值体系，niri 不复制该模式（config.kdl 声明式 +
+  home/ 基线）
+- 主题资产（themes/*/tokens.json）跨三桌面复用，新增 exporter 不触碰既有资产
+- agent 层、skills、镜像构建全部不受影响
+

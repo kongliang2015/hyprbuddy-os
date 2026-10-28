@@ -65,6 +65,7 @@ hyprland-nixos/
 - docs/AGENT-LAYER.md：agent 六层架构与实测状态
 - docs/ng-shell.md：hyprshell / 外壳组件设计与实测状态
 - docs/KEYBINDS.md：Hyprland 键位全表 + COSMIC 默认键位对照
+- docs/niri-noctalia-plan.md：niri + Noctalia 第三提供方接入实施方案（N0–N5）
 
 ## 已实现的功能
 
