@@ -6,7 +6,6 @@
   imports = [
     ./core.nix
     ./diagnostics.nix
-    ./usage.nix
     ./local-llm.nix
   ];
 }

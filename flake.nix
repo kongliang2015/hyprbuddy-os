@@ -86,7 +86,7 @@
         ];
       }).config.system.build.isoImage;
 
-      # live + install 一体盘：直接进入 Hyprland 桌面，并保留安装器
+      # live + install 一体盘：直接进入 niri 桌面，并保留安装器
       mkLiveIso = system: (lib.nixosSystem {
         inherit system;
         modules = [

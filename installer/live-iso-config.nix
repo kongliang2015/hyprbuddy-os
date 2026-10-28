@@ -1,4 +1,4 @@
-# live + install 一体盘：启动直接进入 Hyprland 桌面（SDDM 自动登录 live 用户），
+# live + install 一体盘：启动直接进入 niri 桌面（SDDM 自动登录 live 用户），
 # 同时保留 install-hyprbuddy 安装器。基于 installation-cd-minimal 的
 # squashfs + tmpfs overlay 机制，根可写。
 { pkgs, lib, config, ... }:

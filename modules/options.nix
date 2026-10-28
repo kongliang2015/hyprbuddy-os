@@ -134,13 +134,6 @@ in
         description = "SDDM greeter 主题包，null 用默认 catppuccin-sddm";
       };
 
-      # Waybar 的 agent 用量命令：由 modules/agent/usage.nix 注入，
-      # 为空表示不显示该模块。配置本身由 lib/waybar.nix 统一生成。
-      waybarAgentCmd = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = "custom/agent-usage 的 exec 路径；null 表示不启用该模块";
-      };
     };
 
     polkitAgent = mkOption {
