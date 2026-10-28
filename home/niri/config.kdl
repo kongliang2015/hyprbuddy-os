@@ -10,6 +10,9 @@ spawn-at-startup "sh" "-c" "sleep 2; exec noctalia-shell >>\"$HOME/.cache/noctal
 // 剪贴板历史：cliphist 只负责存储，需要 watcher 持续喂数据（text + image 两路）
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
+// 登录后应用已保存主题：等 Noctalia 起来（sleep 5）再跑，否则 IPC 找不到实例。
+// theme-next restore 读 ~/.local/state/theme-next/idx，niri 分支 → exporters/niri/theme.sh。
+spawn-at-startup "sh" "-c" "sleep 5; exec theme-next restore >>\"$HOME/.cache/theme-next.log\" 2>&1"
 
 input {
     keyboard {
