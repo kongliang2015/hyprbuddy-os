@@ -1,4 +1,4 @@
-# agent 层：入口。安装 agent CLI，快捷键在 home/hypr/hyprland.conf 里。
+# agent 层：入口。安装 agent CLI，快捷键在 home/niri/config.kdl 里。
 { config, lib, pkgs, ... }:
 let cfg = config.distro.agent;
 in

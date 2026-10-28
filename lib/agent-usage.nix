@@ -1,4 +1,5 @@
-# agent 用量脚本的唯一来源：系统级 Waybar 模块与生成的用户配置共用。
+# agent 用量脚本的唯一来源：部署到 ~/.local/bin/agent-usage，
+# 由 Noctalia 状态栏的 CustomButton（parseJson）消费，输出 {"text","tooltip"}。
 # 口径（与 codebuddy /cost 对齐）：主指标为当日 output tokens（真实生成量，
 # 不受缓存影响）；tooltip 给出各源 out/in/cache 明细。
 # 数据源：

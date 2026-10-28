@@ -13,7 +13,7 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 ## 铁律
 
 1. **改仓库源文件，绝不改 `~/.config` 下的 store 软链**
-   （例外：`~/.config/waybar/style.css` 由 theme-next 整份重写，本就该被脚本覆盖）
+   （例外：`~/.config/noctalia/settings.json` 是 Noctalia 自己的运行时状态，可直接改，重装会回默认）
 2. **agent 不执行 sudo**；系统级改动构建验证后把命令交给用户
 3. `/etc/nixos/configuration.nix` 是防误用桩，**绝不修改**
 
@@ -26,7 +26,7 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 | 系统组件/服务/驱动 | 改 `modules/` 或 `hosts/<host>/` → agent-apply → 交用户 `sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>` |
 | agent 能力 | `modules/agent/` + `lib/agent-usage.nix` + `scripts/agent-*`（受 `distro.agent.*`） |
 | 硬件差异 / 新 host | `hosts/<name>/default.nix` 只写 `distro.*`（选项见 `modules/options.nix`） |
-| 不确定入口/报错 | `agent-commands --json`（或 `list` / `show <name>`）→ `scripts/hypr-check` → `troubleshooting.md` → `git log --oneline -10` |
+| 不确定入口/报错 | `agent-commands --json`（或 `list` / `show <name>`）→ `desktop-check` → `troubleshooting.md` → `git log --oneline -10` |
 | 崩溃/段错误/core dump | 调用 diagnose-crash 技能（启用自动分析时先读 ~/.local/state/agent/coredump-report.md） |
 
 ## 专题指南
@@ -34,24 +34,22 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 | 文件 | 内容 |
 |---|---|
 | `workflow.md` | 四步流程、生效方式、备份与回滚、agent-apply 输出判读 |
-| `hyprland.md` | 键位、windowrule/layerrule（0.55 语法）、monitor、装饰、输入法 |
-| `bar-notify.md` | waybar（`lib/waybar.nix` 唯一来源）、mako、swayosd |
-| `theming.md` | theme-next 全链路、壁纸（awww）、fuzzel 联动 |
 | `agent.md` | `distro.agent.*` 开关、agent-usage 口径、诊断、本地模型 |
-| `troubleshooting.md` | hypr-check 判读、常见故障 |
+| `troubleshooting.md` | 常见故障（待重写为 niri/Noctalia 版） |
+| `hyprland.md` / `bar-notify.md` / `theming.md` | ⚠️ **已过时**（Hyprland 时代内容）。键位看 `home/niri/config.kdl`；bar/通知/OSD 走 Noctalia；壁纸走 `wallpaper set` IPC |
 
 ## 示例表
 
 | 用户请求 | 操作 |
 |---|---|
-| "Super+E 改成打开 Nautilus" | `home/hypr/hyprland.conf` 改 `bind = $mainMod, E, exec, nautilus` |
-| "加个 Super+G 打开 btop" | 同文件加 `bind = $mainMod, G, exec, btop` |
-| "外接 2K 显示器放右边" | `monitor = DP-1, 2560x1440@60, 1920x0, 1` |
-| "圆角大一点、间隙小一点" | `home/hypr/hyprland.conf` 的 decoration/general 段 |
-| "让 GIMP 默认浮动" | `windowrule = match:class (gimp), float`（0.55 必须 `match:` 前缀） |
-| "waybar 加 CPU 温度" | 改 `lib/waybar.nix`（唯一来源，系统级与用户级共用） |
-| "通知 3 秒消失、紧急常驻" | `home/mako/config`（新增颜色键须同步 `scripts/theme-next`） |
-| "10 分钟无操作锁屏" | `home/hypr/hypridle.conf` |
+| "Mod+E 打开文件管理器" | `home/niri/config.kdl` 的 binds 段加 `Mod+E { spawn "thunar"; }` |
+| "Mod+G 打开 btop" | 同文件加 `Mod+G { spawn "kitty" "-e" "btop"; }` |
+| "外接 2K 显示器放右边" | `wlr-randr --output DP-1 --mode 2560x1440 --pos 1920,0`（或写进 config.kdl 的 `output` 段） |
+| "圆角大一点、间隙小一点" | `home/niri/config.kdl` 的 `layout { gaps …; }` |
+| "让 GIMP 默认浮动" | `window-rule { match app-id="gimp"; open-floating true; }` |
+| "状态栏加 CPU 温度" | Noctalia 设置（`Mod+Shift+S` → Bar → Widgets），或改 `settings.json` 的 `showCpuTemp` |
+| "通知超时/勿扰" | Noctalia 通知面板，或 `settings.json` 的 `notifications` |
+| "10 分钟无操作锁屏" | `~/.config/noctalia/settings.json` 的 `idle`（当前 600s 熄屏 / 660s 锁屏 / 不挂起） |
 | "终端字号改 13" | `home/kitty/kitty.conf` |
 | "换个主题" | 运行 `theme-next`（循环切换；`restore` 仅供登录） |
 | "照 X 官网风格做套新主题" | 技能 `theme-create`（取色 → 生成壁纸 → 追加主题表 → 部署） |
@@ -63,7 +61,7 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 | "这台机器能做什么 / 有哪些命令" | `agent-commands list`（机器可读用 `--json`） |
 | "这台新机器是 N 卡" | `hosts/<name>/default.nix` 设 `distro.gpu.vendor = "nvidia"` |
 | "waybar 显示 agent 用量" | `hosts/<host>` 设 `distro.agent.enable/usage = true` |
-| "桌面报错/状态栏没了/中文变方块" | `scripts/hypr-check` → `troubleshooting.md` |
+| "桌面报错/状态栏没了/中文变方块" | `desktop-check` → `journalctl --user -b` → `troubleshooting.md` |
 | "回到上一个系统版本" | 交用户 `sudo nixos-rebuild --rollback` |
 | "用户级配置改了没生效" | `./install.sh --host <host> --yes`（备份到 `~/.config.bak-*`） |
 

@@ -6,7 +6,7 @@
 |---|---|---|
 | `enable` | false | 安装 agent 包与专用脚本（agent-menu / agent-apply / agent-theme-sync） |
 | `agents` | `[ "claude-code" ]` | 安装哪些 agent；**claude-code 构建期需访问 downloads.claude.ai**，网络不通时用 `[ "opencode" "codebuddy" ]` |
-| `usage` | true | 生成 waybar `custom/agent-usage` 模块 |
+| `usage` | true | 部署 `~/.local/bin/agent-usage`，供 Noctalia bar 的 CustomButton 显示 |
 | `diagnostics` | true | coredump 诊断；需 `localModels = true` 且已 `ollama pull` |
 | `localModels` | false | 启用本地模型（ollama） |
 | `model` | `qwen2.5-coder:1.5b` | 诊断/摘要使用的模型 |
