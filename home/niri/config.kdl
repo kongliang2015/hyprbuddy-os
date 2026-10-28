@@ -2,6 +2,10 @@
 // 键位尽量与 docs/KEYBINDS.md 的 Hyprland 表对齐；运行期可自行修改（install.sh 会覆盖）。
 // 依赖：kitty / fuzzel / noctalia-shell（niri 会话默认栈）。
 
+// 自启：外壳（面板/launcher/通知/锁屏）与壁纸守护
+spawn-at-startup "noctalia-shell"
+spawn-at-startup "awww-daemon"
+
 input {
     keyboard {
         xkb { layout "us"; }

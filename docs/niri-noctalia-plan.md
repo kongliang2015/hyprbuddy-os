@@ -204,3 +204,37 @@ Noctalia 组件 / 常用命令 共约 10 项），`install.sh` 末尾自检自�
 - 主题资产（themes/*/tokens.json）跨三桌面复用，新增 exporter 不触碰既有资产
 - agent 层、skills、镜像构建全部不受影响
 
+
+## N5 实测结论（2026-10-28，vmware 虚机）
+
+### 环境级阻塞：niri 在 vmwgfx 软渲染下无法出图
+
+日志（niri 26.04，宿主关闭 3D 加速）：
+
+```
+failed to initialize renderer, falling back to primary gpu: software EGL renderers are skipped
+error adding primary node device ... no allocator available for device
+```
+
+niri **主动跳过软件 EGL 渲染器**（二进制中无相关环境变量开关），vmwgfx 在
+3D 关闭时只有 llvmpipe → 渲染器初始化失败 → 会话黑屏（合成器进程存活、
+Web 无输出）。COSMIC 在此环境下能跑是因为它接受软件渲染。
+
+**可选路径**：
+1. VMware 宿主开启「加速 3D 图形」（SVGA3D → mesa svga 硬件 GL）→ niri 可用；
+   但已知代价：COSMIC Workspaces 缩略图恢复崩溃（vmwgfx dmabuf 上游缺陷，
+   pop-os/cosmic-epoch#2978 同类）
+2. 真机验证（leonard host，NVIDIA）
+3. niri 提供方保留但不在本 VM 的 sessions 中启用
+
+### 已修复的两个真实 bug（与黑屏叠加）
+
+1. **config.kdl 缺 `spawn-at-startup`**：niri 不会自动起 shell——已补
+   `noctalia-shell` 与 `awww-daemon`（否则即使渲染正常也只有黑底）
+2. **hyprpolkitagent 全局自启**：systemd 用户单元挂在
+   `graphical-session.target`，导致 niri 会话也拉起并 SIGABRT 崩溃循环——
+   已改为仅由 Hyprland 的 exec-once 启动
+
+### 待办
+
+- 渲染阻塞解除后重跑 N5 清单（desktop-check / 主题跟随 / 键位 / portal）
