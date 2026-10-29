@@ -122,7 +122,7 @@ else
 fi
 
 echo
-echo "完成。注销重登（或重启）让 Hyprland 读取新配置。"
+echo "完成。注销重登（或重启）让 niri 读取新配置。"
 [ -d "$backup" ] && echo "旧文件备份在: $backup"
 echo
 echo "改了配置后的流程："

@@ -19,16 +19,26 @@ bad()  { printf '  ! %s\n' "$1"; warn=$((warn+1)); }
 de="${1:-$(de_name)}"
 case "$de" in
   niri)
-    info "桌面: niri + Noctalia"
+    info "桌面: niri + Noctalia v5"
 
     # 1) 核心进程
-    for p in niri noctalia-shell; do
-      if pgrep -f "$p" >/dev/null 2>&1; then
-        info "进程 $p 在运行"
-      else
-        bad "进程 $p 未运行"
-      fi
-    done
+    if pgrep -x niri >/dev/null 2>&1; then
+      info "进程 niri 在运行"
+    else
+      bad "进程 niri 未运行"
+    fi
+    # noctalia 走 wrapProgram，comm 是 .noctalia-wrapped（pgrep -x 匹配不到），
+    # 用 IPC 是否可用作为存活判据。install.sh 在非图形 shell 里跑自检时没有
+    # WAYLAND_DISPLAY，此时跳过运行态检查，避免假告警。
+    runtime=1
+    [ -n "${WAYLAND_DISPLAY:-}" ] || runtime=0
+    if [ "$runtime" = 0 ]; then
+      info "非图形会话（无 WAYLAND_DISPLAY），跳过 noctalia 运行态检查"
+    elif command -v noctalia >/dev/null 2>&1 && noctalia msg status >/dev/null 2>&1; then
+      info "进程 noctalia 在运行（IPC 可用）"
+    else
+      bad "进程 noctalia 未运行（IPC 无响应）"
+    fi
     if pgrep -f xwayland-satellite >/dev/null 2>&1; then
       info "Xwayland (xwayland-satellite) 在运行"
     else
@@ -43,26 +53,32 @@ case "$de" in
     fi
 
     # 3) 壁纸：Noctalia 内置服务（awww 已于 v1-nn P3 移除，不再检查外部守护）
-    if command -v noctalia-shell >/dev/null 2>&1; then
-      wp=$(noctalia-shell ipc call wallpaper get all 2>/dev/null | head -n1)
+    if [ "$runtime" = 0 ]; then
+      : # 非图形会话跳过
+    elif command -v noctalia >/dev/null 2>&1; then
+      wp=$(noctalia msg wallpaper-get 2>/dev/null | head -n1)
       if [ -n "$wp" ]; then
         info "壁纸由 Noctalia 提供（$(printf "%s" "$wp" | sed "s|$HOME|~|")）"
       else
         bad "Noctalia 未报告壁纸（屏幕可能没有壁纸）"
       fi
     else
-      bad "noctalia-shell 不可用（壁纸与面板都会缺失）"
+      bad "noctalia 不可用（壁纸与面板都会缺失）"
     fi
 
-    # 4) Noctalia 状态栏图层（按输出建 surface；启动早于显示器就绪会没有）
-    if command -v niri >/dev/null 2>&1 && niri msg layers >/dev/null 2>&1; then
-      if niri msg layers 2>/dev/null | grep -q "noctalia-bar-content"; then
-        info "Noctalia 状态栏图层已创建"
+    # 4) 外壳状态：v5 用 IPC status 判定 bar 是否创建（图层名与 v4 不同，不再按名字匹配）
+    if [ "$runtime" = 0 ]; then
+      : # 非图形会话跳过
+    elif command -v noctalia >/dev/null 2>&1; then
+      status=$(noctalia msg status 2>/dev/null)
+      if printf '%s' "$status" | grep -q '"locked": true'; then
+        # 锁屏时 v5 会主动隐藏 bar，此时 barVisible=false 是正常行为
+        info "会话已锁定（Noctalia 锁屏中，bar 隐藏属正常）"
+      elif printf '%s' "$status" | grep -q '"barVisible": true'; then
+        info "Noctalia 状态栏运行中"
       else
-        bad "Noctalia 未创建 bar 图层（检查 ~/.config/niri/config.kdl 里 spawn 是否带 sleep 2）"
+        bad "Noctalia 未报告运行中的 bar（检查 ~/.cache/noctalia/noctalia.log）"
       fi
-    else
-      info "niri IPC 不可用，跳过图层检查"
     fi
     # 5) 中文字体解析
     cjk=$(fc-match ":lang=zh-cn" -f "%{family}" 2>/dev/null)
@@ -72,15 +88,15 @@ case "$de" in
     esac
 
     # 5) 常用命令
-    for c in niri noctalia-shell grim slurp swappy; do
+    for c in niri noctalia grim slurp swappy; do
       command -v "$c" >/dev/null 2>&1 && info "命令 $c 可用" || bad "命令 $c 缺失"
     done
 
     # 6) 主题与配置
-    if [ -f "$HOME/.config/noctalia/colors.json" ]; then
-      info "Noctalia 配色已应用（colors.json 存在）"
+    if [ -f "$HOME/.config/noctalia/theme.toml" ]; then
+      info "Noctalia 配色基线存在（theme.toml，壁纸取色）"
     else
-      info "Noctalia 配色未应用（首次运行后生成）"
+      bad "缺少 ~/.config/noctalia/theme.toml（切一次主题或跑 theme-next restore）"
     fi
     [ -f "$HOME/.config/niri/config.kdl" ] && info "niri 配置存在" || bad "缺少 niri config.kdl"
     ;;

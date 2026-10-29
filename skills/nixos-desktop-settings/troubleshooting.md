@@ -39,6 +39,31 @@ hyprlock 的 `source` 是**追加**语义，不是覆盖：主题文件只放变
 
 virtio-gpu 软件渲染无硬件光标平面，宿主 VNC 客户端自绘光标叠加——仅影响观看，截图不含，可忽略。
 
+## 登录后没有面板（noctalia 没起）+ ~/.config 里配置是空的
+
+典型症状：桌面只有壁纸，没有 bar / 快捷键失效；`~/.config/niri/config.kdl` 大小为 0。
+
+原因：install.sh 部署的是 store 里的产物，而某些 store 文件被**截断成 0 字节**
+（上次异常关机/断电时 nix 正在写），但 nix 仍认为该路径有效，于是不会重建。
+
+诊断：
+
+```bash
+wc -c ~/.config/niri/config.kdl                       # 0 → 确认
+p=$(readlink -f ~/.config/niri/config.kdl)
+nix-store --verify-path "$p"                          # 报 "was modified!" 即损坏
+```
+
+修法（需要能写 store 的权限）：
+
+```bash
+rm -f ~/.local/share/hyprland-nixos-home              # 先解除 GC root
+nix-store --delete $(readlink -f ~/.config/niri/config.kdl)
+cd ~/hyprland-nixos && ./install.sh --host vmware --yes
+```
+
+若多处损坏，可先 `nix-store --verify --check-contents` 全量体检。
+
 ## fuzzel.ini 变成 0 字节
 
 store 中间软链未就绪时直接写会得空文件；theme-next 已用「写 tmp → 非空才替换」规避。
