@@ -48,9 +48,9 @@
     };
 
     desktop = {
-      # v1 抽象层：Hyprland + COSMIC 并存；本机日常使用 COSMIC
-      sessions = [ "hyprland" "niri" ];
-      default = "niri";   # COSMIC 已于 2026-10-28 退役（v1-nn 分支）
+      # v1-nn：Hyprland/COSMIC 已退役，仅保留 niri 提供方
+      sessions = [ "niri" ];
+      default = "niri";
       # HyprBuddy 配套 SDDM 登录界面（pkgs/sddm-theme-hyprbuddy）
       sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
       theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名
