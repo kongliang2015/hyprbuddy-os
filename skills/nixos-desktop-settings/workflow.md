@@ -19,19 +19,58 @@
 
    行为：`nix build .#<host>` → 软链到 `~/.config`、`~/.local/bin`、`~/.codebuddy/skills`、
    `~/.local/share/hyprland-nixos/commands.json`（`~/.claude` 存在时同步 `~/.claude/skills`）；
-   已存在的真实文件备份到 `~/.config.bak-<时间戳>/`；复制 `wallpapers/` 到 `~/Pictures/wallpapers`；末尾自动跑 `hypr-check`
+   已存在的真实文件备份到 `~/.config.bak-<时间戳>/`；复制 `wallpapers/` 到 `~/Pictures/wallpapers`；末尾自动跑 `desktop-check`
 4. **系统级应用（用户执行）**：
 
        sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>
+
+## ⚠️ rebuild ≠ 部署（最容易踩的坑）
+
+`nixos-rebuild switch` 只换 `/run/current-system`（包、服务、systemd 单元）。
+**用户级配置完全不归它管**，必须单独跑 `install.sh`：
+
+| 层级 | 由谁部署 | rebuild 覆盖 |
+|---|---|---|
+| `/run/current-system`（包/服务） | `nixos-rebuild switch` | ✅ |
+| `~/.config/niri/config.kdl` | `install.sh` | ❌ |
+| `~/.local/bin/*`（脚本） | `install.sh` | ❌ |
+| `~/.local/share/hyprland-nixos/exporters/*` | `install.sh` | ❌ |
+| `~/.codebuddy/skills/*` | `install.sh` | ❌ |
+
+**真实事故（2026-10-29）**：`git pull` 拿到 Noctalia v5 迁移后只跑了 `nixos-rebuild switch`，
+没有 `install.sh`，于是 `~/.config/niri/config.kdl` 还是 v4 版本：
+
+```
+spawn-at-startup "sh" "-c" "sleep 2; exec noctalia-shell …"   # v4 包名
+/run/current-system/sw/bin/noctalia-shell                     # 已被删除
+→ sh: exec: noctalia-shell: 未找到 → 进程立即退出 → 桌面没有面板
+```
+
+判据：`journalctl --user -b | grep niri` 里能看到其他 spawn 的 `app-niri-*` scope，
+**唯独缺 noctalia 的 scope**。
+
+**规则：`git pull` 或任何改动涉及 `home/`、`scripts/`、`exporters/`、`skills/` 后，
+必须补跑 `./install.sh --host <host> --yes`，然后 `niri msg action load-config-file`。**
+
+## ⚠️ 顺序：先 commit，再 install
+
+flake 只认 **git 跟踪的文件**。`install.sh` / `agent-apply` 构建的是 `HEAD`，
+工作区里未提交的改动**不会进 store**——表现为「改了没生效」，且没有任何报错。
+
+```bash
+git add -A && git commit -m ...     # 先
+./install.sh --host <host> --yes    # 后
+```
 
 ## 生效方式
 
 | 改动 | 生效 |
 |---|---|
-| Hyprland 配置 | `hyprctl reload`（会话内）或重新登录 |
-| waybar / mako | `install.sh` 后重新登录；mako 可 `makoctl reload` |
-| 主题 | `theme-next`（整份重写 waybar style.css 并重启 waybar / mako） |
-| 系统级 | `nixos-rebuild switch`（用户执行） |
+| niri 配置 | `niri msg action load-config-file`（会话内，也可等自动重载） |
+| 脚本 / exporters / skills | `install.sh` 后立即（新进程读取），无需重登 |
+| 主题 | `theme-next` / `de-theme-apply <slug>`（写 Noctalia scheme + kitty + fuzzel） |
+| 包 / 服务 / 驱动 | `nixos-rebuild switch`（用户执行）+ 重新登录 |
+| Noctalia 面板组件 | `Mod+Shift+S` 或改 `settings.json` 后重启 shell |
 
 ## 判读 agent-apply 输出
 
