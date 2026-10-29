@@ -182,23 +182,42 @@ COSMIC 的键位不写在仓库里，来源是 cosmic-comp 自带的默认表：
 2. `Super+Space` 已被输入法占用，hypr-menu 在 COSMIC 下应换键（如 `Super+Shift+Space`）。
 3. 键位可用 RON 声明式部署，P3 计划用同一份定义生成 Hyprland 绑定与 COSMIC 快捷键，避免两套肌肉记忆。
 
-## niri 当前键位（v1-nn 生效）
+## niri 当前键位（v1-nn 生效，Noctalia v5）
 
 | 快捷键 | 动作 |
 |---|---|
 | `Mod+Return` | kitty |
-| `Mod+D` | Noctalia 启动器 |
-| `Mod+Q` / `Mod+F` | 关窗口 / 全屏 |
-| `Mod+Shift+C` | 控制中心 |
-| `Mod+Shift+P` | 会话菜单 |
-| `Mod+Shift+S` | Noctalia 设置 |
-| `Mod+L` | 锁屏（loginctl lock-session → Noctalia 锁屏） |
-| `Mod+Shift+T` | 主题选择器 |
+| `Mod+D` | Noctalia 启动器（`panel-toggle launcher`） |
+| `Mod+Tab` | 窗口切换器（`window-switcher`） |
+| `Mod+Q` / `Mod+F` / `Mod+Shift+F` | 关窗口 / 全屏 / 浮动 |
+| `Mod+Shift+E` | 会话面板（锁屏/注销/重启/关机；不再直接 quit） |
+| `Mod+方向键` / `Mod+J/K` | 焦点：列左右 / 窗口上下 |
+| `Mod+Shift+←/→` | 移动列 |
+| `Mod+1..9` / `Mod+Shift+1..9` | 切工作区 / 移列到工作区 |
+| `Mod+Ctrl+←/→` | 上一个 / 下一个工作区（`workspace-switch`） |
+| `Mod+Ctrl+Shift+←/→` | 把列送到上 / 下工作区 |
+| `Mod+Shift+C` / `P` / `S` | 控制中心 / 会话面板 / Noctalia 设置 |
+| `Mod+N` | 弹最新通知（`notification-invoke-latest`） |
+| `Mod+Shift+D` | 勿扰开关（`notification-dnd-toggle`） |
+| `Mod+L` | 锁屏（`msg session lock`，PAM 认证） |
+| `Mod+Shift+T` | 主题选择器（`theme-picker`） |
+| `Mod+Shift+N` | 夜间模式（`nightlight-toggle`） |
+| `Mod+Shift+W` | 下一张壁纸（`wallpaper-next`，目录 `~/Pictures/wallpapers`） |
+| `Mod+Shift+M` | btop（任务管理器） |
 | `Mod+V` | 剪贴板历史（cliphist + fuzzel） |
-| `Print` / `Mod+Shift+A` | 截图（整屏 / 窗口） |
-| `XF86Audio{Raise,Lower}Volume` | 音量 ±（Noctalia IPC，带 OSD） |
-| `XF86AudioMute` / `XF86AudioMicMute` | 静音 / 麦克风静音（Noctalia IPC） |
-| `XF86MonBrightness{Up,Down}` | 亮度 ±（Noctalia IPC，带 OSD） |
+| `Print` / `Shift+Print` | v5 截图 overlay：区域 / 整屏 |
+| `Mod+Shift+A` | 区域截图并标注（grim + slurp + swappy） |
+| `XF86Audio{Raise,Lower}Volume` | 音量 ±（Noctalia msg，带 OSD，锁屏可用） |
+| `XF86AudioMute` / `XF86AudioMicMute` | 静音 / 麦克风静音（锁屏可用） |
+| `XF86MonBrightness{Up,Down}` | 亮度 ±（带 OSD，锁屏可用） |
 | `XF86Audio{Play,Next,Prev}` | 播放控制（playerctl） |
+
+说明：
+- 全局快捷键**只能写在 niri 里**：Noctalia v5 的 `[keybinds]` 只作用于它自己的面板内部
+  （Enter/Esc/Tab/Ctrl+C…），且明确拒绝 `super` 系绑定。
+- `Mod+Shift+W` 只换壁纸：外壳配色会重新按新壁纸取色，此时配色**不再等于 tokens**，
+  想要「配色回到 tokens」用 `theme-next` / `de-theme-apply <slug>`。
+- v5 没有独立通知面板（可切换面板只有 clipboard/control-center/launcher/polkit/session/
+  tray-drawer/wallpaper），历史通知只能点 bar 上的组件。
 
 > 空闲行为（Noctalia idle）：10 分钟熄屏、11 分钟锁屏、**不自动挂起**。

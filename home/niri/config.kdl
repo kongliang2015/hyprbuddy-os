@@ -1,12 +1,11 @@
 // niri 基线配置（随 install.sh 部署到 ~/.config/niri/config.kdl）
 // 键位尽量与 docs/KEYBINDS.md 的 Hyprland 表对齐；运行期可自行修改（install.sh 会覆盖）。
-// 依赖：kitty / noctalia-shell；fuzzel 只用于 dmenu 管道（剪贴板历史），不再作启动器。
+// 依赖：kitty / noctalia（v5）；fuzzel 只用于 dmenu 管道（剪贴板历史），不再作启动器。
 
 // 自启：外壳（面板/launcher/通知/锁屏）与壁纸守护
-// noctalia 必须等显示器就绪后再起：niri 会先跑 spawn、约 0.5s 后才接上 DRM 输出，
-// 抢在输出之前启动时它拿不到 screen，bar 永远不会创建（实测 2026-10-28）。
-// 同时把 stdout/stderr 落到 ~/.cache，便于登录后排查。
-spawn-at-startup "sh" "-c" "sleep 2; exec noctalia-shell >>\"$HOME/.cache/noctalia-shell.log\" 2>&1"
+// Noctalia v5 自己处理输出热插拔与就绪（v4 需要 sleep 2 的坑已不存在），
+// 日志写在 $XDG_CACHE_HOME/noctalia/noctalia.log。
+spawn-at-startup "noctalia"
 // 剪贴板历史：cliphist 只负责存储，需要 watcher 持续喂数据（text + image 两路）
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
@@ -37,15 +36,18 @@ output "eDP-1" {
 }
 
 binds {
-    // 终端 / 启动器 / 系统菜单
+    // 终端 / 启动器 / 窗口切换
     Mod+Return { spawn "kitty"; }
-    Mod+D      { spawn "noctalia-shell" "ipc" "call" "launcher" "toggle"; }
+    Mod+D      { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
+    // 窗口切换器（v5 的最近窗口列表；niri 26.04 没有 overview）
+    Mod+Tab repeat=false { spawn "noctalia" "msg" "window-switcher"; }
 
     // 窗口
     Mod+Q          { close-window; }
     Mod+F          { fullscreen-window; }
     Mod+Shift+F    { toggle-window-floating; }
-    Mod+Shift+E    { quit; }
+    // 误触防护：不直接 quit，走会话面板（锁屏/注销/重启/关机）
+    Mod+Shift+E    { spawn "noctalia" "msg" "panel-toggle" "session"; }
 
     // 列/窗口导航（滚动平铺）
     Mod+Left  { focus-column-left; }
@@ -57,41 +59,68 @@ binds {
     Mod+J { focus-window-down; }
     Mod+K { focus-window-up; }
 
-    // 工作区
+    // 工作区（1-9；niri 工作区动态创建）
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
     Mod+3 { focus-workspace 3; }
     Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
     Mod+Shift+1 { move-column-to-workspace 1; }
     Mod+Shift+2 { move-column-to-workspace 2; }
     Mod+Shift+3 { move-column-to-workspace 3; }
     Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+    // 上下工作区（v5 IPC，带切换动画/占位）
+    Mod+Ctrl+Left  { spawn "noctalia" "msg" "workspace-switch" "prev"; }
+    Mod+Ctrl+Right { spawn "noctalia" "msg" "workspace-switch" "next"; }
+    // 把当前列送到相邻工作区
+    Mod+Ctrl+Shift+Left  { move-column-to-workspace-up; }
+    Mod+Ctrl+Shift+Right { move-column-to-workspace-down; }
 
-    // 系统面板（Noctalia IPC）
-    Mod+Shift+C { spawn "noctalia-shell" "ipc" "call" "controlCenter" "toggle"; }
-    Mod+Shift+P { spawn "noctalia-shell" "ipc" "call" "sessionMenu" "toggle"; }
-    Mod+Shift+S { spawn "noctalia-shell" "ipc" "call" "settings" "toggle"; }
+    // 系统面板与通知（Noctalia msg）
+    Mod+Shift+C { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
+    Mod+Shift+P { spawn "noctalia" "msg" "panel-toggle" "session"; }
+    Mod+Shift+S { spawn "noctalia" "msg" "settings-toggle"; }
+    // 通知：v5 没有独立的通知面板，键盘只能“弹最新一条”/切勿扰
+    Mod+N       { spawn "noctalia" "msg" "notification-invoke-latest"; }
+    Mod+Shift+D { spawn "noctalia" "msg" "notification-dnd-toggle"; }
 
     // 媒体键（niri 不内置硬件键处理，必须显式绑定）
-    // 走 Noctalia IPC，OSD 才会跟随显示（wpctl/brightnessctl 直连没有 OSD）
-    XF86AudioRaiseVolume  { spawn "noctalia-shell" "ipc" "call" "volume" "increase"; }
-    XF86AudioLowerVolume  { spawn "noctalia-shell" "ipc" "call" "volume" "decrease"; }
-    XF86AudioMute         { spawn "noctalia-shell" "ipc" "call" "volume" "muteOutput"; }
-    XF86AudioMicMute      { spawn "noctalia-shell" "ipc" "call" "volume" "muteInput"; }
-    XF86MonBrightnessUp   { spawn "noctalia-shell" "ipc" "call" "brightness" "increase"; }
-    XF86MonBrightnessDown { spawn "noctalia-shell" "ipc" "call" "brightness" "decrease"; }
+    // 走 Noctalia msg，OSD 才会跟随显示（wpctl/brightnessctl 直连没有 OSD）
+    // allow-when-locked：锁屏状态下仍可调音量/亮度（否则锁屏后媒体键全失效）
+    XF86AudioRaiseVolume  allow-when-locked=true { spawn "noctalia" "msg" "volume-up"; }
+    XF86AudioLowerVolume  allow-when-locked=true { spawn "noctalia" "msg" "volume-down"; }
+    XF86AudioMute         allow-when-locked=true { spawn "noctalia" "msg" "volume-mute"; }
+    XF86AudioMicMute      allow-when-locked=true { spawn "noctalia" "msg" "mic-mute"; }
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "noctalia" "msg" "brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "noctalia" "msg" "brightness-down"; }
     XF86AudioPlay         { spawn "playerctl" "play-pause"; }
     XF86AudioNext         { spawn "playerctl" "next"; }
     XF86AudioPrev         { spawn "playerctl" "previous"; }
 
-    // 剪贴板历史
+    // 剪贴板历史（cliphist + fuzzel；v5 自带 panel-toggle clipboard 作为备选）
     Mod+V        { spawn "clipboard-menu"; }
 
-    // 锁屏 / 主题 / 截图
-    Mod+L        { spawn "loginctl" "lock-session"; }
+    // 锁屏 / 主题 / 夜间模式 / 壁纸 / 任务管理器
+    Mod+L        { spawn "noctalia" "msg" "session" "lock"; }
     Mod+Shift+T  { spawn "theme-picker"; }
-    Print        { screenshot-screen; }
-    Mod+Shift+A  { screenshot-window; }
+    Mod+Shift+N  { spawn "noctalia" "msg" "nightlight-toggle"; }
+    Mod+Shift+W  { spawn "noctalia" "msg" "wallpaper-next"; }
+    Mod+Shift+M  { spawn "kitty" "-e" "btop"; }
+
+    // 截图：Print 走 v5 overlay（框选/复制/保存），Shift+Print 整屏，
+    // Mod+Shift+A 走 grim+slurp+swappy 标注链路
+    Print        repeat=false { spawn "noctalia" "msg" "screenshot-region"; }
+    Shift+Print  repeat=false { spawn "noctalia" "msg" "screenshot-fullscreen"; }
+    Mod+Shift+A  repeat=false { spawn "screenshot-annotate"; }
 }
 
 // 浮动窗口（设置类工具）
