@@ -74,7 +74,7 @@ hyprland-nixos/
   （hyprland → hyprland-uwsm，niri → niri），\`sessions.nix\` 分发默认会话
 - Hyprland 提供方：programs.hyprland（withUWSM）、Lua 配置管理器（hyprland.lua，
   为 hyprshell 的 eval 键位铺路）、0.55 规则语法（match: 前缀）
-- niri 提供方：programs.niri + noctalia-shell + gnome/gtk 门户（与 Hyprland
+- niri 提供方：programs.niri + noctalia（v5）+ gnome/gtk 门户（与 Hyprland
   门户分会话声明，避免截图/共享抢占）；Noctalia 自带 panel/launcher/通知/
   settings/bg/screenshot/osd/lock，无需外壳组件
 - SDDM：主题 HyprBuddy（自绘上拉菜单会话选择）/ catppuccin-mocha-mauve；
@@ -98,7 +98,7 @@ hyprland-nixos/
   night-mode 已接入
 - 主题系统（P2）：`themes/<slug>/tokens.json` 唯一真相 + `exporters/{hyprland,
   niri}/*` 输出端拆分；theme-next 只做编排；niri 经 `de_theme_apply`
-  生成 Noctalia 配色方案 + 壁纸（详见 docs/niri-noctalia-plan.md）
+  写入 Noctalia theme.toml + 壁纸并触发壁纸取色（详见 skills/nixos-desktop-settings/theming.md）
 - desktop-check：按桌面分派的自检（Hyprland → hypr-check 原有 8 组；
   niri → 13 项：进程 / portal / 壁纸守护 / 字体 / 命令 / 配色配置）
 - theme-next：8 套主题热切换（编排器），联动 waybar / fuzzel / swaync / eww /

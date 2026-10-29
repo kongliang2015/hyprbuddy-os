@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # @command: night-mode
-# @summary: 夜间模式开关（Noctalia 内置 nightLight）
+# @summary: 夜间模式开关（Noctalia v5 内置 night light）
 # @category: runtime
 # @usage: night-mode
-# @effect: 通过 Noctalia IPC 切换夜间模式
-# 夜间模式：niri + Noctalia 内置 nightLight（Hyprland 已退役）
+# @effect: 通过 noctalia msg nightlight-toggle 切换色温
+# 夜间模式：niri + Noctalia v5 内置 night light（Hyprland 已退役）
 DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
 . "$DE_LIB"
 de=$(de_name)
 if [ "$de" = "niri" ]; then
-  command -v noctalia-shell >/dev/null 2>&1 || { de_notify "夜间模式" "noctalia-shell 不可用"; exit 1; }
-  noctalia-shell ipc call nightLight toggle
+  command -v noctalia >/dev/null 2>&1 || { de_notify "夜间模式" "noctalia 不可用"; exit 1; }
+  noctalia msg nightlight-toggle
   exit 0
 fi
 de_notify "夜间模式" "当前桌面（$de）不支持色温切换"

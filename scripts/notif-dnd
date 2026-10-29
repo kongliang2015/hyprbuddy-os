@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # @command: notif-dnd
-# @summary: 切换通知勿扰模式（Noctalia IPC）
+# @summary: 切换通知勿扰模式（Noctalia v5 IPC）
 # @category: runtime
 # @usage: notif-dnd
 # @effect: 切换 Noctalia 的 DND
 # @doc: bar-notify.md
-# 通知栈已并入 Noctalia（swaync/mako 均已移除），勿扰走 notifications IPC。
+# 通知栈已并入 Noctalia（swaync/mako 均已移除），勿扰走 msg notification-dnd-toggle。
 set -uo pipefail
-if ! command -v noctalia-shell >/dev/null 2>&1; then
-  echo "noctalia-shell 不可用" >&2
+if ! command -v noctalia >/dev/null 2>&1; then
+  echo "noctalia 不可用" >&2
   exit 1
 fi
-noctalia-shell ipc call notifications toggleDND >/dev/null 2>&1 || exit 1
+noctalia msg notification-dnd-toggle >/dev/null 2>&1 || exit 1
 # DND 开启时通知本身会被吞，提示仅供参考
 notify-send "通知" "勿扰模式已切换" 2>/dev/null || true

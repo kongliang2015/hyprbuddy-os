@@ -19,10 +19,10 @@ de_wallpaper_set() {
   local img="$1"
   case "$(de_name)" in
     niri)
-      # 壁纸交给 Noctalia 自带服务（awww 已从包集移除）；
-      # 注意必须传绝对路径：settings.wallpaper.directory 会被 Noctalia 启动时重置。
-      command -v noctalia-shell >/dev/null 2>&1 || return 1
-      noctalia-shell ipc call wallpaper set "$img" all >/dev/null 2>&1 || return 1
+      # 壁纸交给 Noctalia v5 自带服务（awww 已从包集移除）；
+      # 必须传绝对路径：壁纸目录会被 Noctalia 启动时重置为默认值。
+      command -v noctalia >/dev/null 2>&1 || return 1
+      noctalia msg wallpaper-set "$img" >/dev/null 2>&1 || return 1
       ;;
     *) return 1 ;;
   esac
@@ -42,7 +42,7 @@ de_screenshot_annotate() {
 # 锁屏
 de_lock() {
   case "$(de_name)" in
-    niri) loginctl lock-session ;; # Noctalia 锁屏接管
+    niri) loginctl lock-session ;; # Noctalia v5 锁屏接管 session lock 信号
     *) return 1 ;;
   esac
 }

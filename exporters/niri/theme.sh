@@ -1,14 +1,15 @@
-#!/usr/bin/env bash
-# Noctalia 主题 exporter（N3）：tokens 配色 → Noctalia colors.json + settings.json。
+# Noctalia v5 主题 exporter（tokens → 外壳配色）。
 #
-# 依据 N0 调研（docs/niri-noctalia-plan.md）：
-#   - 配置目录 $XDG_CONFIG_HOME/noctalia/（NOCTALIA_CONFIG_DIR 可覆盖，用于测试）
-#   - colors.json 结构 { "dark": {...}, "light": {...} }，Material 风格键；
-#     目录级 watcher 会热加载本文件
-#   - settings.json 的 colorSchemes.predefinedScheme 非空时启动会重新 apply
-#     预设并覆盖 colors.json → 必须清空（jq 合并写，保留其余键）
-#   - darkMode 跟随 tokens.dark（两段写同一色板，明暗由 darkMode 决定）
-
+# 事实（2026-10-29 实测 pkgs.noctalia 5.0.1）：
+#   - 手写配置 ~/.config/noctalia/*.toml（按名排序合并）；GUI/运行态改动写
+#     ~/.local/state/noctalia/settings.toml，且 state 优先级更高；
+#   - 外壳配色由 [theme] source 决定：builtin | wallpaper | community | custom；
+#   - 这里用 source = "wallpaper"：Noctalia 从当前壁纸派生 Material 调色板
+#     （wallpaper_scheme = m3-tonal-spot），主题壁纸一换配色就跟着换；
+#   - custom（~/.config/noctalia/palettes/<name>.json）配色更精确，但文件格式
+#     在 5.0.1 上尚未跑通（16 色 m* / 完整 token 表 / 社区数组格式均被判 invalid），
+#     待上游文档明确后再切，不要凭猜写死；
+#   - IPC 是 `noctalia msg <cmd>`（wallpaper-set / color-scheme-set / theme-mode-set）。
 
 # fuzzel：整份重写（fuzzel 每次启动都重读配置，不需要热加载）。
 # [main]/[border] 保持不变，[colors] 由 tokens 派生；fuzzel 的颜色是 rrggbb[aa]，不带 #。
@@ -76,119 +77,48 @@ noctalia_theme_apply() {
   local slug="${1:-theme}"
   local dir="${NOCTALIA_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/noctalia}"
   dir="${dir%/}"
-  local sdir="$dir/colorschemes/$slug"
-  mkdir -p "$sdir" || return 1
-  local colors="$sdir/$slug.json" settings="$dir/settings.json"
+  local mode="dark"
+  [ "$T_DARK" = true ] && mode="dark" || mode="light"
+  mkdir -p "$dir" || return 1
 
-  # 终端色板：tokens.terminal.colors 为 16 项标准排布
-  # （[0]=黑/底色，[1..7]=red..white，[8..15]=bright black..bright white）
-  local c=("$T_TERM_C0" "$T_TERM_C1" "$T_TERM_C2" "$T_TERM_C3" "$T_TERM_C4" \
-           "$T_TERM_C5" "$T_TERM_C6" "$T_TERM_C7" "$T_TERM_C8" "$T_TERM_C9" \
-           "$T_TERM_C10" "$T_TERM_C11" "$T_TERM_C12" "$T_TERM_C13" "$T_TERM_C14" "$T_TERM_C15")
-  local white="${c[15]:-$T_TERM_FG}"
-
-  emit_scheme() {
-    printf '  "%s": {\n' "$1"
-    printf '    "mPrimary": "#%s",\n' "$T_ACCENT"
-    printf '    "mOnPrimary": "#%s",\n' "$T_BG"
-    printf '    "mSecondary": "#%s",\n' "$T_ACCENT2"
-    printf '    "mOnSecondary": "#%s",\n' "$T_BG"
-    printf '    "mTertiary": "#%s",\n' "$T_BAR_PULSE"
-    printf '    "mOnTertiary": "#%s",\n' "$T_BG"
-    printf '    "mError": "#%s",\n' "$T_URGENT"
-    printf '    "mOnError": "#%s",\n' "$T_BG"
-    printf '    "mSurface": "#%s",\n' "$T_BG"
-    printf '    "mOnSurface": "#%s",\n' "$T_FG"
-    printf '    "mSurfaceVariant": "#%s",\n' "$T_SURFACE"
-    printf '    "mOnSurfaceVariant": "#%s",\n' "$T_MUTED"
-    printf '    "mOutline": "#%s",\n' "$T_INACTIVE"
-    printf '    "mShadow": "#%s",\n' "$T_BG"
-    printf '    "mHover": "#%s",\n' "$T_ACCENT"
-    printf '    "mOnHover": "#%s",\n' "$T_BG"
-    printf '    "terminal": {\n'
-    printf '      "normal": {\n'
-    printf '        "black": "#%s", "red": "#%s", "green": "#%s",\n' "${c[0]}" "${c[1]}" "${c[2]}"
-    printf '        "yellow": "#%s", "blue": "#%s", "magenta": "#%s",\n' "${c[3]}" "${c[4]}" "${c[5]}"
-    printf '        "cyan": "#%s", "white": "#%s"\n' "${c[6]}" "${c[7]}"
-    printf '      },\n'
-    printf '      "bright": {\n'
-    printf '        "black": "#%s", "red": "#%s", "green": "#%s",\n' "${c[8]}" "${c[9]}" "${c[10]}"
-    printf '        "yellow": "#%s", "blue": "#%s", "magenta": "#%s",\n' "${c[11]}" "${c[12]}" "${c[13]}"
-    printf '        "cyan": "#%s", "white": "#%s"\n' "${c[14]}" "$white"
-    printf '      }\n'
-    printf '    }\n'
-    printf '  }'
-  }
-
-  {
-    printf '{\n'
-    emit_scheme dark; printf ',\n'
-    emit_scheme light; printf '\n}\n'
-  } > "$colors.tmp.$$" && mv -f "$colors.tmp.$$" "$colors" || {
-    rm -f "$colors.tmp.$$"
-    return 1
-  }
-
-  # settings.json：清空预设方案 + 关闭壁纸取色 + 明暗跟随 tokens
-  local mode=false
-  [ "$T_DARK" = true ] && mode=true
-  if [ -f "$settings" ]; then
-    jq --arg s "$slug" --argjson dark "$mode" \
-      '.colorSchemes.useWallpaperColors = false
-       | .colorSchemes.predefinedScheme = $s
-       | .colorSchemes.darkMode = $dark
-' \
-      "$settings" > "$settings.tmp.$$" 2>/dev/null && [ -s "$settings.tmp.$$" ] \
-      && mv -f "$settings.tmp.$$" "$settings" || rm -f "$settings.tmp.$$"
-  else
-    jq -n --arg s "$slug" --argjson dark "$mode" \
-      '{colorSchemes: {useWallpaperColors: false, predefinedScheme: $s, darkMode: $dark}}' \
-      > "$settings.tmp.$$" 2>/dev/null && mv -f "$settings.tmp.$$" "$settings" || rm -f "$settings.tmp.$$"
-  fi
-
-  # 热应用：已在运行的 Noctalia 立即切换
-  # 运行中的 shell 只认启动时扫描到的方案列表；新方案（首次使用）不在列表里，
-  # IPC set 会失败。detect：colors.json 未在 1.5s 内更新则重启 shell
-  # （重启后启动扫描会收录新方案，并按 settings.predefinedScheme 应用）。
-  local marker="$dir/colors.json"
-  local before=""
-  [ -f "$marker" ] && before=$(stat -c %Y "$marker" 2>/dev/null)
-  if command -v noctalia-shell >/dev/null 2>&1; then
-    noctalia-shell ipc call colorScheme set "$slug" >/dev/null 2>&1 || true
-  fi
-  if pgrep -f 'bin/quickshell -p' >/dev/null 2>&1; then
-    sleep 1.5
-    local after=""
-    [ -f "$marker" ] && after=$(stat -c %Y "$marker" 2>/dev/null)
-    if [ "$before" = "$after" ]; then
-      pkill -f 'bin/quickshell -p' 2>/dev/null
-      sleep 0.5
-      setsid noctalia-shell >/dev/null 2>&1 < /dev/null &
-      echo "noctalia: scheme 未在运行实例中，已重启 shell（首次使用该方案）"
-    fi
-  fi
-
-  # 壁纸：主题自带 PNG → Noctalia 壁纸服务
-  # （awww 的壁纸层会被 Noctalia 壁纸层盖住，统一以 Noctalia 为准；
-  #   重启后的 shell 需要约 20s 就绪，这里带重试）
-  # 注意：settings.wallpaper.directory 会被 Noctalia 启动时强制重置为默认目录，
-  # 不能靠它做扫描；直接传绝对路径。优先与 Hyprland 栈共用的 ~/Pictures/wallpapers。
+  # 主题壁纸：优先与 Hyprland 栈共用的 ~/Pictures/wallpapers，其次仓库 themes/<slug>/
   local wp=""
+  local cand
   for cand in "$HOME/Pictures/wallpapers/$T_WALLPAPER" "$THEMES_DIR/$T_SLUG/$T_WALLPAPER"; do
     if [ -f "$cand" ]; then wp="$cand"; break; fi
   done
-  if [ -n "$wp" ] && command -v noctalia-shell >/dev/null 2>&1; then
-    # 就绪探测：wallpaper get 返回非空说明服务已起来（裸 set 在未就绪时也会返回 0）
-    for _ in $(seq 1 40); do
-      cur=$(noctalia-shell ipc call wallpaper get all 2>/dev/null)
-      if [ -n "$cur" ]; then
-        noctalia-shell ipc call wallpaper set "$wp" all >/dev/null 2>&1 && break
-      fi
-      sleep 1
-    done
+
+  # 手写基线（整份重写，与 fuzzel 同样的策略）：壁纸取色 + 明暗模式。
+  # 注意 state/settings.toml 优先级更高，所以运行中的实例还要走 IPC 落一次。
+  local f="$dir/theme.toml"
+  cat > "$f.tmp.$$" <<NOCTALIA_THEME && mv -f "$f.tmp.$$" "$f" || { rm -f "$f.tmp.$$"; return 1; }
+# 由 exporters/niri/theme.sh 生成，勿手改
+[theme]
+mode = "$mode"
+source = "wallpaper"
+wallpaper_scheme = "m3-tonal-spot"
+
+[wallpaper]
+enabled = true
+# wallpaper-next/previous/random 需要目录（wallpaper-set 传绝对路径不依赖它）。
+# 注意：5.0.1 不认 recursive 键（会 warn unknown setting），别加。
+directory = "$HOME/Pictures/wallpapers"
+NOCTALIA_THEME
+
+  # 运行中的实例：壁纸会重新触发取色，mode/source 通过 IPC 同步进 state。
+  if command -v noctalia >/dev/null 2>&1; then
+    if [ -n "$wp" ]; then
+      # 刚启动时 IPC socket 可能还没就绪，重试几轮
+      for _ in $(seq 1 20); do
+        noctalia msg wallpaper-set "$wp" >/dev/null 2>&1 && break
+        sleep 0.5
+      done
+    fi
+    noctalia msg color-scheme-set wallpaper m3-tonal-spot >/dev/null 2>&1 || true
+    noctalia msg theme-mode-set "$mode" >/dev/null 2>&1 || true
   fi
 
   kitty_theme_apply && echo "kitty: theme.inc.conf <- $T_NAME" || echo "kitty: 写入失败（终端配色未更新）"
   fuzzel_theme_apply && echo "fuzzel: fuzzel.ini <- $T_NAME" || echo "fuzzel: 写入失败（启动器配色未更新）"
-  echo "noctalia: $T_NAME ($slug) -> $colors"
+  echo "noctalia: $T_NAME ($slug) -> wallpaper scheme ($mode) ${wp:+[$wp]}"
 }

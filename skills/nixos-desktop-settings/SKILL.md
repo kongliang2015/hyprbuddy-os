@@ -13,7 +13,8 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 ## 铁律
 
 1. **改仓库源文件，绝不改 `~/.config` 下的 store 软链**
-   （例外：`~/.config/noctalia/settings.json` 是 Noctalia 自己的运行时状态，可直接改，重装会回默认）
+   （例外：`~/.local/state/noctalia/settings.toml` 是 Noctalia v5 的 GUI 运行态，可直接改；
+   它优先级高于 `~/.config/noctalia/*.toml`，重装回默认）
 2. **agent 不执行 sudo**；系统级改动构建验证后把命令交给用户
 3. `/etc/nixos/configuration.nix` 是防误用桩，**绝不修改**
 
@@ -51,7 +52,7 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 | "让 GIMP 默认浮动" | `window-rule { match app-id="gimp"; open-floating true; }` |
 | "状态栏加 CPU 温度" | Noctalia 设置（`Mod+Shift+S` → Bar → Widgets），或改 `settings.json` 的 `showCpuTemp` |
 | "通知超时/勿扰" | Noctalia 通知面板，或 `settings.json` 的 `notifications` |
-| "10 分钟无操作锁屏" | `~/.config/noctalia/settings.json` 的 `idle`（当前 600s 熄屏 / 660s 锁屏 / 不挂起） |
+| "10 分钟无操作锁屏" | Noctalia v5 GUI → Shell / Idle（落盘在 `~/.local/state/noctalia/settings.toml`） |
 | "终端字号改 13" | `home/kitty/kitty.conf` |
 | "换个主题" | 运行 `theme-next`（循环切换；`restore` 仅供登录） |
 | "照 X 官网风格做套新主题" | 技能 `theme-create`（取色 → 生成壁纸 → 追加主题表 → 部署） |

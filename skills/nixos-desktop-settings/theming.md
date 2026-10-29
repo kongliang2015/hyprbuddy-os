@@ -1,30 +1,32 @@
-# theming：tokens → Noctalia 配色 + 壁纸
+# theming：tokens → 壁纸取色 + 终端/启动器配色
 
 ## 唯一真相
 
 `themes/<slug>/tokens.json`：每套主题一个文件，含 bg/fg/accent/urgent/terminal 16 色/
 bar 颜色/wallpaper 文件名等。**不要手改 `~/.config/noctalia/*` 来「修主题」**——下次切主题就被覆盖。
 
-## 链路
+## 链路（Noctalia v5）
 
 ```
 themes/<slug>/tokens.json
    │  theme_env_load（exporters/lib.sh，展开成 T_* 环境变量）
    ▼
 exporters/niri/theme.sh  (noctalia_theme_apply)
-   ├─ 写  ~/.config/noctalia/colorschemes/<slug>/<slug>.json   ← Material 键，dark/light 两份
-   ├─ 改  ~/.config/noctalia/settings.json（jq 合并）
-   │        colorSchemes.useWallpaperColors = false
-   │        colorSchemes.predefinedScheme   = <slug>
-   │        colorSchemes.darkMode           = tokens.dark
+   ├─ 写  ~/.config/noctalia/theme.toml
+   │        [theme] mode / source="wallpaper" / wallpaper_scheme="m3-tonal-spot"
+   │        [wallpaper] enabled=true
    ├─ 写  ~/.config/kitty/theme.inc.conf（16 色 ANSI，来自 tokens.terminal）
    │        + kitty @ set-colors -a 热加载（仅 KITTY_LISTEN_ON 存在时尝试）
    ├─ 写  ~/.config/fuzzel/fuzzel.ini（整份重写，[colors] 来自 tokens）
-   ├─ IPC noctalia-shell ipc call colorScheme set <slug>
-   └─ IPC noctalia-shell ipc call wallpaper set <绝对路径> all
+   └─ IPC noctalia msg wallpaper-set <绝对路径>
+          + color-scheme-set wallpaper m3-tonal-spot
+          + theme-mode-set dark|light
 ```
 
-入口：
+v5 外壳配色**由壁纸派生**（Material You），所以「切主题 = 换壁纸 + 换 mode」。
+终端/启动器仍严格用 tokens 的 16 色，二者同源于同一次切换。
+
+## 入口
 
 | 命令 | 用途 |
 |---|---|
@@ -33,13 +35,13 @@ exporters/niri/theme.sh  (noctalia_theme_apply)
 | `theme-next <idx>` | 指定第 idx 套（`theme-picker` 用） |
 | `theme-next --print-themes` | 输出主题清单（选择器数据源） |
 | `theme-picker` | 交互式选择（`Mod+Shift+T`） |
-| `de-theme-apply <slug>` | 按 slug 应用（能力层 `de_theme_apply`，niri 分支同上） |
+| `de-theme-apply <slug>` | 按 slug 应用（能力层 `de_theme_apply`） |
 
 ## 壁纸
 
 - 文件：`~/Pictures/wallpapers/<tokens.wallpaper>`（`install.sh` 从仓库 `wallpapers/` 拷入）
-- 由 **Noctalia 壁纸服务**显示（awww 已移除）；`de_wallpaper_set` 走 `wallpaper set`
-- `wallpaper-next` 换下一张壁纸，也走同一能力层
+- 由 **Noctalia 壁纸服务**显示；`de_wallpaper_set` 走 `noctalia msg wallpaper-set`
+- `wallpaper-next` 换下一张壁纸，外壳配色随之重算
 
 ## 新增一套主题
 
@@ -49,23 +51,24 @@ exporters/niri/theme.sh  (noctalia_theme_apply)
 4. `de-theme-apply <slug>` 验证
 5. `theme-next --print-themes` 应能看到新主题（`theme-picker` 自动收录）
 
-## 已知坑（都是实测踩过的）
+## 已知坑
 
-1. **`predefinedScheme` 必须同步写**：若 settings.json 里它为空或指向别的方案，
-   Noctalia 启动时会用预设方案覆盖 `colorscheme` 里的配色 → 看起来「切了没反应」
-2. **必须传壁纸绝对路径**：`settings.wallpaper.directory` 会被 Noctalia 启动时重置，
-   依赖目录扫描会失败（日志里 `Wallpaper Scan failed … (directory might not exist)`）
-3. **新方案首次 IPC 会失败**：运行中的 shell 只认启动时扫描到的方案列表。
-   exporter 用 `colors.json` 的 mtime 做探测，1.5s 未更新就重启 shell 兜底
-4. **别直接调 `noctalia-shell ipc call colorScheme set` 指望它读 tokens**：
-   它只切换已存在的方案文件
+1. **v5 的 state 覆盖 config**：GUI 改过的值写在 `~/.local/state/noctalia/settings.toml`，
+   优先级**高于** `~/.config/noctalia/*.toml`。所以 exporter 除了写 theme.toml，
+   还要走 `msg color-scheme-set / theme-mode-set` 把 state 一起对齐。
+2. **必须传壁纸绝对路径**：壁纸目录在启动时会被重置为默认值，靠目录扫描会失败。
+3. **自定义调色板（`source="custom"`）暂不可用**：`~/.config/noctalia/palettes/<name>.json`
+   在 5.0.1 上没有跑通（16 色 m*、完整 token 表、社区数组格式都被判 invalid），
+   当前统一走 `source="wallpaper"`。等上游文档明确格式再切，别凭猜写死。
+4. **v4 的 `colorschemes/*.json` + `settings.json` 已作废**，留在目录里也不会被 v5 读取。
 
 ## 排查
 
 ```bash
-ls ~/.config/noctalia/colorschemes/            # 已生成的方案
-grep -E "predefinedScheme|useWallpaperColors" ~/.config/noctalia/settings.json
-noctalia-shell ipc call colorScheme get        # 当前生效的 source + name
-noctalia-shell ipc call wallpaper get all      # 当前壁纸绝对路径
-theme-next --print-themes                      # 主题清单与当前标记
+cat ~/.config/noctalia/theme.toml
+noctalia msg color-scheme-get    # 当前 source + scheme
+noctalia msg theme-mode-get      # dark / light
+noctalia msg wallpaper-get       # 当前壁纸绝对路径
+tail -f ~/.cache/noctalia/noctalia.log
+theme-next --print-themes
 ```

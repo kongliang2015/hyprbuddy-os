@@ -1,5 +1,11 @@
 # niri + Noctalia 接入实施方案（v1 架构第三提供方）
 
+> **状态（2026-10-29）**：本文记录的是 **Noctalia v4（noctalia-shell 4.7.6）** 的接入过程。
+> 仓库现已切到 **Noctalia v5（pkgs.noctalia 5.0.1，原生 C++ 运行时）**：
+> 配置为 `~/.config/noctalia/*.toml`、IPC 为 `noctalia msg ...`、配色走壁纸取色。
+> 现状说明以 `skills/nixos-desktop-settings/{theming,bar-notify,niri}.md` 为准，
+> 本文仅作历史与决策依据保留。
+
 > 前置评估见本文件第一节；架构分层与阶段方法论沿用
 > `docs/desktop-abstraction.md`（P0–P2 已落地的能力契约 + tokens/exporters 体系）。
 > 目标：在 `distro.desktop.sessions` 中新增 `niri` 提供方，与 Hyprland / COSMIC
