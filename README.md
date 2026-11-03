@@ -61,7 +61,9 @@ hyprland-nixos/
 - docs/desktop-abstraction.md：桌面提供方抽象（选项 / 能力契约 / P0–P5 阶段与实测记录）
 - docs/ARCHITECTURE-REVIEW.md：评估结论与结构性硬伤
 - docs/IMPLEMENTATION-PLAN.md：flake + options + host 的目标结构与实施步骤
-- docs/AGENT-LAYER.md：agent 六层架构与实测状态
+- docs/AGENT-LAYER.md：agent 六层架构与实测状态（设计稿，部分内容已过时）
+- docs/SKILLS.md：**技能总览**——5 个技能的分工、路由决策、技能×命令矩阵
+- docs/agent-coverage-review.md：agent 层覆盖度评审与 P0–P3 补齐记录
 - docs/ng-shell.md：hyprshell / 外壳组件设计与实测状态
 - docs/KEYBINDS.md：Hyprland 键位全表（niri 键位见 home/niri/config.kdl）
 - docs/niri-noctalia-plan.md：niri + Noctalia 第三提供方接入实施方案（N0–N5）
