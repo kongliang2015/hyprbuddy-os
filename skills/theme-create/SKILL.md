@@ -1,125 +1,104 @@
 ---
 name: theme-create
-description: 为 hyprland-nixos 生成一套新桌面主题（参考某网站/品牌的配色 → 壁纸 + waybar/mako/fuzzel/swayosd/kitty/hyprlock/polkit 配色），并接入 theme-picker 预览选择。适用于「照 X 官网风格做套主题」这类请求。
+description: 为 hyprland-nixos 生成一套新主题（参考网站/品牌配色 → 壁纸 + themes/<slug>/tokens.json），并接入 theme-picker 预览选择。适用于「照 X 官网风格做套主题」这类请求。
 ---
 
 # theme-create
 
-把「参考某个网站的品牌风格做一套桌面主题」固化成一个可复现流程。产出物是
-`scripts/theme-next` 主题表里的一行 + 一张壁纸，自动被 `theme-picker` 收录。
+一套主题 = **一张壁纸 + 一个 `themes/<slug>/tokens.json`**。
+`theme-picker` / `theme-next` 会自动收录，无需改任何数组。
 
-仓库：`~/hyprland-nixos`；宿主：`leonard`（注意 `hostname` 输出是 `nixos`，
-flake 里没有该 host，别照抄 hostname）。
+仓库：`~/hyprland-nixos`；host：`leonard`（`hostname` 输出是 `nixos`，flake 里没有该 host，别照抄）。
 
-## 0. 先定两件事
+## 0. 先定三件事
 
-- **浅色还是深色**：官网常是浅色底，但桌面终端浅色未必讨喜。给出选项让用户选，
-  必要时两套都做（同一批色令牌的浅/暗两个切面）。
-- **ImageGen 会花 credits**（每张约 5–10）：动手前必须告知用户。
+- **深色还是浅色**：官网常是浅色，桌面终端未必讨喜。给用户选，必要时两套都做
+- **slug**：小写连字符（`deepin-blue`、`rose-pine`），会成为目录名
+- **ImageGen 花 credits**（每张约 5–10）：生成壁纸前必须告知用户
 
-## 1. 从官网取真实色值（不要凭印象猜）
+## 1. 取真实色值（不要凭印象猜）
 
-站点用 TDesign 时优先找它自己的设计令牌（本例 `--wb2-*`），比截图取色准：
+```bash
+cd /tmp
+curl -sL --max-time 20 https://<site>/ -o page.html
+for f in $(grep -oE 'href="[^"]+\.css[^"]*"' page.html | sed 's/href="//;s/"$//'); do
+  curl -sL "https:$f" -o "css_$(basename $f)"
+done
+grep -ohE -- '--[a-z0-9-]+:[^;} ]+' css_*.css | sort -u | head -60   # 设计令牌
+cat css_*.css | grep -oE '#[0-9a-fA-F]{6}' | sort | uniq -c | sort -rn | head -20
+```
 
-    cd /tmp
-    curl -sL --max-time 20 https://<site>/ -o page.html
-    for f in $(grep -oE 'href="[^"]+\.css[^"]*"' page.html | sed 's/href="//;s/"$//'); do
-      curl -sL "https:$f" -o "css_$(basename $f)"
-    done
-    grep -ohE -- '--[a-z0-9-]+:[^;}]+' css_*.css | sort -u | head -60   # 设计令牌
-    grep -ohE -- '--wb[a-z0-9-]*:[^;}]+' css_*.css | sort -u             # 站点自有前缀更干净
-    cat css_*.css | grep -oE '#[0-9a-fA-F]{6}' | sort | uniq -c | sort -rn | head -20
-    grep -ohE 'linear-gradient\([^)]*\)' css_*.css | sort | uniq -c | sort -rn | head
-
-拿到的是：主色 / 文字三级 / 面（page/sunken/card）/ 描边 / 语义色 / 渐变。
-WorkBuddy 实测：`#00C29A` 主色、`#009273` 深主色、`#FFF` 面、`#1A1A1A` 文、
-`#646464` 次文、`#EBEBEB` 描边、暗部 `#0A0A0A`、渐变 `135deg #28B894→#3B82F6`。
+要拿到：主色 / 文字三级 / 面（page / card）/ 描边 / 语义色（成功/警告/危险）。
 
 ## 2. 壁纸
 
-    ImageGen(prompt="...", size="1536x1024", quality="high", output_dir="/tmp/wbgen")
-    magick /tmp/wbgen/x.png -resize 2560x -gravity center -crop 2560x1440+0+0 +repage \
-      -alpha off -depth 8 -define png:color-type=2 wallpapers/08-<slug>.png
-    identify -format '%wx%h %[channels] %[bit-depth]bit mean=%[fx:int(mean*255)]\n' wallpapers/08-<slug>.png
+```bash
+ImageGen(prompt="...", size="1536x1024", quality="high", output_dir="/tmp/wbgen")
+magick /tmp/wbgen/x.png -resize 2560x -gravity center -crop 2560x1440+0+0 +repage \
+  -alpha off -depth 8 -define png:color-type=2 wallpapers/NN-<slug>.png
+identify -format '%wx%h %[channels] %[bit-depth]bit\n' wallpapers/NN-<slug>.png
+```
 
-- 命名 `NN-<slug>.png`，序号接现有最大值（当前到 10）。
-- **必须 2560×1440、8bit、3 通道（无 alpha）** —— 带透明通道会让 awww 出黑屏/花屏。
-- 用 mean 自检方向：浅色应 >200，深色 <60。
-- 壁纸会被 `wallpaper-next` 一起轮播，命名带主题前缀便于辨认。
+- 命名 `NN-<slug>.png`，序号接现有最大值（`ls wallpapers | tail -1`）
+- **2560×1440、8bit、3 通道（无 alpha）**
+- 深浅自检：`identify -format '%[fx:int(mean*255)]'`，浅色 >200、深色 <60
 
-## 3. 主题表：追加一行，36 个字段
+## 3. 写 `themes/<slug>/tokens.json`
 
-`scripts/theme-next` 的 `THEMES=(...)`，字段顺序（`|` 分隔，一字段不能少）：
+```json
+{
+  "name": "Rose Pine",              // 显示名（picker 用）
+  "wallpaper": "04-rose-pine.png",  // wallpapers/ 下的文件名
+  "dark": true,                     // 决定 Noctalia darkMode 与 agent-theme-sync 方向
+  "bg": "191724", "fg": "E0DEF4",
+  "accent": "9CCFD8", "accent2": "C4A7E7",
+  "inactive": "6E6A86", "surface": "2A283E",
+  "muted": "6E6A86", "urgent": "EB6F92",
+  "bar": { "clock": "...", "cpu": "...", "mem": "...", "battery": "...", "pulse": "...", "agent": "..." },
+  "terminal": { "bg": "...", "fg": "...", "cursor": "...", "colors": ["16 个 ANSI 色"] },
+  "order": 11                       // theme_list 按它排序，决定索引位置
+}
+```
 
-| # | 字段 | 含义 |
-|---|---|---|
-| 1 | NAME | 显示名（picker 用） |
-| 2 | WALLPAPER | `wallpapers/` 下文件名 |
-| 3-4 | HA1 HA2 | 活动边框渐变两端；同时是 polkit 的 accent / accent_secondary |
-| 5 | HI | 非活动边框 |
-| 6-7 | WB_BG WB_FG | waybar 底 / 前景 |
-| 8-10 | WB_WS WB_WSAFG WB_WSABG | 工作区：静默文字 / 激活文字 / 激活与 hover 底 |
-| 11-17 | WB_URGENT CLOCK CPU MEM BAT PULSE AGENT | 各模块前景色 |
-| 18-20 | K_BG K_FG K_CURSOR | kitty 底/字/光标 |
-| 21-36 | K0..K15 | kitty ANSI 16 色 |
+规则：
 
-追加前先算一下现有行宽度，写完逐行核：
+- 色值**不带 `#`**（6 位十六进制）
+- `terminal.colors` 必须 16 项：`[0]=黑/底，1..7=red..white，8..15=bright black..bright white`
+- 浅色主题：`terminal.colors[7]`/`[15]` 别用近白，用中深灰（否则浅底不可读）
+- **`order` 取当前最大值 +1，不要插在中间**——索引变化会打乱已保存的当前主题与预览图
 
-    awk '/^THEMES=\(/{f=1;next} /^\)/{f=0} f && /^"/{n=split($0,a,"|"); print n, a[1]}' scripts/theme-next
-    # 每行必须是 36
+## 4. 部署
 
-派生项不用手填：mako 卡片/描边/进度、fuzzel `[colors]`、swayosd 五色、hyprlock 变量、
-hyprtoolkit 认证框配色，全部由脚本按 WB_*/HA* 用 `mixhex` 算出来。
+```bash
+scripts/agent-apply leonard        # 求值 + 构建（无 sudo）
+./install.sh --host leonard --yes  # 部署 tokens + 复制 wallpapers/ 到 ~/Pictures/wallpapers
+```
 
-**浅色主题的坑**
-- kitty `K7/K15` 别用近白，用中深灰（如 `#57606A`/`#1A1A1A`），否则浅底上不可读。
-- `WB_BG` 亮度决定 `agent-theme-sync` 收到 light 还是 dark（阈值 140）；
-  浅色行必须真的接近白，否则 opencode 主题会跟错。
+## 5. 应用与验证
 
-## 4. 部署与实测
+```bash
+theme-next --print-themes          # 新主题应在列表里（按 order 排序）
+de-theme-apply <slug>              # 应用，看输出三行
+head -3 ~/.config/kitty/theme.inc.conf     # 终端配色是否跟到
+grep -A3 "^\[colors\]" ~/.config/fuzzel/fuzzel.ini   # 启动器配色
+cat ~/.config/noctalia/theme.toml          # v5：source=wallpaper 时面板配色由壁纸推导
+```
 
-    scripts/agent-apply leonard        # 求值 + 构建（无 sudo）
-    ./install.sh --host leonard --yes  # 软链用户配置 + 复制壁纸 + hypr-check
+## 6. 写设计说明 `docs/themes/<Name>.md`
 
-    theme-next --print-themes          # 新行在列表里，壁纸路径存在
-    theme-next <idx>                   # 实际应用
-    grep -m2 'color:' ~/.config/waybar/style.css
-    head -3 ~/.config/kitty/theme.inc.conf
-    cat ~/.config/opencode/tui.json    # light/dark 是否跟对
-    grim ~/.local/share/hyprland-nixos/theme-previews/preview-<idx>.png   # picker 预览图
+tokens 只有一个 JSON，读不出「哪个色用在哪」。每套配一份说明：
 
-预览图没有时 picker 会退回显示壁纸；要实拍就先切到该主题再 grim。
-测完切回用户原来的主题（`--print-themes` 里带「← 当前」的那行）。
+- slug / 索引号 / 切换命令 / 壁纸与预览图路径
+- 角色配色表：色值 → 角色 → 实际落点（kitty 光标 / fuzzel 选中 / SDDM 按钮…）
+- 与参考站点的对应关系（哪个色来自哪里）
 
-## 5. 别踩的坑
+## 7. 坑
 
-- `scripts/theme-preview-capture` 的主题总数已从 `--print-themes` 行数推导，**不要**再写死 N。
-- 主题是按**索引**应用的：只往数组末尾追加，别插在中间（会打乱已保存的 idx 与预览图）。
-- 不要改 `~/.config` 下的 store 软链；主题切换脚本自己会「摘链 → 写真实文件」。
-- 文档里的「N 套主题」是硬编码文案：`README.md`、`docs/COMMANDS-JSON.md`、
-  `skills/nixos-desktop-settings/{SKILL,theming}.md` 需要一起改，否则下一个人会被误导。
-- 新建 skill 目录后必须重跑 `install.sh`，`~/.codebuddy/skills` 才会出现软链。
-
-## 6. 主题说明文件（每套一份，别省）
-
-主题表只有一行 36 字段，读不出「哪个色是干什么的」。每套主题配
-`docs/themes/<名称>.md`，这是人看的设计说明，也是将来复盘/微调的唯一依据：
-
-- 索引号、切换命令、壁纸与预览图路径
-- **角色配色表**：色值 → 角色 → 实际落点（waybar 底 / kitty 光标 / polkit accent …）
-- kitty ANSI 16 色表
-- 壁纸：内容描述、生成方式、尺寸/格式/mean 自检结果
-- 一句「派生配色由 theme-next 的 mixhex 算出，不要手填」
-
-范例：`docs/themes/HyprBuddy.md`。只做主题不改脚本时，这份文件也要跟着更新。
-新建后同步 `docs/themes/README.md` 的索引表（索引/主题/主面/强调色/链接）。
-
-## 7. 验收清单
-
-- [ ] `docs/themes/<名称>.md` 已写（角色配色 + 壁纸信息）
-- [ ] 主题表每行 36 字段
-- [ ] 壁纸 2560×1440 / 8bit / 无 alpha，mean 方向正确
-- [ ] `--print-themes` 有该行且壁纸存在
-- [ ] 实机切换后 waybar / kitty / hyprtoolkit / agent 主题同步变化
-- [ ] 预览图已生成（或明确说明只有壁纸回退）
-- [ ] 文档里的主题数量已更新
+1. **v5 的面板配色来自壁纸取色**（`theme.toml` 的 `source = "wallpaper"`），
+   tokens 里 `accent` 不会直接影响 Noctalia bar。要让面板精确跟随 tokens，
+   需走 v5 的 custom palette（`~/.config/noctalia/palettes/`），格式另需实测
+2. 主题按 `order` 索引，只追加不插队
+3. 壁纸必须 RGB（无 alpha），否则部分壁纸服务会黑屏
+4. 新建/改动 skill 目录后要重跑 `install.sh`，`~/.codebuddy/skills` 才会更新
+5. 文档里的「N 套主题」是硬编码文案：`README.md`、`skills/nixos-desktop-settings/{SKILL,theming}.md`
+   需要一起改
