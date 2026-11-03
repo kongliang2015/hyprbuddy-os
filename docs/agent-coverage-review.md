@@ -186,7 +186,7 @@ P3 skill 清理（可与 P2 并行）
 | P0 `sys-log` | OK 2026-11-03 | 薄封装 journalctl，支持 --system/--since/--unit/--grep/--json；自动去 ANSI |
 | P1 `sys-rollback` | OK 2026-11-03 | 列 21 代 + 打印 switch/boot 命令，--json；只读 |
 | P1 `sys-gc` | OK 2026-11-03 | df 分区 + dead 路径 3041 个 / 可回收上限 22.2G；--fast/--json |
-| P1 `sys-update` | 待做 | |
+| P1 `sys-update` | OK 2026-11-03 | 只读列输入 / --check 临时副本试更新(30s) / --apply 更新+构建+打印 switch |
 | P2 `net-status` | 待做 | |
 | P2 `power-status` | 待做 | |
 | P3 skill 清理 | 待做 | `scifi-ui`、`theme-create` |
