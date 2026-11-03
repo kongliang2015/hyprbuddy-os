@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# @command: net-status
+# @summary: 网络状态检查（接口/路由/Wi-Fi/网关连通性/DNS 解析），只读
+# @category: check
+# @usage: net-status [--json]
+# @effect: 只读；网关不可达或 DNS 解析全失败时退出码 1
+# @doc: agent-coverage-review.md
+#
+# 设计：四件事回答「为什么连不上」——
+#   1) 有没有拿到地址  2) 默认路由指向谁  3) 网关通不通  4) DNS 解析得出来吗
+# 每项都带耗时，便于区分「慢」和「断」。
+set -uo pipefail
+
+JSON=0
+[ "${1:-}" = "--json" ] && JSON=1
+
+# ── 接口 ──────────────────────────────────────────────
+ifaces=$(ip -brief addr show 2>/dev/null)
+
+# ── 默认路由 ──────────────────────────────────────────
+defrt=$(ip route show default 2>/dev/null | head -1)
+gw=$(printf "%s" "$defrt" | awk '{for(i=1;i<=NF;i++) if($i=="via") print $(i+1)}')
+dev=$(printf "%s" "$defrt" | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')
+
+# ── Wi-Fi ─────────────────────────────────────────────
+ssid=""; signal=""
+if command -v nmcli >/dev/null 2>&1; then
+  # LC_ALL=C：中文环境里 ACTIVE 是「是/否」，字段比较会失效
+  line=$(LC_ALL=C nmcli -t -f ACTIVE,SSID,SIGNAL dev wifi 2>/dev/null | awk -F: '$1=="yes"{print; exit}')
+  if [ -n "$line" ]; then
+    ssid=$(printf "%s" "$line" | cut -d: -f2)
+    signal=$(printf "%s" "$line" | cut -d: -f3)
+  fi
+fi
+
+# ── 网关连通性（1 包，1s 超时）─────────────────────────
+gw_ok=0; gw_ms=""
+if [ -n "$gw" ]; then
+  # LC_ALL=C：中文 locale 下 ping 输出「时间=3.24 毫秒」，正则匹配不到 time=
+  if out=$(LC_ALL=C ping -c1 -W1 "$gw" 2>/dev/null); then
+    gw_ok=1
+    gw_ms=$(printf "%s" "$out" | sed -n 's/.*time=\([0-9.]*\).*/\1/p' | head -1)
+  fi
+fi
+
+# ── DNS（3 个域名，逐个体检）───────────────────────────
+dns_rows=(); dns_ok=0; dns_try=0
+for host in baidu.com github.com example.com; do
+  dns_try=$((dns_try+1))
+  t0=$(date +%s%N)
+  addr=$(timeout 3 getent hosts "$host" 2>/dev/null | awk 'NR==1{print $1}')
+  t1=$(date +%s%N)
+  ms=$(( (t1-t0)/1000000 ))
+  if [ -n "$addr" ]; then
+    dns_ok=$((dns_ok+1))
+    dns_rows+=("$(printf "%-14s %-16s %5s ms  ✓" "$host" "$addr" "$ms")")
+  else
+    dns_rows+=("$(printf "%-14s %-16s %5s ms  ✗" "$host" "-" "$ms")")
+  fi
+done
+
+bad=0
+[ "$gw_ok" = 1 ] || bad=1
+[ "$dns_ok" -gt 0 ] || bad=1
+
+if [ "$JSON" = 1 ]; then
+  printf '{"default_route":{"gateway":"%s","device":"%s","reachable":%s,"rtt_ms":%s},' \
+    "${gw:-}" "${dev:-}" "$([ "$gw_ok" = 1 ] && echo true || echo false)" "${gw_ms:-null}"
+  printf '"wifi":{"ssid":"%s","signal":%s},' "${ssid:-}" "${signal:-null}"
+  printf '"dns":{"resolved":%s,"tried":%s},"ok":%s}\n' "$dns_ok" "$dns_try" "$([ "$bad" = 0 ] && echo true || echo false)"
+  exit $bad
+fi
+
+echo "网络状态  $(date +%F' '%T)"
+echo
+echo "接口"
+printf "%s\n" "$ifaces" | sed "s/^/  /"
+echo
+if [ -n "$defrt" ]; then
+  printf "路由   默认经 %s（%s）\n" "${gw:-?}" "${dev:-?}"
+else
+  echo "路由   无默认路由（无法访问外网）"
+fi
+[ -n "$ssid" ] && printf "Wi-Fi  %s（信号 %s%%）\n" "$ssid" "$signal"
+echo
+if [ -n "$gw" ]; then
+  printf "连通   网关 %-15s %6s ms  %s\n" "$gw" "${gw_ms:-?}" "$([ "$gw_ok" = 1 ] && echo ✓ || echo ✗)"
+else
+  echo "连通   无网关可测"
+fi
+echo "DNS"
+for r in "${dns_rows[@]}"; do printf "  %s\n" "$r"; done
+echo
+[ "$bad" = 0 ] && echo "结论   OK" || echo "结论   有异常（网关不通或 DNS 全部失败）"
+exit $bad

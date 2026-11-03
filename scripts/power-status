@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# @command: power-status
+# @summary: 电源与散热状态（性能档位/CPU 温度/电池/亮度/空闲抑制），只读
+# @category: check
+# @usage: power-status [--json]
+# @effect: 只读；电池电量 <10% 时退出码 1
+# @doc: agent-coverage-review.md
+#
+# 台式机没有电池/背光时对应项显示「—」，不算异常。
+set -uo pipefail
+
+JSON=0
+[ "${1:-}" = "--json" ] && JSON=1
+
+# ── 性能档位 ──────────────────────────────────────────
+profile=""
+if command -v powerprofilesctl >/dev/null 2>&1; then
+  profile=$(timeout 2 powerprofilesctl get 2>/dev/null | head -1)
+fi
+
+# ── CPU 温度（优先 k10temp/coretemp/zenpower）──────────
+temp=""; temp_label=""
+for name_f in /sys/class/hwmon/hwmon*/name; do
+  [ -r "$name_f" ] || continue
+  n=$(cat "$name_f" 2>/dev/null)
+  case "$n" in k10temp|coretemp|zenpower|cpu_thermal|acpitz) ;; *) continue ;; esac
+  d=$(dirname "$name_f")
+  for tf in "$d"/temp*_input; do
+    [ -r "$tf" ] || continue
+    v=$(cat "$tf" 2>/dev/null) || continue
+    temp=$(( v / 1000 ))
+    lb="$d/$(basename "$tf" _input)_label"
+    [ -r "$lb" ] && temp_label=$(cat "$lb" 2>/dev/null)
+    break 2
+  done
+done
+
+# ── 电池 ──────────────────────────────────────────────
+bat_cap=""; bat_state=""
+for b in /sys/class/power_supply/BAT*; do
+  [ -d "$b" ] || continue
+  [ -r "$b/capacity" ] && bat_cap=$(cat "$b/capacity" 2>/dev/null)
+  [ -r "$b/status" ] && bat_state=$(cat "$b/status" 2>/dev/null)
+  break
+done
+
+# ── 背光 ──────────────────────────────────────────────
+bl=""; bl_max=""
+for d in /sys/class/backlight/*; do
+  [ -d "$d" ] || continue
+  [ -r "$d/brightness" ] && bl=$(cat "$d/brightness" 2>/dev/null)
+  [ -r "$d/max_brightness" ] && bl_max=$(cat "$d/max_brightness" 2>/dev/null)
+  break
+done
+bl_pct=""
+if [ -n "$bl" ] && [ -n "$bl_max" ] && [ "$bl_max" -gt 0 ] 2>/dev/null; then
+  bl_pct=$(( bl * 100 / bl_max ))
+fi
+
+# ── 空闲抑制（谁在阻止休眠）────────────────────────────
+inhibits=""
+if command -v systemd-inhibit >/dev/null 2>&1; then
+  inhibits=$(systemd-inhibit --list --no-pager 2>/dev/null | grep -c "block" || true)
+fi
+
+bad=0
+if [ -n "$bat_cap" ] && [ "$bat_cap" -lt 10 ] 2>/dev/null; then bad=1; fi
+
+if [ "$JSON" = 1 ]; then
+  printf '{"profile":"%s","cpu_temp_c":%s,"cpu_temp_label":"%s",' \
+    "${profile:-}" "${temp:-null}" "${temp_label:-}"
+  printf '"battery":{"percent":%s,"state":"%s"},' "${bat_cap:-null}" "${bat_state:-}"
+  printf '"backlight":{"raw":%s,"max":%s,"percent":%s},' "${bl:-null}" "${bl_max:-null}" "${bl_pct:-null}"
+  printf '"inhibitors":%s,"ok":%s}\n' "${inhibits:-0}" "$([ "$bad" = 0 ] && echo true || echo false)"
+  exit $bad
+fi
+
+echo "电源与散热  $(date +%F' '%T)"
+echo
+printf "性能档位  %s\n" "${profile:-(未取到，power-profiles-daemon 可能未运行)}"
+if [ -n "$temp" ]; then
+  printf "CPU 温度  %s°C%s\n" "$temp" "${temp_label:+（$temp_label）}"
+else
+  echo "CPU 温度  —（未找到传感器）"
+fi
+if [ -n "$bat_cap" ]; then
+  printf "电池      %s%%（%s）\n" "$bat_cap" "${bat_state:-未知}"
+else
+  echo "电池      —（无电池，台式机）"
+fi
+if [ -n "$bl_pct" ]; then
+  printf "屏幕亮度  %s%%（%s/%s）\n" "$bl_pct" "$bl" "$bl_max"
+else
+  echo "屏幕亮度  —（无背光设备）"
+fi
+printf "空闲抑制  %s 条（阻止休眠的 inhibitor）\n" "${inhibits:-0}"
+echo
+[ "$bad" = 0 ] && echo "结论      OK" || echo "结论      电池电量偏低"
+exit $bad

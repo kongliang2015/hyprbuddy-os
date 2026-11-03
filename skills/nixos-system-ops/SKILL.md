@@ -24,6 +24,8 @@ description: hyprland-nixos 系统运维入口：机器变慢、服务挂了、�
 | "某个服务挂了" | `svc-status` | `sys-log --unit <name> -n 100` |
 | "桌面没反应 / 面板不见了" | `desktop-check` | 再 `svc-status`、`sys-log --grep noctalia` |
 | "报错了，看下日志" | `sys-log --level err -n 100` | 加 `--unit` / `--since` 收窄 |
+| "连不上网 / 网速异常" | `net-status` | 看网关通不通、DNS 能不能解析 |
+| "发烫 / 风扇吵 / 想换性能档" | `power-status` | 看温度、档位、谁在阻止休眠 |
 | "磁盘满了 / nix store 太大" | `sys-gc` | 按提示跑 `sudo nix-collect-garbage …` |
 | "升级 / 回滚" | `sys-update --check` · `sys-rollback` | 见 `lifecycle.md` |
 | "崩溃 / core dump" | 技能 `diagnose-crash` | — |
@@ -37,6 +39,8 @@ description: hyprland-nixos 系统运维入口：机器变慢、服务挂了、�
 | `svc-status [unit…] [--json]` | ✅ | failed/not-found/进程缺失 → 1 | 0.2s | 7 个关键单元，`inactive` 视为按需启动 |
 | `sys-log [--user\|--system] [--since T] [--unit U] [--grep P] [-n N] [--level L] [--json]` | ✅ | 仅权限问题 → 1 | <0.1s | journalctl 薄封装，自动去 ANSI |
 | `sys-rollback [--limit N] [--json]` | ✅ | 0 | <0.1s | 列世代 + 打印 switch/boot 命令 |
+| `net-status [--json]` | ✅ | 网关不通或 DNS 全失败 → 1 | ~5s | 接口/路由/Wi-Fi/网关时延/DNS 解析 |
+| `power-status [--json]` | ✅ | 电池 <10% → 1 | <0.1s | 性能档位/CPU 温度/电池/亮度/空闲抑制 |
 | `sys-gc [--fast] [--json]` | ✅ | 0 | 9s（`--fast` 8s） | 分区占用、dead 路径、可回收上限 |
 | `sys-update [--check\|--apply] [--host H] [--json]` | 默认/`--check` ✅ | `--check` 有更新 → 1 | 30s（联网） | 更新 flake 输入并构建 |
 
