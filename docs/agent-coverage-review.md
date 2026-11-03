@@ -187,8 +187,8 @@ P3 skill 清理（可与 P2 并行）
 | P1 `sys-rollback` | OK 2026-11-03 | 列 21 代 + 打印 switch/boot 命令，--json；只读 |
 | P1 `sys-gc` | OK 2026-11-03 | df 分区 + dead 路径 3041 个 / 可回收上限 22.2G；--fast/--json |
 | P1 `sys-update` | OK 2026-11-03 | 只读列输入 / --check 临时副本试更新(30s) / --apply 更新+构建+打印 switch |
-| P2 `net-status` | 待做 | |
-| P2 `power-status` | 待做 | |
+| P2 `net-status` | OK 2026-11-04 | 接口/路由/Wi-Fi/网关 RTT/DNS，~5s |
+| P2 `power-status` | OK 2026-11-04 | 档位/温度/电池/亮度/抑制，<0.1s |
 | P3 skill 清理 | 待做 | `scifi-ui`、`theme-create` |
 
 ## 10. 实施小结（P0 + P1 已完成，2026-11-03）
@@ -232,3 +232,14 @@ P3 skill 清理（可与 P2 并行）
 
 P2（`net-status` / `power-status`）与 P3（`scifi-ui`、`theme-create` 清理）尚未实施，
 因此网络与电源仍无专属入口。
+### 10.5 P2 补充（2026-11-04）
+
+| 命令 | 分类 | 用途 | 退出码 1 的条件 | 耗时 |
+|---|---|---|---|---|
+| `net-status` | check | 接口/路由/Wi-Fi SSID/网关 RTT/DNS 解析 | 网关不通或 DNS 全部失败 | ~5s |
+| `power-status` | check | 性能档位/CPU 温度/电池/背光/空闲抑制 | 电池 <10% | <0.1s |
+
+命令总数 24 → **26**；网络与电源不再是空白。
+
+`net-status` 的一个坑值得记：**必须 `LC_ALL=C` 调 nmcli 与 ping**。中文 locale 下
+nmcli 的 ACTIVE 字段是「是/否」、ping 输出是「时间=3.24 毫秒」，按英文正则解析会全部失败。
