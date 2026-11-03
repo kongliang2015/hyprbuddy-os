@@ -12,12 +12,12 @@
 
 buildNpmPackage rec {
   pname = "codebuddy";
-  version = "2.173.0";
+  version = "2.179.2";
 
   src = fetchurl {
     # npmmirror 国内镜像（npmjs.org 直连 Cloudflare 易卡死）；内容与官方 registry 一致
     url = "https://registry.npmmirror.com/@tencent-ai/codebuddy-code/-/codebuddy-code-${version}.tgz";
-    hash = "sha256-vC2xVH18Hb0slsooQ7pqbWamKuEQeAPhe8XcbOccLCE=";
+    hash = "sha256-mEEHFxK+657EUYpnKHKjEK7MSZyAnVFboOPCODyt0u8=";
   };
 
   # registry 的 tarball 解包后根目录是 package/
@@ -28,7 +28,7 @@ buildNpmPackage rec {
     cp ${./package-lock.json} package-lock.json
   '';
 
-  npmDepsHash = "sha256-88CpnPER9sTRnPNPBFdUiwMjNZ7dxkV6HfT1YCZIZPw=";
+  npmDepsHash = "sha256-et69SHePnK3WrVSp7o4BRKl/vMQIon27oyOpgdBHNvg=";
 
   # 包内自带 dist/ 构建产物，无需再 npm run build
   dontNpmBuild = true;
