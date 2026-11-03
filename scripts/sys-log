@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# @command: sys-log
+# @summary: 日志查询（journalctl 的薄封装，缺省查用户日志本次启动最近 50 条），只读
+# @category: check
+# @usage: sys-log [--user|--system] [--since T] [--unit U] [--grep PAT] [-n N] [--level L] [--json] [-- 额外参数]
+# @effect: 只读，输出原样 journal 行（--json 时为 json-lines）
+# @doc: agent-coverage-review.md
+#
+# 设计：不加工内容，只补默认值，保证输出可追溯。
+#   --user    查用户日志（默认）
+#   --system  查系统日志（无权限时会提示，不报错退出）
+#   --since   透传 journalctl 语法（"1 hour ago" / "today" / "2026-10-29 10:00"）
+#   --level   err / warning / info / debug（映射 -p）
+#   --json    输出 json-lines（-o json）
+#   --        其后的参数原样交给 journalctl
+set -uo pipefail
+
+scope="--user"
+since=""
+unit=""
+grep_pat=""
+lines=50
+level=""
+fmt=""
+extra=()
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --user)   scope="--user"; shift ;;
+    --system) scope=""; shift ;;
+    --since)  since="${2:-}"; shift 2 ;;
+    --unit|-u) unit="${2:-}"; shift 2 ;;
+    --grep|-g) grep_pat="${2:-}"; shift 2 ;;
+    -n)       lines="${2:-50}"; shift 2 ;;
+    --level|-p) level="${2:-}"; shift 2 ;;
+    --json)   fmt="json"; shift ;;
+    --)       shift; extra+=("$@"); break ;;
+    -h|--help) sed -n "2,12p" "$0" | sed "s/^# //"; exit 0 ;;
+    *) echo "未知参数: $1（用 --help 查看用法）" >&2; exit 2 ;;
+  esac
+done
+
+args=(journalctl $scope -b --no-pager -n "$lines")
+[ -n "$since" ] && args+=(--since "$since")
+[ -n "$unit" ] && args+=(--unit "$unit")
+[ -n "$level" ] && args+=(-p "$level")
+[ "$fmt" = json ] && args+=(-o json)
+[ ${#extra[@]} -gt 0 ] && args+=("${extra[@]}")
+
+# 系统日志无权限时给出明确提示（普通用户不在 systemd-journal 组）
+if [ -z "$scope" ] && ! journalctl -b -n 1 --no-pager >/dev/null 2>&1; then
+  echo "系统日志需要提权：sudo journalctl -b -n $lines" >&2
+  echo "（或把用户加入 systemd-journal 组：sudo usermod -aG systemd-journal $USER）" >&2
+  exit 1
+fi
+
+# 去掉消息体内的 ANSI 序列（部分程序自己带颜色，journalctl 不会清）
+if [ -n "$grep_pat" ]; then
+  "${args[@]}" 2>/dev/null | grep -i -- "$grep_pat" | sed -E 's/\x1B\[[0-9;]*[mK]//g'
+else
+  "${args[@]}" | sed -E 's/\x1B\[[0-9;]*[mK]//g'
+fi
