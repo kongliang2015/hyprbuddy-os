@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# @command: sys-health
+# @summary: 系统健康总览（磁盘/内存/负载/温度/服务/日志/关键进程），只读
+# @category: check
+# @usage: sys-health [--json]
+# @effect: 只读；磁盘使用率 >=90% 或存在 failed 单元时退出码 1
+# @doc: agent-coverage-review.md
+#
+# 设计：一条命令回答「机器现在怎么样」。只读、无 sudo、<2s。
+# 系统日志在无权限时标记为 n/a，不报错退出。
+set -uo pipefail
+
+JSON=0
+[ "${1:-}" = "--json" ] && JSON=1
+
+# ── 磁盘 ──────────────────────────────────────────────
+disk_lines=""
+seen_src=""
+for target in / "$HOME"; do
+  read -r src size used pcent _ < <(df -P -h "$target" 2>/dev/null | awk 'NR==2{print $1, $2, $3, $5, $6}')
+  [ -n "${src:-}" ] || continue
+  case " $seen_src " in *" $src "*) continue ;; esac
+  seen_src="$seen_src $src"
+  disk_lines="${disk_lines}${target}	${used}/${size}	${pcent}
+"
+done
+
+# ── 内存 ──────────────────────────────────────────────
+mem=$(awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}/SwapTotal/{st=$2}/SwapFree/{sf=$2}END{printf "%.1f %.1f %.1f %.1f", (t-a)/1048576, t/1048576, (st-sf)/1048576, st/1048576}' /proc/meminfo)
+read -r mem_used mem_total swap_used swap_total <<< "$mem"
+
+# ── 负载 ──────────────────────────────────────────────
+read -r l1 l5 l15 _ < /proc/loadavg
+cores=$(nproc 2>/dev/null || echo "?")
+
+# ── 温度（hwmon 里找 CPU 传感器，优先 k10temp/coretemp）─────
+temp=""
+for name_f in /sys/class/hwmon/hwmon*/name; do
+  [ -r "$name_f" ] || continue
+  n=$(cat "$name_f" 2>/dev/null)
+  case "$n" in k10temp|coretemp|zenpower|cpu_thermal|acpitz) ;; *) continue ;; esac
+  for t_f in "$(dirname "$name_f")"/temp*_input; do
+    [ -r "$t_f" ] || continue
+    v=$(cat "$t_f" 2>/dev/null) || continue
+    temp=$(( v / 1000 ))
+    break 2
+  done
+done
+
+# ── 服务 ──────────────────────────────────────────────
+failed_user=$(systemctl --user --failed --no-legend --plain 2>/dev/null | wc -l)
+failed_sys=$(systemctl --failed --no-legend --plain 2>/dev/null | wc -l)
+
+# ── 日志（最近 1 小时 error）─────────────────────────────
+err_user=$(journalctl --user -b --since "1 hour ago" -p err --no-pager -q 2>/dev/null | wc -l)
+err_sys=$(journalctl -b --since "1 hour ago" -p err --no-pager -q 2>/dev/null | wc -l)
+journal_readable=1
+journalctl -b -n 1 --no-pager -q >/dev/null 2>&1 || journal_readable=0
+
+# ── 关键进程 ───────────────────────────────────────────
+check() {  # $1=进程名 $2=命令行片段
+  pgrep -x "$1" >/dev/null 2>&1 || pgrep -f "$2" >/dev/null 2>&1 && echo up || echo down; }
+p_niri=$(check niri "bin/niri")
+p_noctalia=$(check noctalia "^noctalia")
+p_fcitx=$(check fcitx5 "bin/fcitx5")
+p_polkit=$(check polkit-kde-authentication-agent "polkit-(kde|gnome)-authentication-agent")
+
+# ── 判定 ──────────────────────────────────────────────
+bad=0
+for p in "$p_niri" "$p_noctalia" "$p_fcitx" "$p_polkit"; do [ "$p" = down ] && bad=1; done
+[ "$failed_user" -gt 0 ] 2>/dev/null && bad=1
+[ "$failed_sys" -gt 0 ] 2>/dev/null && bad=1
+while IFS=$'\t' read -r _ _ pcent; do
+  n=${pcent%\%}
+  [ "${n:-0}" -ge 90 ] 2>/dev/null && bad=1
+done < <(printf "%b" "$disk_lines")
+
+if [ "$JSON" = 1 ]; then
+  printf '{"disk":['
+  first=1
+  while IFS=$'\t' read -r target usage pcent; do
+    [ -z "${target:-}" ] && continue
+    [ $first -eq 0 ] && printf ','
+    printf '{"mount":"%s","usage":"%s","percent":"%s"}' "$target" "$usage" "$pcent"
+    first=0
+  done < <(printf "%b" "$disk_lines")
+  printf '],"memory":{"used_gb":%s,"total_gb":%s,"swap_used_gb":%s,"swap_total_gb":%s},' \
+    "$mem_used" "$mem_total" "$swap_used" "$swap_total"
+  printf '"load":{"1m":%s,"5m":%s,"15m":%s,"cores":%s},' "$l1" "$l5" "$l15" "$cores"
+  printf '"cpu_temp_c":%s,' "${temp:-null}"
+  printf '"services":{"failed_user":%s,"failed_system":%s},' "$failed_user" "$failed_sys"
+  printf '"errors_1h":{"user":%s,"system":%s,"system_readable":%s},' "$err_user" "$err_sys" "$journal_readable"
+  printf '"processes":{"niri":"%s","noctalia":"%s","fcitx5":"%s","polkit":"%s"},' \
+    "$p_niri" "$p_noctalia" "$p_fcitx" "$p_polkit"
+  printf '"ok":%s}' "$([ "$bad" = 0 ] && echo true || echo false)"
+  echo
+  exit $bad
+fi
+
+echo "系统健康  $(date +%F' '%T)"
+echo
+echo "磁盘"
+printf "%b" "$disk_lines" | while IFS=$'\t' read -r target usage pcent; do
+  [ -z "${target:-}" ] && continue
+  printf "  %-8s %-14s %s\n" "$target" "$usage" "$pcent"
+done
+echo "内存    ${mem_used}G 已用 / ${mem_total}G    swap ${swap_used}G / ${swap_total}G"
+echo "负载    ${l1} ${l5} ${l15}   (${cores} 核)"
+[ -n "$temp" ] && echo "温度    CPU ${temp}°C" || echo "温度    (未找到传感器)"
+echo "服务    用户 ${failed_user} 失败 · 系统 ${failed_sys} 失败"
+if [ "$journal_readable" = 1 ]; then
+  echo "日志    最近 1h error: user ${err_user} 条 / system ${err_sys} 条"
+else
+  echo "日志    最近 1h error: user ${err_user} 条 / system n/a（无读权限）"
+fi
+printf "进程    niri %s · noctalia %s · fcitx5 %s · polkit %s\n" "$p_niri" "$p_noctalia" "$p_fcitx" "$p_polkit"
+echo
+if [ "$bad" = 0 ]; then echo "结论    OK"; else echo "结论    有告警（详见上方 ! 项或 failed 单元）"; fi
+exit $bad
