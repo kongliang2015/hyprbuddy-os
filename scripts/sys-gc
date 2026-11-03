@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# @command: sys-gc
+# @summary: Nix store 体积、可回收估算与清理命令（只读，不执行 GC）
+# @category: check
+# @usage: sys-gc [--fast] [--json]
+# @effect: 只读：统计 store 占用与 dead 路径，只打印清理命令
+# @doc: agent-coverage-review.md
+#
+# 说明：
+#   - 固定成本：nix-store --gc --print-dead 约 8s（不可省）
+#   - 默认额外算「可回收上限」（dead 路径 narSize 之和），总计约 9–10s；
+#     --fast 跳过体积估算，只给数量
+#   - 该上限不考虑共享依赖，实际回收通常更少
+#   - 不执行任何删除动作；需要 sudo 的命令只打印
+set -uo pipefail
+
+FAST=0
+JSON=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --fast) FAST=1; shift ;;
+    --json) JSON=1; shift ;;
+    -h|--help) sed -n "2,13p" "$0" | sed "s/^# //"; exit 0 ;;
+    *) echo "未知参数: $1" >&2; exit 2 ;;
+  esac
+done
+
+# 文件系统占用（快）
+read -r fs_used fs_size fs_pct < <(df -h /nix/store 2>/dev/null | awk 'NR==2{print $3, $2, $5}')
+
+# 世代数
+gen_total=$(ls -d /nix/var/nix/profiles/system-*-link 2>/dev/null | wc -l)
+gen_cur=$(readlink /nix/var/nix/profiles/system 2>/dev/null | grep -oE 'system-[0-9]+-link' | grep -oE '[0-9]+' | head -1)
+
+# dead 路径
+dead_file=$(mktemp)
+trap 'rm -f "$dead_file"' EXIT
+nix-store --gc --print-dead >"$dead_file" 2>/dev/null || true
+dead_count=$(wc -l <"$dead_file")
+
+dead_gb=""
+if [ "$FAST" = 0 ] && [ "$dead_count" -gt 0 ]; then
+  dead_gb=$(nix path-info --stdin --json <"$dead_file" 2>/dev/null \
+    | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+v=d.values() if isinstance(d,dict) else d
+t=sum(x.get("narSize") or 0 for x in v if isinstance(x,dict))
+print(round(t/1e9,1))' 2>/dev/null)
+fi
+
+if [ "$JSON" = 1 ]; then
+  printf '{"store":{"used":"%s","size":"%s","percent":"%s"},' "${fs_used:-?}" "${fs_size:-?}" "${fs_pct:-?}"
+  printf '"generations":{"count":%s,"current":%s},' "$gen_total" "${gen_cur:-null}"
+  printf '"dead":{"paths":%s,"reclaimable_gb":%s}}\n' "$dead_count" "${dead_gb:-null}"
+  exit 0
+fi
+
+echo "Nix store 概况"
+echo "  所在分区    ${fs_used:-?} / ${fs_size:-?}（${fs_pct:-?} 已用）"
+echo "  系统世代    ${gen_total} 个（当前${gen_cur:+ 第 $gen_cur 代}）"
+echo "  可回收路径  ${dead_count} 个"
+if [ -n "$dead_gb" ]; then
+  echo "  可回收上限  约 ${dead_gb} GB（nar 合计，未扣除共享依赖）"
+elif [ "$FAST" = 1 ]; then
+  echo "  （--fast：跳过体积估算）"
+fi
+echo
+echo "清理命令（需 sudo，脚本不执行）："
+echo "  # 只删旧世代，保留最近 3 天"
+echo "  sudo nix-collect-garbage --delete-older-than 3d"
+echo "  # 删掉除当前外全部世代（最彻底，失去回滚点）"
+echo "  sudo nix-collect-garbage -d"
+echo "  # 只回收不可达路径，不删世代"
+echo "  sudo nix-collect-garbage"
+echo
+echo "回滚点：sys-rollback 可查看现存世代"
