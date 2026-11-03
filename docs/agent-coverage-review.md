@@ -176,3 +176,17 @@ P3 skill 清理（可与 P2 并行）
 | `clipboard-menu` | runtime | 剪贴板历史选择器 |
 | `sddm-theme` | runtime | 查看/切换 SDDM 主题（下次注销生效） |
 | `show-sysinfo` / `sysinfo-os` | runtime | 系统信息弹窗 / OS 行 |
+
+## 9. 实施进度
+
+| 项 | 状态 | 说明 |
+|---|---|---|
+| P0 `sys-health` | ✅ 2026-11-03 | 7 组信息 + `--json`，150ms，已入 commands.json |
+| P0 `svc-status` | 待做 | |
+| P0 `sys-log` | 待做 | |
+| P1 `sys-rollback` | 待做 | |
+| P1 `sys-gc` | 待做 | |
+| P1 `sys-update` | 待做 | |
+| P2 `net-status` | 待做 | |
+| P2 `power-status` | 待做 | |
+| P3 skill 清理 | 待做 | `scifi-ui`、`theme-create` |
