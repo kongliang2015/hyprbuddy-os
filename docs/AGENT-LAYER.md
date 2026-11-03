@@ -1,6 +1,8 @@
 # Agent 层（NixOS 版）：设计与实现
 
-> **状态（2026-10-21）**：六层全部实现并通过实测验证。本文保留设计依据，内容已与代码同步；
+> **状态（2026-10-21 初稿）**：本文是设计依据，**部分内容已过时**（Hyprland / waybar / mako 均已退役，
+> 桌面栈现为 niri + Noctalia v5）。当前实现的覆盖度评审与补齐方案见
+> **`docs/agent-coverage-review.md`**（2026-10-29）。
 > 实现细节以代码为准。关联：`docs/ROADMAP.md`、`docs/TROUBLESHOOTING.md`、skill `nixos-desktop-settings`。
 >
 > 目标：在 NixOS + Hyprland 上实现 agent 层，并在声明式系统的约束下给出可执行路径。
