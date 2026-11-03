@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# @command: sys-rollback
+# @summary: 列出系统世代并打印回滚命令（只读，不执行）
+# @category: check
+# @usage: sys-rollback [--limit N] [--json]
+# @effect: 只读：读 /nix/var/nix/profiles 与 /run/current-system，只打印命令
+# @doc: agent-coverage-review.md
+#
+# 为什么要这条：回滚命令长且容易记错（system-N-link 的编号 vs --rollback），
+# agent 又不应执行 sudo，所以做成「列清单 + 打印可直接粘贴的命令」。
+set -uo pipefail
+
+LIMIT=10
+JSON=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --limit) LIMIT="${2:-10}"; shift 2 ;;
+    --json)  JSON=1; shift ;;
+    -h|--help) sed -n "2,9p" "$0" | sed "s/^# //"; exit 0 ;;
+    *) echo "未知参数: $1" >&2; exit 2 ;;
+  esac
+done
+
+cur_target=$(readlink -f /run/current-system 2>/dev/null)
+links=(/nix/var/nix/profiles/system-*-link)
+total=0
+for l in "${links[@]}"; do [ -e "$l" ] && total=$((total+1)); done
+
+gens=()   # 形如 "46|2026-10-28 23:53|9r42q6k3g3lv|*"
+for l in $(printf "%s\n" "${links[@]}" | sort -V); do
+  [ -e "$l" ] || continue
+  num=$(printf "%s" "$l" | sed -E 's#.*/system-([0-9]+)-link$#\1#')
+  date=$(stat -c %y "$l" | cut -c1-16)
+  tgt=$(readlink -f "$l" 2>/dev/null)
+  short=$(basename "${tgt:-?}" | cut -c1-13)
+  mark=""; [ "$tgt" = "$cur_target" ] && mark="*"
+  gens+=("$num|$date|$short|$mark")
+done
+
+cur_num=""
+for g in "${gens[@]}"; do
+  IFS="|" read -r n _ _ m <<< "$g"
+  [ "$m" = "*" ] && cur_num="$n"
+done
+
+show=("${gens[@]}")
+if [ "$total" -gt "$LIMIT" ]; then
+  show=("${gens[@]: -$LIMIT}")
+fi
+
+# 上一代 = 在当前代之前最近的那个
+prev=""
+for i in "${!gens[@]}"; do
+  IFS="|" read -r n _ _ m <<< "${gens[$i]}"
+  if [ "$m" = "*" ] && [ "$i" -gt 0 ]; then
+    IFS="|" read -r prev _ _ _ <<< "${gens[$((i-1))]}"
+  fi
+done
+
+if [ "$JSON" = 1 ]; then
+  printf '{"current":%s,"total":%s,"generations":[' "${cur_num:-null}" "$total"
+  first=1
+  for g in "${show[@]}"; do
+    IFS="|" read -r n d s m <<< "$g"
+    [ $first -eq 0 ] && printf ','
+    printf '{"gen":%s,"date":"%s","store":"%s","current":%s}' "$n" "$d" "$s" "$([ "$m" = "*" ] && echo true || echo false)"
+    first=0
+  done
+  printf '],"previous":%s}\n' "${prev:-null}"
+  exit 0
+fi
+
+printf "系统世代（共 %s 个，显示最近 %s 个）\n\n" "$total" "${#show[@]}"
+printf "    %-6s %-17s %s\n" "世代" "时间" "构建"
+for g in "${show[@]}"; do
+  IFS="|" read -r n d s m <<< "$g"
+  printf "  %s %-6s %-17s %s%s\n" "${m:- }" "$n" "$d" "$s" "${m:+   ← 当前运行}"
+done
+echo
+if [ -n "$prev" ]; then
+  echo "回滚到上一代（$prev）："
+  echo "  sudo /nix/var/nix/profiles/system-$prev-link/bin/switch-to-configuration switch"
+else
+  echo "没有更早的世代可回滚。"
+fi
+echo
+echo "回滚到指定代："
+echo "  sudo /nix/var/nix/profiles/system-<N>-link/bin/switch-to-configuration switch"
+echo "等价写法（仅回上一代）："
+echo "  sudo nixos-rebuild switch --rollback"
+echo
+echo "只改下次启动的默认项（不立即切换）："
+echo "  sudo /nix/var/nix/profiles/system-<N>-link/bin/switch-to-configuration boot"
