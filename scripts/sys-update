@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# @command: sys-update
+# @summary: 检查/更新 flake 输入并构建（不执行 switch）
+# @category: workflow
+# @usage: sys-update [--check|--apply] [--host NAME] [--json]
+# @effect: 默认只读；--apply 会改写 flake.lock 并构建；switch 只打印不执行
+# @doc: agent-coverage-review.md
+#
+#   sys-update                 只读：列当前锁定的输入 rev（秒回）
+#   sys-update --check         在临时副本里试更新，报告哪些输入有更新（联网，约 30s）
+#   sys-update --apply         实际更新 flake.lock → agent-apply 构建 → 打印 switch 命令
+#   --host NAME                默认 leonard（本机 hostname 是 nixos，与 hosts/ 目录名不同）
+#
+# 说明：nix flake update 没有 --dry-run，所以 --check 用「复制 flake.nix+lock 到临时目录
+# 里真跑一次」的方式，不改动仓库。
+set -uo pipefail
+
+REPO="${HYPRLAND_NIXOS_REPO:-$HOME/hyprland-nixos}"
+MODE="info"
+HOST="leonard"
+JSON=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --check) MODE="check"; shift ;;
+    --apply) MODE="apply"; shift ;;
+    --host)  HOST="${2:-leonard}"; shift 2 ;;
+    --json)  JSON=1; shift ;;
+    -h|--help) sed -n "2,16p" "$0" | sed "s/^# //"; exit 0 ;;
+    *) echo "未知参数: $1" >&2; exit 2 ;;
+  esac
+done
+
+cd "$REPO" || { echo "仓库不存在: $REPO" >&2; exit 1; }
+[ -f flake.lock ] || { echo "缺少 flake.lock" >&2; exit 1; }
+
+lock_hash() { python3 - "$1" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1]))
+out=[]
+for k,v in sorted(d.get("nodes",{}).items()):
+    if k=="root": continue
+    l=v.get("locked") or {}
+    out.append(f"{k} {l.get('rev') or l.get('narHash','?')[:24]}")
+print("\n".join(out))
+PY
+}
+
+case "$MODE" in
+info)
+  if [ "$JSON" = 1 ]; then
+    python3 -c 'import json;d=json.load(open("flake.lock"));print(json.dumps({k:(v.get("locked",{}) or {}) for k,v in d["nodes"].items() if k!="root"}))'
+  else
+    echo "当前 flake 输入（flake.lock）："
+    lock_hash flake.lock | sed "s/^/  /"
+    echo
+    echo "检查更新：sys-update --check"
+    echo "应用更新：sys-update --apply [--host $HOST]（会改写 flake.lock 并构建）"
+  fi
+  exit 0
+  ;;
+check)
+  tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+  cp flake.nix flake.lock "$tmp"/
+  echo "在临时副本里试更新（联网，可能需要 10–60s）…" >&2
+  if ! ( cd "$tmp" && timeout 300 nix flake update >/dev/null 2>"$tmp/err" ); then
+    echo "更新失败：" >&2; tail -3 "$tmp/err" >&2; exit 1
+  fi
+  if cmp -s flake.lock "$tmp/flake.lock"; then
+    [ "$JSON" = 1 ] && { echo '{"changed":false,"inputs":[]}'; exit 0; }
+    echo "已是最新：无输入变化"
+    exit 0
+  fi
+  changed=$(diff <(lock_hash flake.lock) <(lock_hash "$tmp/flake.lock") | sed -n "s/^[<>] \([^ ]*\).*/\1/p" | sort -u | tr "\n" " ")
+  if [ "$JSON" = 1 ]; then
+    printf '{"changed":true,"inputs":[%s]}\n' "$(printf "%s" "$changed" | sed "s/ /\",\"/g;s/^/\"/;s/ $/\"/")"
+    exit 1
+  fi
+  echo "有更新：${changed}"
+  echo
+  echo "应用：sys-update --apply --host $HOST"
+  exit 1
+  ;;
+apply)
+  before=$(lock_hash flake.lock)
+  echo "更新 flake.lock …" >&2
+  if ! timeout 600 nix flake update; then echo "flake update 失败" >&2; exit 1; fi
+  after=$(lock_hash flake.lock)
+  if [ "$before" = "$after" ]; then
+    echo "输入无变化，跳过构建。"
+    exit 0
+  fi
+  echo
+  echo "已变更的输入："
+  diff <(printf "%s\n" "$before") <(printf "%s\n" "$after") | sed -n "s/^[<>] \([^ ]*\).*/  \1/p" | sort -u
+  echo
+  echo "构建中：agent-apply $HOST" >&2
+  if ! "$REPO/scripts/agent-apply" "$HOST"; then
+    echo "构建失败——flake.lock 已更新，可用 git checkout flake.lock 撤销" >&2
+    exit 1
+  fi
+  echo
+  echo "下一步（需你执行）："
+  echo "  sudo nixos-rebuild switch --flake $REPO#$HOST"
+  echo "  # 记得把 flake.lock 一起提交：git add flake.lock && git commit -m \"chore(flake): update inputs\""
+  exit 0
+  ;;
+esac
