@@ -189,7 +189,7 @@ P3 skill 清理（可与 P2 并行）
 | P1 `sys-update` | OK 2026-11-03 | 只读列输入 / --check 临时副本试更新(30s) / --apply 更新+构建+打印 switch |
 | P2 `net-status` | OK 2026-11-04 | 接口/路由/Wi-Fi/网关 RTT/DNS，~5s |
 | P2 `power-status` | OK 2026-11-04 | 档位/温度/电池/亮度/抑制，<0.1s |
-| P3 skill 清理 | 待做 | `scifi-ui`、`theme-create` |
+| P3 skill 清理 | OK 2026-11-04 | scifi-ui 234→109 行（只剩 SDDM/kitty/fuzzel）、theme-create 125→104 行（改 tokens.json 管线） |
 
 ## 10. 实施小结（P0 + P1 已完成，2026-11-03）
 
