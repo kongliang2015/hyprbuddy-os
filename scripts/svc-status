@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# @command: svc-status
+# @summary: 关键服务状态（用户级 + 系统级 + 进程型），只读
+# @category: check
+# @usage: svc-status [unit...] [--json]
+# @effect: 只读；单元 failed/not-found 或关键进程缺失时退出码 1（inactive 视为按需启动）
+# @doc: agent-coverage-review.md
+#
+# 默认检查：
+#   user   niri.service fcitx5.service polkit-agent.service
+#   system display-manager.service udisks2.service power-profiles-daemon.service
+#   proc   noctalia（niri spawn 启动，没有 systemd 单元）
+# 自定义单元用 "user:name" / "system:name" 指定作用域，缺省按 user 处理。
+set -uo pipefail
+
+JSON=0
+UNITS=()
+for a in "$@"; do
+  case "$a" in
+    --json) JSON=1 ;;
+    *) UNITS+=("$a") ;;
+  esac
+done
+
+if [ ${#UNITS[@]} -eq 0 ]; then
+  UNITS=(user:niri.service user:fcitx5.service user:polkit-agent.service \
+         system:display-manager.service system:udisks2.service system:power-profiles-daemon.service \
+         proc:noctalia)
+fi
+
+strip() { sed -E 's/\x1B\[[0-9;]*[mK]//g' | tr -d "\r"; }
+
+prop() { # prop <--user|""> <unit> <Property>
+  if [ -n "${1:-}" ]; then
+    systemctl --user show -p "$3" --value "$2" 2>/dev/null
+  else
+    systemctl show -p "$3" --value "$2" 2>/dev/null
+  fi
+}
+
+bad=0
+rows=()
+json_items=()
+
+for spec in "${UNITS[@]}"; do
+  scope=${spec%%:*}
+  name=${spec#*:}
+  [ "$scope" = "$spec" ] && { scope=user; name=$spec; }
+
+  if [ "$scope" = proc ]; then
+    if pgrep -x "$name" >/dev/null 2>&1 || pgrep -f "^$name" >/dev/null 2>&1; then state=up; else state=down; bad=1; fi
+    pid=$(pgrep -f "^$name" | head -1)
+    since=$(ps -o lstart= -p "${pid:-0}" 2>/dev/null | tail -1 | awk '{print $4}')
+    last=$(journalctl --user -b --no-pager -o cat 2>/dev/null | grep -i "$name" | tail -1 | strip | cut -c1-52)
+    [ -n "$last" ] || last="—"
+    rows+=("$(printf "%-30s %-7s %-9s %-9s %s" "$name" "$scope" "$state" "${since:--}" "$last")")
+    json_items+=("{\"name\":\"$name\",\"scope\":\"proc\",\"state\":\"$state\"}")
+    continue
+  fi
+
+  flag=""; [ "$scope" = system ] || flag="--user"
+  active=$(prop "$flag" "$name" ActiveState)
+  load=$(prop "$flag" "$name" LoadState)
+  enter=$(prop "$flag" "$name" ActiveEnterTimestamp | awk '{print $3}')
+  jflag="--user"; [ "$scope" = system ] && jflag=""
+
+  if [ -z "$active" ] || [ "$load" = not-found ]; then
+    state=missing; bad=1; since="-"; last="单元不存在"
+  elif [ "$active" = failed ]; then
+    state=failed; bad=1; since="${enter:--}"
+    last=$(journalctl $jflag -b -u "$name" -n 1 -o cat --no-pager 2>/dev/null | tail -1 | strip | cut -c1-52)
+  elif [ "$active" = active ]; then
+    state=active; since="${enter:--}"
+    last=$(journalctl $jflag -b -u "$name" -n 1 -o cat --no-pager 2>/dev/null | tail -1 | strip | cut -c1-52)
+  else
+    state="$active"; since="${enter:--}"; last="（按需启动）"
+  fi
+  [ -n "$last" ] || last="—"
+
+  rows+=("$(printf "%-30s %-7s %-9s %-9s %s" "$name" "$scope" "$state" "$since" "$last")")
+  json_items+=("{\"name\":\"$name\",\"scope\":\"$scope\",\"state\":\"$state\",\"since\":\"$since\"}")
+done
+
+if [ "$JSON" = 1 ]; then
+  printf '{"units":[%s],"ok":%s}\n' "$(IFS=,; echo "${json_items[*]}")" "$([ "$bad" = 0 ] && echo true || echo false)"
+  exit $bad
+fi
+
+printf "%-30s %-7s %-9s %-9s %s\n" "单元" "作用域" "状态" "启动于" "最近日志"
+printf "%-30s %-7s %-9s %-9s %s\n" "------------------------------" "-------" "---------" "---------" "--------"
+for r in "${rows[@]}"; do printf "%s\n" "$r"; done
+echo
+[ "$bad" = 0 ] && echo "全部正常" || echo "有异常（failed / missing / 进程缺失）"
+exit $bad
