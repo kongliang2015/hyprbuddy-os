@@ -119,7 +119,26 @@ lib.mkIf cfg.desktop.enable {
     wantedBy = [ "graphical-session.target" ];
     partOf = [ "graphical-session.target" ];
     serviceConfig = {
-      ExecStart = polkitAgentExe;
+      # 与 fcitx5 同理：graphical-session.target 触发时 systemd 用户环境里可能还没有
+      # WAYLAND_DISPLAY，Qt 找不到平台插件会立刻崩（实测 NRestarts=2 才起来）。
+      # 包装脚本先等「环境变量 + socket 文件」就绪再 exec。
+      ExecStart = pkgs.writeShellScript "polkit-agent-start" ''
+        export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnused ]}:$PATH
+        wd=""
+        for _ in $(seq 1 100); do
+          wd=$(${config.systemd.package}/bin/systemctl --user show-environment 2>/dev/null \
+                | sed -n 's/^WAYLAND_DISPLAY=//p' | head -n1)
+          [ -n "$wd" ] && [ -S "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/$wd" ] && break
+          sleep 0.1
+        done
+        if [ -n "$wd" ]; then export WAYLAND_DISPLAY="$wd"; fi
+        # qt.style = adwaita-dark 会把 QT_STYLE_OVERRIDE 设成 adwaita-dark，而 KDE 代理的
+        # QML 对话框按 QtQuick Controls 样式名加载 → 报 module "adwaita-dark" is not installed，
+        # 认证框根本弹不出来（实测：只记 REQUEST 后 polkitd 报 FAILED）。
+        unset QT_STYLE_OVERRIDE
+        export QT_QUICK_CONTROLS_STYLE=Basic
+        exec ${polkitAgentExe}
+      '';
       Restart = "on-failure";
     };
   };
@@ -139,6 +158,7 @@ lib.mkIf cfg.desktop.enable {
     wf-recorder # 屏幕录制
     swappy # 截图标注
     libnotify # notify-send
+    xcb-util-cursor # libxcb-cursor：Qt xcb 平台插件的依赖（X11 回退时用）
     thunar # 文件管理器
     mpv # 视频播放
     imv # 图片查看
