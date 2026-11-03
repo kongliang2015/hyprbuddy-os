@@ -228,10 +228,11 @@ P3 skill 清理（可与 P2 并行）
 
 `nixos-desktop-settings` 的决策树加了交叉引用：系统运维类请求转 `nixos-system-ops`。
 
-### 10.4 仍未覆盖
+### 10.4 覆盖现状
 
-P2（`net-status` / `power-status`）与 P3（`scifi-ui`、`theme-create` 清理）尚未实施，
-因此网络与电源仍无专属入口。
+原计划中「日志/服务/存储/网络/电源」五块空白已在 P0–P2 补齐；
+`scifi-ui` / `theme-create` 两份过时技能在 P3 重写。剩余空白只有：
+包管理（设计上走声明式，不做命令）、需要 sudo 的写操作（只打印命令）。
 ### 10.5 P2 补充（2026-11-04）
 
 | 命令 | 分类 | 用途 | 退出码 1 的条件 | 耗时 |
@@ -243,3 +244,22 @@ P2（`net-status` / `power-status`）与 P3（`scifi-ui`、`theme-create` 清理
 
 `net-status` 的一个坑值得记：**必须 `LC_ALL=C` 调 nmcli 与 ping**。中文 locale 下
 nmcli 的 ACTIVE 字段是「是/否」、ping 输出是「时间=3.24 毫秒」，按英文正则解析会全部失败。
+
+### 10.6 P3 技能重写（2026-11-04）
+
+| 技能 | 行数 | 主要问题 | 处理 |
+|---|---|---|---|
+| `theme-create` | 125 → 104 | 围绕已删除的 36 字段 `THEMES` 数组 | 改围绕 `themes/<slug>/tokens.json`，补 order 规则与 v5 壁纸取色限制 |
+| `scifi-ui` | 234 → 109 | 改造对象 waybar/swaync/eww/hyprshell/swayosd/hyprlock 全部删除，另有整节 COSMIC | 收窄到 SDDM QML / kitty / fuzzel（Noctalia 受限说明），保留设计资产 |
+
+两份技能开头都显式列出「已退役，不要再引用」的组件名，防止被重新写回。
+
+### 10.7 技能分工（当前 5 个）
+
+| 技能 | 入口场景 |
+|---|---|
+| `nixos-desktop-settings` | 改桌面外观/键位/主题、构建部署流程 |
+| `nixos-system-ops` | 系统排障（卡顿/服务/磁盘/网络/电源）、更新回滚 |
+| `theme-create` | 照品牌配色做一套新主题 |
+| `scifi-ui` | 科幻风视觉改造（SDDM/kitty/fuzzel） |
+| `diagnose-crash` | 进程崩溃 / core dump |

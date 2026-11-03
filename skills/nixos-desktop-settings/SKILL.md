@@ -18,6 +18,16 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 2. **agent 不执行 sudo**；系统级改动构建验证后把命令交给用户
 3. `/etc/nixos/configuration.nix` 是防误用桩，**绝不修改**
 
+## 技能分工
+
+| 技能 | 什么时候用 |
+|---|---|
+| **本技能** | 改桌面外观/键位/主题/bar，构建与部署流程 |
+| `nixos-system-ops` | 系统排障（卡顿/服务挂了/磁盘满/网络/电源）、更新与回滚 |
+| `theme-create` | 照某个网站/品牌做一套新主题 |
+| `scifi-ui` | 科幻风视觉改造（SDDM / kitty / fuzzel） |
+| `diagnose-crash` | 进程崩溃 / core dump |
+
 ## 决策树
 
 | 请求类型 | 入口 |
