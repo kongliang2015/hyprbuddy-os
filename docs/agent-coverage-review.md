@@ -184,7 +184,7 @@ P3 skill 清理（可与 P2 并行）
 | P0 `sys-health` | ✅ 2026-11-03 | 7 组信息 + `--json`，150ms，已入 commands.json |
 | P0 `svc-status` | OK 2026-11-03 | 7 个单元/进程 + --json, 205ms, inactive 视为按需启动 |
 | P0 `sys-log` | OK 2026-11-03 | 薄封装 journalctl，支持 --system/--since/--unit/--grep/--json；自动去 ANSI |
-| P1 `sys-rollback` | 待做 | |
+| P1 `sys-rollback` | OK 2026-11-03 | 列 21 代 + 打印 switch/boot 命令，--json；只读 |
 | P1 `sys-gc` | 待做 | |
 | P1 `sys-update` | 待做 | |
 | P2 `net-status` | 待做 | |
