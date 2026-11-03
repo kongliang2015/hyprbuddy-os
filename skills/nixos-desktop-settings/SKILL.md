@@ -29,6 +29,7 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 | 硬件差异 / 新 host | `hosts/<name>/default.nix` 只写 `distro.*`（选项见 `modules/options.nix`） |
 | 不确定入口/报错 | `agent-commands --json`（或 `list` / `show <name>`）→ `desktop-check` → `troubleshooting.md` → `git log --oneline -10` |
 | 崩溃/段错误/core dump | 调用 diagnose-crash 技能（启用自动分析时先读 ~/.local/state/agent/coredump-report.md） |
+| 系统运维：卡顿/服务挂了/磁盘满/更新回滚 | 调用 **`nixos-system-ops`** 技能（`sys-health` → `svc-status` → `sys-log`） |
 
 ## 专题指南
 

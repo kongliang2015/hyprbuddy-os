@@ -190,3 +190,45 @@ P3 skill 清理（可与 P2 并行）
 | P2 `net-status` | 待做 | |
 | P2 `power-status` | 待做 | |
 | P3 skill 清理 | 待做 | `scifi-ui`、`theme-create` |
+
+## 10. 实施小结（P0 + P1 已完成，2026-11-03）
+
+### 10.1 新增命令
+
+| 命令 | 分类 | 用途 | 退出码 1 的条件 | 耗时 |
+|---|---|---|---|---|
+| `sys-health` | check | 磁盘/内存/负载/温度/failed 单元/1h 错误数/关键进程 | 磁盘≥90%、有 failed 单元、关键进程缺失 | 0.15s |
+| `svc-status` | check | 7 个关键单元/进程的状态 + 最后一条日志 | failed / not-found / 进程缺失 | 0.2s |
+| `sys-log` | check | journalctl 薄封装（user/system/since/unit/grep/level/json） | 仅权限问题 | <0.1s |
+| `sys-rollback` | check | 世代清单 + 打印 switch/boot 回滚命令 | 恒 0 | <0.1s |
+| `sys-gc` | check | 分区占用 / dead 路径 / 可回收上限 + 清理命令 | 恒 0 | 9s |
+| `sys-update` | workflow | 列输入 / `--check` 试更新 / `--apply` 更新+构建 | `--check` 发现更新 | 30s |
+
+命令总数从 19 → **24**（check 2 → 7，workflow 1 → 2），读写比从 14:2 改善到 14:9。
+
+### 10.2 实施中确认的事实（都已落到代码注释）
+
+1. **`systemctl show -p A -p B --value` 的输出顺序与请求顺序无关** —— 按行号解析会错位，必须逐属性查询
+2. **`nix path-info --stdin --json` 返回 `{path: {...}}` 字典且含 `null` 值** —— 不能当列表遍历
+3. **`readlink /nix/var/nix/profiles/system` 是相对软链**（`system-49-link`），不是 store 路径
+4. **`du -sh /nix/store` 要 35s**，`df` 只要毫秒；`nix-store --gc --print-dead` 固定 8s
+5. **`nix flake update` 没有 `--dry-run`** —— 只能复制 flake.nix+lock 到临时目录真跑一次
+6. **journal 消息体可能自带 ANSI**（polkit agent 等），`journalctl` 不清洗，管道里会变成 `:5:245m`
+7. **进程探测要同时看 comm 与命令行** —— `noctalia` 的 comm 是 `.noctalia-wrapp`、args 是 `noctalia`
+
+### 10.3 配套技能
+
+新增 `skills/nixos-system-ops/`：
+
+| 文件 | 内容 |
+|---|---|
+| `SKILL.md` | 铁律、症状→命令决策树、命令速查（含退出码与耗时）、三步排障法 |
+| `diagnose.md` | 五类症状的判读与处置，含本机三次真实事故的判据 |
+| `lifecycle.md` | 更新/回滚/GC 流程，以及「先 commit 再 install」的顺序铁律 |
+
+`nixos-desktop-settings` 的决策树加了交叉引用：系统运维类请求转 `nixos-system-ops`。
+
+### 10.4 仍未覆盖
+
+P2（`net-status` / `power-status`）与 P3（`scifi-ui`、`theme-create` 清理）尚未实施，
+因此网络与电源仍无专属入口。
