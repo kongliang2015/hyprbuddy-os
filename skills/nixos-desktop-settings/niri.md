@@ -52,6 +52,24 @@ XF86AudioRaiseVolume allow-when-locked=true { spawn "noctalia" "msg" "volume-up"
 XF86MonBrightnessUp  allow-when-locked=true { spawn "noctalia" "msg" "brightness-up"; }
 ```
 
+## 截图落盘（实测 2026-11-04）
+
+| 键 | 命令 | 落盘位置 |
+|---|---|---|
+| `Print` | `noctalia msg screenshot-region` | `~/图片/screenshot_<时间戳>.png`（XDG 图片目录）+ 剪贴板 `image/png` |
+| `Shift+Print` | `noctalia msg screenshot-fullscreen` | 同上 |
+| `Mod+Shift+A` | `screenshot-annotate`（grim+slurp+swappy） | 由 swappy 决定（默认 `~/Pictures`） |
+
+要点：
+
+- v5 的截图服务会**同时**保存文件并写入剪贴板，所以 `Print` 之后可以直接粘贴。
+- 5.0.1 没有暴露「保存目录」的配置键（`settings.toml` 里没有 screenshot 段），
+  目录固定跟随 XDG 图片目录（中文 locale 是 `~/图片`）。要换目录就改
+  `~/.config/user-dirs.dirs` 或改用 `Mod+Shift+A` 那条链路。
+- 因为截图落在 `~/图片`，**不要**把壁纸目录设成 `~/图片`，否则
+  `wallpaper-next` 会把截图当壁纸轮播（我们显式设的是 `~/Pictures/wallpapers`）。
+- 区域截图会起一层 overlay 等框选，未选中按 `Escape` 取消。
+
 一次性动作加 `repeat=false`（窗口切换、截图），否则按住会连续弹面板。
 
 ## 窗口规则
