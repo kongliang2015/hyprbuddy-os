@@ -78,8 +78,7 @@ XF86MonBrightnessUp  allow-when-locked=true { spawn "noctalia" "msg" "brightness
   agent 不要直接调用（会阻塞等输入）。
 - `sysinfo-os`：给 fastfetch 的 command 模块提供 OS 行
   （`HyprBuddy <NixOS 版本> · <分支>@<短提交>`）。仓库路径默认 `~/hyprbuddy-os`，
-  可用 `HYPRBUDDY_REPO` 覆盖——注意这个变量名与 agent 脚本的
-  `HYPRBUDDY_OS_REPO` 不同，是历史命名。
+  与其它脚本一致用 `HYPRBUDDY_OS_REPO` 覆盖。
 
 一次性动作加 `repeat=false`（窗口切换、截图），否则按住会连续弹面板。
 

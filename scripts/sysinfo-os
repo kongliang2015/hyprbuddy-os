@@ -6,7 +6,7 @@
 # @effect: 打印一行文本，供 fastfetch 的 command 模块使用
 set -uo pipefail
 
-repo="${HYPRBUDDY_REPO:-$HOME/hyprbuddy-os}"
+repo="${HYPRBUDDY_OS_REPO:-$HOME/hyprbuddy-os}"
 ver=$(nixos-version 2>/dev/null | cut -d' ' -f1 | cut -d. -f1,2)
 branch=$(git -C $repo rev-parse --abbrev-ref HEAD 2>/dev/null)
 rev=$(git -C $repo rev-parse --short HEAD 2>/dev/null)

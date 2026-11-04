@@ -7,7 +7,7 @@ description: HyprBuddy OS 系统运维入口：机器变慢、服务挂了、磁
 
 系统层运维与排障。**桌面外观/键位/主题**这类请求走 `nixos-desktop-settings`，这里只管"机器状态"。
 
-仓库：`~/hyprbuddy-os`（`HYPRBUDDY_OS_REPO` 可覆盖）；host 默认 `leonard`。
+仓库：`~/hyprbuddy-os`（`HYPRBUDDY_OS_REPO` 可覆盖）；host 取 `hosts/` 下的真实目录名（当前机器 `vmware`）。
 
 ## 铁律
 
