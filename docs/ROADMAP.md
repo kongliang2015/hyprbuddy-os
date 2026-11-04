@@ -39,9 +39,15 @@
 
 - [x] 夜间模式：`distro.desktop.nightlight`（vmware 用 auto_locate，6500/4000K），
       日志 `[gamma] target 4000K` 确认已下发
-- [ ] 录屏：`scripts/record-toggle` 尚无键位（建议 `Mod+Alt+R`）
-- [ ] 自定义调色板：5.0.1 的 `source="custom"` 格式未攻克，外壳只能壁纸取色
-- [ ] 多 host 验证：`leonard`（NVIDIA）、`vm-virtio`（aarch64）未跑过 v5
+- [x] 录屏：`Mod+Alt+R` → `record-toggle`（输出到 XDG 视频目录 + 起停通知）
+- [x] 快捷键 B 套（窗口切换器 / 通知 / 勿扰 / 夜间 / 壁纸 / btop / 工作区 / 截图）
+
+### P1 暂缓（2026-11-04 决定搁置）
+
+- [ ] 自定义调色板：5.0.1 的 `source="custom"` 格式试了 6 种写法均被判 invalid，
+      外壳暂时只能壁纸取色；等上游文档明确或新版本再攻
+- [ ] 多 host 验证：`leonard`（NVIDIA）、`vm-virtio`（aarch64）尚未实机跑 v5；
+      需要那两台机器，暂不排期
 
 ### P2 质量
 
