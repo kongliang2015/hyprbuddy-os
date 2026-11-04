@@ -1,11 +1,11 @@
 # Agent 层（NixOS 版）：设计与实现
 
-> **状态（2026-10-21 初稿）**：本文是设计依据，**部分内容已过时**（Hyprland / waybar / mako 均已退役，
-> 桌面栈现为 niri + Noctalia v5）。当前实现的覆盖度评审与补齐方案见
-> **`docs/agent-coverage-review.md`**（2026-10-29）。
-> 实现细节以代码为准。关联：`docs/ROADMAP.md`、`docs/TROUBLESHOOTING.md`、skill `nixos-desktop-settings`。
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 2026-10-21 的 agent 六层架构设计稿，正文仍是 Hyprland / waybar / mako / swaync / awww 时代的实现描述。当前覆盖度评审见 `docs/agent-coverage-review.md`（2026-10-29）。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
 >
-> 目标：在 NixOS + Hyprland 上实现 agent 层，并在声明式系统的约束下给出可执行路径。
+> 目标：在 NixOS 桌面上实现 agent 层，并在声明式系统的约束下给出可执行路径。
 
 ## 1. 背景
 
@@ -184,4 +184,4 @@ agent 层默认关闭，三个 agent 脚本随 `agent.enable` 安装（`home/def
 
 - Omarchy：<https://github.com/basecamp/omarchy>
 - systemd-coredump：`man coredumpctl` / `man systemd.path`
-- 本项目：`README.md`、`docs/ROADMAP.md`、`docs/TROUBLESHOOTING.md`
+- 本项目：`README.md`、`docs/ROADMAP.md`、`docs/TROUBLESHOOTING-hyprland-era.md`（历史）

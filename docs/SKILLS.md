@@ -1,7 +1,8 @@
 # 技能总览（SKILLS）
 
 > 更新：2026-11-04 · 5 个技能 · 26 条命令
-> 相关：`docs/agent-coverage-review.md`（命令的来龙去脉）、`docs/AGENT-LAYER.md`（设计稿）
+> 相关：`docs/INDEX.md`（全仓库文档总入口）、`docs/agent-coverage-review.md`（命令的来龙去脉）、
+> `docs/AGENT-LAYER.md`（设计稿，已标注历史）
 
 agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` 可查），
 **技能**回答"什么时候用、按什么顺序用、输出怎么判读"。本文是技能的路由表。

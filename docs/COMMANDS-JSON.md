@@ -1,5 +1,10 @@
 # 机器可读命令清单（agent-commands）方案
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文描述的**生成机制已落地**（`lib/commands.nix` + `scripts/agent-commands`，26 条命令）；文中 `@command` 示例与「8 套主题」为 v0 时代数据，勿按现状引用。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 > 目标：给 agent 一份**不会漂移**的入口目录，把「有哪些能力、参数、副作用、权限」
 > 从散文文档变成可查询的事实。对标 Omarchy 的 `omarchy commands --json`，
 > 但数据源自本仓库真实脚本，并额外覆盖非脚本工作流。

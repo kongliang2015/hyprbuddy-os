@@ -1,5 +1,10 @@
 # P2 主题 token 化方案
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 P2 主题 token 化设计稿，范围曾收缩为「只给 COSMIC 导出调色板」；当前实现是 `exporters/niri/theme.sh` → `theme.toml`（壁纸取色）。`tokens.json` 机制本身仍然有效。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 > **修订（2026-10-26）**：COSMIC 已原生提供的桌面功能不再迁移，P2 范围收缩为
 > 「token 化 + 只给 COSMIC 导出调色板」。详见文末《十、迁移边界》，第四节与工作量以修订版为准。
 

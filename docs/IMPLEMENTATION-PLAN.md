@@ -1,5 +1,10 @@
 # 实施计划：从配置仓库到发行版骨架
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 flake + options + host 重构的实施计划（2026-10-20 快照）；该结构已落地，§8 的「当前状态」是当时记录。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 > 前置评估见 [ARCHITECTURE-REVIEW.md](./ARCHITECTURE-REVIEW.md)。
 > 目标：用 5 个阶段把 `26.05-dev` 的"单机模板"改造成 `flake + options + host` 结构，过程中系统始终可回滚。
 

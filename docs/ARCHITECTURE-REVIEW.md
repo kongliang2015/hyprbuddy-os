@@ -1,5 +1,10 @@
 # 架构评估：现状 vs 发行版目标
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 2026-10-20 对 `26.05-dev` 分支（`9c7f320`）的架构评估；所提结构性硬伤已在后续重构中解决。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 > 评估对象：`26.05-dev` 分支（`9c7f320`）
 > 设计目标：以本仓库的 Hyprland 桌面为壳，构建 **AI agent 原生**、**可覆盖多种显卡配置**（NVIDIA / AMD / Intel / virtio）的 NixOS 发行版。
 > 本文件只做评估与结论，具体实施见 [IMPLEMENTATION-PLAN.md](./IMPLEMENTATION-PLAN.md)。
@@ -70,7 +75,7 @@ grep -q 'boot.loader.grub.enable = true' /etc/nixos/configuration.nix
 |---|---|
 | `home/` 全部配置与脚本 | 纯文本、agent 可读；是"外观资产"而非"安装逻辑" |
 | `system/profiles/` 目录 | 扩展点选择正确，只是实现方式要换成 option |
-| `docs/TROUBLESHOOTING.md` | 记录了 0.55 语法、Pascal 驱动分支、SDDM/Qt6 等真实经验 |
+| `docs/TROUBLESHOOTING-hyprland-era.md` | 记录了 0.55 语法、Pascal 驱动分支、SDDM/Qt6 等真实经验（已改名，历史） |
 | `docs/AGENT-LAYER.md` | 六层拆分与"NixOS 上两种写"的判断准确，可直接映射为模块 |
 | 双 HM 模式（module / standalone） | 说明已意识到部署形态差异，需要保留为选项 |
 

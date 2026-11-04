@@ -1,8 +1,9 @@
-# skill 改造方案（设计稿，未实施）
+# skill 改造方案（设计稿，已实施并演化）
 
-> 状态：待实施　|　目标：把 `skills/nixos-desktop-settings` 从单文件升级为
-> 「路由器 + 专题指南 + 示例表」结构，提升 agent 一次做对的概率。
-> 灵感来自 Omarchy skill 的组织形式，但操作模型按 NixOS 不可变系统重写（见 §7 对比结论）。
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 skill 结构改造设计稿，**方案已实施并演化**——路由器 + 专题指南已落地，`hyprland.md` 被 `niri.md` 取代，另增 `nixos-system-ops` 等 4 个技能。原「未实施」状态已失效。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
 
 ## 1. 目标结构
 

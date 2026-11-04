@@ -1,7 +1,8 @@
 # 路线图（v1-nn：niri + Noctalia v5）
 
-> 更新：2026-10-29。Hyprland / COSMIC 时代的功能清单已归档到
-> `docs/desktop-retire-hyprland.md` 与 `docs/niri-noctalia-plan.md`，本文只写当前现实。
+> 更新：2026-11-04。Hyprland / COSMIC 时代的功能清单已归档到
+> `docs/desktop-retire-hyprland.md` 与 `docs/niri-noctalia-plan.md`；
+> 其余历史 / 设计稿已在文件头统一加状态横幅，本文只写当前现实。
 
 ## 当前形态
 

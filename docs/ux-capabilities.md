@@ -1,5 +1,10 @@
 # UX 可自定义能力清单
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 COSMIC / Hyprland 时代的 UX 能力清单（自称「唯一清单」），其中 `uxctl`、COSMIC 34 键等均已不存在。现行能力见 `docs/SKILLS.md` 与 `agent-commands --json`。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 本文是"我能改什么、改哪里、改不了什么"的唯一清单。新增能力时同步更新本文件。
 
 ## 结论（先看这四条）

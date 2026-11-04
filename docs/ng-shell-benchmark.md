@@ -1,5 +1,10 @@
 # 同类桌面栈调研（NG 外壳方案对照）
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 2026-10-25 对 NG 外壳栈（swaync / eww / hyprshell / waybar）的社区调研，相关组件均已退役。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 本文记录 `docs/ng-shell.md` 那套栈（swaync + eww + hyprshell + waybar）在社区里的
 实际使用情况、可借鉴的界面功能，以及本项目已采纳 / 计划采纳的部分。
 

@@ -1,5 +1,10 @@
 # NG 外壳方案（swaync + eww + hyprshell）
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 `distro/v0-ng` 分支的 swaync + eww + hyprshell 外壳方案，该栈与 Waybar 均已退役。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 > 同类项目与可借鉴功能见 [ng-shell-benchmark.md](ng-shell-benchmark.md)。
 
 分支：`distro/v0-ng`。目标：在不替换 waybar 的前提下，补齐 waybar 结构上做不到的

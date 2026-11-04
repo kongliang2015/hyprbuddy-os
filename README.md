@@ -8,7 +8,8 @@ Hyprland / COSMIC 于 2026-10-28 在 `distro/v1-nn` 退役，历史版本见 `di
 - 共享底座（SDDM / fcitx5 / Qt / polkit / 通用 CLI）在 `modules/desktop/hyprbuddy.nix`
 - 主题：`themes/<slug>/tokens.json` → `exporters/niri/theme.sh` → `theme.toml`（外壳壁纸取色）+ kitty/fuzzel 精确 16 色
 - 分支：`distro/v1-cosmic`（Hyprland + COSMIC，历史）/ `distro/v1-nn`（当前）
-- 现状索引：`docs/ROADMAP.md`（路线与进度）、`docs/SKILLS.md`（技能路由）、`docs/KEYBINDS.md`（键位速查）
+- 文档总入口：`docs/INDEX.md`（现行规范 / 历史归档 / 设计稿 三类索引）；
+  常用：`docs/ROADMAP.md`（路线与进度）、`docs/SKILLS.md`（技能路由）、`docs/KEYBINDS.md`（键位速查）
 
 ## 环境
 
@@ -65,9 +66,10 @@ hyprland-nixos/
 
 **历史 / 设计稿（勿按现状引用）**：`docs/desktop-abstraction.md`、`niri-noctalia-plan.md`、
 `desktop-retire-hyprland.md`、`cosmic-*.md` ×7、`ng-shell*.md`、`eww-start-menu.md`、
-`ARCHITECTURE-REVIEW.md`、`IMPLEMENTATION-PLAN.md`、`AGENT-LAYER.md`、`TROUBLESHOOTING.md`（根）、
-`theme-tokens.md`、`ux-capabilities.md`、`SKILL-REDESIGN.md`、`COMMANDS-JSON.md`。
-其中多数已在文件头标注状态；排障请以 `skills/nixos-desktop-settings/troubleshooting.md` 为准。
+`ARCHITECTURE-REVIEW.md`、`IMPLEMENTATION-PLAN.md`、`AGENT-LAYER.md`、
+`TROUBLESHOOTING-hyprland-era.md`（原根目录同名文件，已改名）、`theme-tokens.md`、
+`ux-capabilities.md`、`SKILL-REDESIGN.md`、`COMMANDS-JSON.md`。
+这些文件头部均已加统一状态横幅；排障请以 `skills/nixos-desktop-settings/troubleshooting.md` 为准。
 
 ## 已实现的功能
 

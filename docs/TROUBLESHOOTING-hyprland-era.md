@@ -1,5 +1,10 @@
 # 踩坑与修复记录
 
+> **历史 / 设计稿（2026-11-04 标注）**：本文是 Hyprland / waybar 时代的踩坑记录（LightDM、nvidiaPatches、home-manager 等），相关组件均已退役。现行排障见 `skills/nixos-desktop-settings/troubleshooting.md`。
+> 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
+> `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
+> 本文保留为历史与决策依据，勿按现状引用。
+
 记录搭建过程中实际遇到的问题，便于以后复现/排障。
 
 ## 1. LightDM 启动 Hyprland 后键鼠全死
