@@ -47,10 +47,10 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 |---|---|
 | `workflow.md` | 四步流程、生效方式、备份与回滚、agent-apply 输出判读 |
 | `niri.md` | 键位、window-rule、输出/缩放、输入法（fcitx5 启动顺序）、已知坑 |
-| `bar-notify.md` | Noctalia bar 组件、CustomButton JSON 协议、通知/勿扰、OSD |
-| `theming.md` | tokens → colorschemes → IPC 链路、壁纸、新增主题、坑 |
+| `bar-notify.md` | Noctalia v5 `msg` 命令表、bar 属运行态、通知/勿扰、OSD |
+| `theming.md` | tokens → theme.toml（壁纸取色）+ kitty/fuzzel、新增主题、v5 已知坑 |
 | `agent.md` | `distro.agent.*` 开关、agent-usage 口径、诊断、本地模型 |
-| `troubleshooting.md` | 常见故障（待重写为 niri/Noctalia 版） |
+| `troubleshooting.md` | v5 常见故障（bar 消失 / unknown setting / 夜间模式 / custom palette / store 产物截断） |
 
 ## 示例表
 
@@ -61,20 +61,20 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 | "外接 2K 显示器放右边" | `wlr-randr --output DP-1 --mode 2560x1440 --pos 1920,0`（或写进 config.kdl 的 `output` 段） |
 | "圆角大一点、间隙小一点" | `home/niri/config.kdl` 的 `layout { gaps …; }` |
 | "让 GIMP 默认浮动" | `window-rule { match app-id="gimp"; open-floating true; }` |
-| "状态栏加 CPU 温度" | Noctalia 设置（`Mod+Shift+S` → Bar → Widgets），或改 `settings.json` 的 `showCpuTemp` |
-| "通知超时/勿扰" | Noctalia 通知面板，或 `settings.json` 的 `notifications` |
+| "状态栏加 CPU 温度" | Noctalia 设置（`Mod+Shift+S` → Bar → Widgets）；v5 写 `~/.local/state/noctalia/settings.toml` |
+| "通知超时/勿扰" | Noctalia 设置 → Notifications；勿扰可直接 `noctalia msg notification-dnd-toggle` |
 | "10 分钟无操作锁屏" | Noctalia v5 GUI → Shell / Idle（落盘在 `~/.local/state/noctalia/settings.toml`） |
 | "终端字号改 13" | `home/kitty/kitty.conf` |
 | "换个主题" | 运行 `theme-next`（循环切换；`restore` 仅供登录） |
-| "照 X 官网风格做套新主题" | 技能 `theme-create`（取色 → 生成壁纸 → 追加主题表 → 部署） |
+| "照 X 官网风格做套新主题" | 技能 `theme-create`（取色 → 壁纸 → `themes/<slug>/tokens.json` → 部署） |
 | "想先看看各主题效果再选" | 运行 `theme-picker`（须在 kitty 内；菜单：外观 → 主题预览） |
 | "换壁纸" | 运行 `wallpaper-next` |
 | "夜间模式/勿扰/录屏/区域截图标注" | `night-mode` / `notif-dnd` / `record-toggle` / `screenshot-annotate` |
-| "现在有哪些快捷键" | `show-keybinds`（浮动 kitty）或 `docs/KEYBINDS.md` |
+| "现在有哪些快捷键" | `docs/KEYBINDS.md`（源文件 `home/niri/config.kdl`） |
 | "系统崩了 / 段错误 / 分析 core dump" | `diagnose-crash` 技能（先读 `~/.local/state/agent/coredump-report.md`） |
 | "这台机器能做什么 / 有哪些命令" | `agent-commands list`（机器可读用 `--json`） |
 | "这台新机器是 N 卡" | `hosts/<name>/default.nix` 设 `distro.gpu.vendor = "nvidia"` |
-| "waybar 显示 agent 用量" | `hosts/<host>` 设 `distro.agent.enable/usage = true` |
+| "让 agent 用量上栏" | `hosts/<host>` 设 `distro.agent.enable/usage = true`，再在 Noctalia 设置里加对应组件 |
 | "桌面报错/状态栏没了/中文变方块" | `desktop-check` → `journalctl --user -b` → `troubleshooting.md` |
 | "回到上一个系统版本" | 交用户 `sudo nixos-rebuild --rollback` |
 | "用户级配置改了没生效" | `./install.sh --host <host> --yes`（备份到 `~/.config.bak-*`） |

@@ -30,8 +30,8 @@
 
 ### P0 一致性
 
-- [ ] bar 布局的定位写死：目前**不做声明式基线**（state 优先级更高 + schema 不稳），
-      需在 `bar-notify.md` 与自检里持续提示「bar 属运行态」
+- [x] bar 布局的定位：确认**不做声明式基线**（state 优先级更高 + schema 不稳），
+      已在 `bar-notify.md` 说明并让 `desktop-check` 在 bar 未显示时给出 `bar-show` 提示
 - [x] `docs/ROADMAP.md` 重写（本次）
 - [x] 清理 `~/.config/noctalia/` 的 v4 残留（settings.json / colors.json / colorschemes）
 

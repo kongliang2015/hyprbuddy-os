@@ -68,9 +68,9 @@ git add -A && git commit -m ...     # 先
 |---|---|
 | niri 配置 | `niri msg action load-config-file`（会话内，也可等自动重载） |
 | 脚本 / exporters / skills | `install.sh` 后立即（新进程读取），无需重登 |
-| 主题 | `theme-next` / `de-theme-apply <slug>`（写 Noctalia scheme + kitty + fuzzel） |
+| 主题 | `theme-next` / `de-theme-apply <slug>`（写 `theme.toml` 壁纸取色 + kitty + fuzzel） |
 | 包 / 服务 / 驱动 | `nixos-rebuild switch`（用户执行）+ 重新登录 |
-| Noctalia 面板组件 | `Mod+Shift+S` 或改 `settings.json` 后重启 shell |
+| Noctalia 面板组件 | `Mod+Shift+S` GUI 调整（落 `~/.local/state/noctalia/settings.toml`，换机回默认） |
 
 ## 判读 agent-apply 输出
 
