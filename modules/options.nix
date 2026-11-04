@@ -134,6 +134,49 @@ in
         description = "SDDM greeter 主题包，null 用默认 catppuccin-sddm";
       };
 
+      # Noctalia 夜间模式（wlr-gamma-control）。色温日程来自 [location]：
+      # 没有坐标时不会生效（日志：gamma no schedule）。
+      nightlight = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = "启用夜间模式（Noctalia nightlight，随日出日落渐变）";
+        };
+        autoLocate = mkOption {
+          type = types.bool;
+          default = true;
+          description = "按公网 IP 定位（最省事，精确到城市；无网时回落失败）";
+        };
+        address = mkOption {
+          type = types.str;
+          default = "";
+          description = "autoLocate 关闭时用地址geocode，例如 \"Shanghai\"";
+        };
+        latitude = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "手动纬度（autoLocate 与 address 都为空时生效）";
+        };
+        longitude = mkOption {
+          type = types.nullOr types.float;
+          default = null;
+          description = "手动经度";
+        };
+        customSchedule = mkOption {
+          type = types.bool;
+          default = false;
+          description = "用固定日落/日出时间代替天文计算";
+        };
+        sunset = mkOption { type = types.str; default = "19:00"; };
+        sunrise = mkOption { type = types.str; default = "07:00"; };
+        temperatureDay = mkOption { type = types.int; default = 6500; };
+        temperatureNight = mkOption {
+          type = types.int;
+          default = 4000;
+          description = "夜间色温（须比白天低至少 100K）";
+        };
+      };
+
     };
 
     polkitAgent = mkOption {

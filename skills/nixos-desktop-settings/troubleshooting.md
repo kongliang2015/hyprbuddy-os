@@ -111,8 +111,30 @@ noctalia msg bar-show
 
 日志：`[WRN] [gamma] no schedule: enable auto-locate, set an address, ...`
 
-夜间模式需要 Location（地址或经纬度）或自定义日程才有依据。`noctalia msg nightlight-toggle`
-依然返回 `ok`，但不会真的改色温。修法：Noctalia 设置 → Location 填地址，或设自定义日程。
+夜间模式需要 Location（地址或经纬度）或自定义日程才有依据；没有坐标时
+`noctalia msg nightlight-toggle` 仍返回 `ok`，但不会改色温。
+
+现已声明式配置（`hosts/<host>/default.nix`）：
+
+```nix
+distro.desktop.nightlight = {
+  enable = true;
+  autoLocate = true;        # 按公网 IP 定位；也可用 address 或 latitude/longitude
+  temperatureDay = 6500;
+  temperatureNight = 4000;  # 必须比白天低至少 100K
+};
+```
+
+install.sh 会把它生成成 `~/.config/noctalia/nightlight.toml`（只读软链，勿手改）。
+验证：
+
+```bash
+grep -a 'geo schedule' ~/.cache/noctalia/noctalia.log | tail -1   # 有日程即定位成功
+noctalia msg nightlight-force-toggle                              # 立刻按夜间色温渲染
+noctalia msg nightlight-force-toggle                              # 恢复随日出日落
+```
+
+生效时日志是 `[INF] [gamma] target 4000K (day=6500K night=4000K force=true ...)`。
 
 ## Noctalia v5：自定义调色板（source="custom"）加载失败
 

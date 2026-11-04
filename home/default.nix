@@ -11,6 +11,29 @@ let
   sub = s: lib.replaceStrings [ "@HOME@" "@JQ@" ] [ home "${pkgs.jq}/bin/jq" ] s;
   read = path: sub (builtins.readFile path);
 
+  # Noctalia 夜间模式：色温日程由 [location] 驱动，没有坐标就不生效
+  nl = distro.desktop.nightlight;
+  nightlightToml = ''
+    # 由 flake 生成（distro.desktop.nightlight），勿手改
+    [location]
+    auto_locate = ${lib.boolToString nl.autoLocate}
+  '' + lib.optionalString (nl.address != "") ''
+    address = "${nl.address}"
+  '' + lib.optionalString (nl.latitude != null && nl.longitude != null) ''
+    latitude = ${toString nl.latitude}
+    longitude = ${toString nl.longitude}
+  '' + lib.optionalString nl.customSchedule ''
+    custom_schedule = true
+    sunset = "${nl.sunset}"
+    sunrise = "${nl.sunrise}"
+  '' + ''
+    [nightlight]
+    enabled = true
+    force = false
+    temperature_day = ${toString nl.temperatureDay}
+    temperature_night = ${toString nl.temperatureNight}
+  '';
+
   agentEnabled = distro.agent.enable;
   usageEnabled = agentEnabled && distro.agent.usage;
   # agent-usage 部署到 ~/.local/bin，供 fastfetch 的 command 模块调用
@@ -26,6 +49,8 @@ let
     # 能力层库（scripts/lib/de.sh）：脚本被逐个装进 bin/，无法靠相对路径找兄弟文件，
     # 所以单独落到 ~/.local/share/hyprland-nixos/lib/ 供脚本 source
     "share/hyprland-nixos/lib/de.sh" = read ../scripts/lib/de.sh;
+  } // lib.optionalAttrs nl.enable {
+    "noctalia/nightlight.toml" = nightlightToml;
   };
 
   # P2 主题系统：themes/<slug>/tokens.json（唯一真相）+ exporters

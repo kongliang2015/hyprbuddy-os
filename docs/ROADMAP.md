@@ -37,7 +37,8 @@
 
 ### P1 功能缺口
 
-- [ ] 夜间模式：配 Location / 自定义日程，否则 `Mod+Shift+N` 只有 `ok` 没有效果
+- [x] 夜间模式：`distro.desktop.nightlight`（vmware 用 auto_locate，6500/4000K），
+      日志 `[gamma] target 4000K` 确认已下发
 - [ ] 录屏：`scripts/record-toggle` 尚无键位（建议 `Mod+Alt+R`）
 - [ ] 自定义调色板：5.0.1 的 `source="custom"` 格式未攻克，外壳只能壁纸取色
 - [ ] 多 host 验证：`leonard`（NVIDIA）、`vm-virtio`（aarch64）未跑过 v5

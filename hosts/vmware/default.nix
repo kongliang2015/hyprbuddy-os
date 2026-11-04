@@ -54,6 +54,15 @@
       # HyprBuddy 配套 SDDM 登录界面（pkgs/sddm-theme-hyprbuddy）
       sddmThemePackage = pkgs.callPackage ../../pkgs/sddm-theme-hyprbuddy { };
       theme = "hyprbuddy";   # sddmThemePackage 内 share/sddm/themes/ 下的目录名
+
+      # 夜间模式：按公网 IP 定位（城市级足够算日出日落）。
+      # 若定位失败（断网/NAT 异常），改成 address 或经纬度，或 customSchedule。
+      nightlight = {
+        enable = true;
+        autoLocate = true;
+        temperatureDay = 6500;
+        temperatureNight = 4000;
+      };
     };
 
     hardware.battery = false;
