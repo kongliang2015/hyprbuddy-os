@@ -79,3 +79,13 @@
    键位数看 `home/niri/config.kdl`、技能数用 `ls skills`；统一写进 `ROADMAP.md`。
 6. **文档不进 `install.sh`**：只有 `skills/` 会部署到 `~/.codebuddy/skills/`；
    `docs/` 与根 `README.md` 只在仓库里供人/agent 阅读。
+
+## 5. 待评估特性（`next-feature/`）
+
+第 4 类文档：**尚未落地**的新特性调研与方案评估，不算现行规范、不计入技能数、
+不随 `install.sh` 部署，也不写进 `ROADMAP.md` 的待办清单（决定推进时再登记）。
+每份文件头部必须标注「状态：未实施 + 评估日期 + 基准 commit」。
+
+| 文件 | 主题 |
+|---|---|
+| `next-feature/local-memory-timeline.md` | Linux / niri 版 Recall：本地时间轴 + 语义检索（2026-11-04 评估） |
