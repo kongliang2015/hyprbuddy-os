@@ -57,9 +57,9 @@ nix-store --verify-path "$p"                          # 报 "was modified!" 即�
 修法（需要能写 store 的权限）：
 
 ```bash
-rm -f ~/.local/share/hyprland-nixos-home              # 先解除 GC root
+rm -f ~/.local/share/hyprbuddy-os-home              # 先解除 GC root
 nix-store --delete $(readlink -f ~/.config/niri/config.kdl)
-cd ~/hyprland-nixos && ./install.sh --host vmware --yes
+cd ~/hyprbuddy-os && ./install.sh --host vmware --yes
 ```
 
 若多处损坏，可先 `nix-store --verify --check-contents` 全量体检。

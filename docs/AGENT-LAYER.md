@@ -1,5 +1,7 @@
 # Agent 层（NixOS 版）：设计与实现
 
+> 注：本文中的 `hyprland-nixos` 为更名前的仓库名（现为 `hyprbuddy-os`），按历史原样保留。
+
 > **历史 / 设计稿（2026-11-04 标注）**：本文是 2026-10-21 的 agent 六层架构设计稿，正文仍是 Hyprland / waybar / mako / swaync / awww 时代的实现描述。当前覆盖度评审见 `docs/agent-coverage-review.md`（2026-10-29）。
 > 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
 > `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。

@@ -8,7 +8,7 @@
 # COSMIC 于 2026-10-28 退役，Hyprland 于 v1-nn 退役；当前只有 niri 提供方。
 set -uo pipefail
 self=$(dirname "$(readlink -f "$0")")
-DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprbuddy-os/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$self/lib/de.sh"
 . "$DE_LIB"
 

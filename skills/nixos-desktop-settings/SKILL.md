@@ -1,14 +1,14 @@
 ---
 name: nixos-desktop-settings
-description: hyprland-nixos 桌面配置入口：改仓库 → 求值构建 → 部署 → 自检。桌面外观/键位/状态栏/通知/主题/agent 层请求从这里开始；即时动作（切主题/壁纸/录屏等）直接调用对应脚本。
+description: HyprBuddy OS 桌面配置入口：改仓库 → 求值构建 → 部署 → 自检。桌面外观/键位/状态栏/通知/主题/agent 层请求从这里开始；即时动作（切主题/壁纸/录屏等）直接调用对应脚本。
 ---
 
 # nixos-desktop-settings
 
-hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 niri + Noctalia**
+HyprBuddy OS的桌面配置入口。**当前桌面提供方只有 niri + Noctalia**
 （Hyprland / COSMIC 均已退役，见 `docs/desktop-retire-hyprland.md`）；
 共享底座（SDDM / fcitx5 / Qt / polkit / 通用 CLI）在 `modules/desktop/hyprbuddy.nix`。
-仓库：`~/hyprland-nixos`（`HYPRLAND_NIXOS_REPO` 可覆盖）；host 名默认 `$(hostname)`。
+仓库：`~/hyprbuddy-os`（`HYPRBUDDY_OS_REPO` 可覆盖）；host 名默认 `$(hostname)`。
 
 ## 铁律
 
@@ -34,7 +34,7 @@ hyprland-nixos 发行版的桌面配置入口。**当前桌面提供方只有 ni
 |---|---|
 | 即时动作：主题/壁纸/勿扰/录屏/夜间/截图标注 | 直接跑 `theme-next` / `wallpaper-next` / `notif-dnd` / `record-toggle` / `night-mode` / `screenshot-annotate` |
 | 桌面外观行为：键位/规则/bar/通知/终端 | 改 `home/` → `scripts/agent-apply <host>` → `./install.sh --host <host> --yes` |
-| 系统组件/服务/驱动 | 改 `modules/` 或 `hosts/<host>/` → agent-apply → 交用户 `sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>` |
+| 系统组件/服务/驱动 | 改 `modules/` 或 `hosts/<host>/` → agent-apply → 交用户 `sudo nixos-rebuild switch --flake ~/hyprbuddy-os#<host>` |
 | agent 能力 | `modules/agent/` + `lib/agent-usage.nix` + `scripts/agent-*`（受 `distro.agent.*`） |
 | 硬件差异 / 新 host | `hosts/<name>/default.nix` 只写 `distro.*`（选项见 `modules/options.nix`） |
 | 不确定入口/报错 | `agent-commands --json`（或 `list` / `show <name>`）→ `desktop-check` → `troubleshooting.md` → `git log --oneline -10` |

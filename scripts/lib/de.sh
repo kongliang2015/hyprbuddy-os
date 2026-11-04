@@ -81,9 +81,9 @@ for name, o in d.items():
 de_theme_apply() {
   local slug=$1 lib=""
   [ -n "$slug" ] || { echo "usage: de_theme_apply <slug>" >&2; return 1; }
-  # 注意不能用 readlink -f：解析到 store 会丢掉 share/hyprland-nixos/ 布局。
+  # 注意不能用 readlink -f：解析到 store 会丢掉 share/hyprbuddy-os/ 布局。
   # 按 source 时的原始路径回溯：
-  #   部署   ~/.local/share/hyprland-nixos/lib/ → ../exporters/
+  #   部署   ~/.local/share/hyprbuddy-os/lib/ → ../exporters/
   #   仓库   scripts/lib/ → ../../exporters/
   local d; d=$(dirname "${BASH_SOURCE[0]}")
   for d in "$d/../exporters/lib.sh" "$d/../../exporters/lib.sh"; do

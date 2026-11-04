@@ -93,7 +93,7 @@ payload = {
         {
             "name": "deploy-system",
             "summary": "系统级应用（由用户执行）",
-            "steps": ["sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>"],
+            "steps": ["sudo nixos-rebuild switch --flake ~/hyprbuddy-os#<host>"],
             "requires_sudo": True,
         },
         {
@@ -104,7 +104,7 @@ payload = {
         },
     ],
     "paths": {
-        "repo": "~/hyprland-nixos",
+        "repo": "~/hyprbuddy-os",
         "user_config": [
             "~/.config/hypr",
             "~/.config/waybar",

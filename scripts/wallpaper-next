@@ -15,7 +15,7 @@ i=$(cat "$state" 2>/dev/null || echo -1)
 i=$(( (i + 1) % ${#imgs[@]} ))
 echo "$i" > "$state"
 img="${imgs[$i]}"
-DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprbuddy-os/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
 . "$DE_LIB"
 

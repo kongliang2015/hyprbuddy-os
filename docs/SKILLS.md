@@ -1,4 +1,4 @@
-# 技能总览（SKILLS）
+# 技能总览（HyprBuddy OS / SKILLS）
 
 > 更新：2026-11-04 · 5 个技能 · 26 条命令
 > 相关：`docs/INDEX.md`（全仓库文档总入口）、`docs/agent-coverage-review.md`（命令的来龙去脉）、

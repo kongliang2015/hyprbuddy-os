@@ -18,11 +18,11 @@
        ./install.sh --host <host> --yes
 
    行为：`nix build .#<host>` → 软链到 `~/.config`、`~/.local/bin`、`~/.codebuddy/skills`、
-   `~/.local/share/hyprland-nixos/commands.json`（`~/.claude` 存在时同步 `~/.claude/skills`）；
+   `~/.local/share/hyprbuddy-os/commands.json`（`~/.claude` 存在时同步 `~/.claude/skills`）；
    已存在的真实文件备份到 `~/.config.bak-<时间戳>/`；复制 `wallpapers/` 到 `~/Pictures/wallpapers`；末尾自动跑 `desktop-check`
 4. **系统级应用（用户执行）**：
 
-       sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>
+       sudo nixos-rebuild switch --flake ~/hyprbuddy-os#<host>
 
 ## ⚠️ rebuild ≠ 部署（最容易踩的坑）
 
@@ -34,7 +34,7 @@
 | `/run/current-system`（包/服务） | `nixos-rebuild switch` | ✅ |
 | `~/.config/niri/config.kdl` | `install.sh` | ❌ |
 | `~/.local/bin/*`（脚本） | `install.sh` | ❌ |
-| `~/.local/share/hyprland-nixos/exporters/*` | `install.sh` | ❌ |
+| `~/.local/share/hyprbuddy-os/exporters/*` | `install.sh` | ❌ |
 | `~/.codebuddy/skills/*` | `install.sh` | ❌ |
 
 **真实事故（2026-10-29）**：`git pull` 拿到 Noctalia v5 迁移后只跑了 `nixos-rebuild switch`，

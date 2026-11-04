@@ -5,7 +5,7 @@
 - 索引：**0**（主题表第 1 套）
 - 切换：`theme-next 0` 或 Super+Space → 外观 → 主题预览
 - 壁纸：`wallpapers/01-kanagawa.png` → `~/Pictures/wallpapers/01-kanagawa.png`
-- 预览图：`~/.local/share/hyprland-nixos/theme-previews/preview-0.png`
+- 预览图：`~/.local/share/hyprbuddy-os/theme-previews/preview-0.png`
 
 ## 角色配色
 

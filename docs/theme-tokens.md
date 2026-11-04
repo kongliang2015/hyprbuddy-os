@@ -1,5 +1,7 @@
 # P2 主题 token 化方案
 
+> 注：本文中的 `hyprland-nixos` 为更名前的仓库名（现为 `hyprbuddy-os`），按历史原样保留。
+
 > **历史 / 设计稿（2026-11-04 标注）**：本文是 P2 主题 token 化设计稿，范围曾收缩为「只给 COSMIC 导出调色板」；当前实现是 `exporters/niri/theme.sh` → `theme.toml`（壁纸取色）。`tokens.json` 机制本身仍然有效。
 > 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
 > `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。

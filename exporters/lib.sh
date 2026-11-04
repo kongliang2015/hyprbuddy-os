@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # 主题系统公共库（P2）：tokens 加载 + 颜色工具。
 # 被 theme-next / exporters/* / de.sh source，不独立执行。
-# 定位：lib.sh 被部署在 share/hyprland-nixos/exporters/，themes 在其上级目录；
+# 定位：lib.sh 被部署在 share/hyprbuddy-os/exporters/，themes 在其上级目录；
 # 仓库内直接跑时同一相对结构也成立（exporters/ 与 themes/ 同级）。
 
 # 注意不能用 readlink -f / cd 解析物理路径：部署时 lib.sh 是指向 store 的软链，
-# 解析进 store 会丢掉 share/hyprland-nixos/ 的 themes/ 布局。保留逻辑路径。
+# 解析进 store 会丢掉 share/hyprbuddy-os/ 的 themes/ 布局。保留逻辑路径。
 THEME_LIB_DIR="$(dirname "${BASH_SOURCE[0]}")"
 case "$THEME_LIB_DIR" in
   /*) : ;;

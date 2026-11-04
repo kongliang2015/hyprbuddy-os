@@ -1,5 +1,5 @@
 {
-  description = "AI-agent 原生的 NixOS + Hyprland 发行版（P1：options + 多机型）";
+  description = "HyprBuddy OS：AI-agent 原生的 NixOS 发行版（niri + Noctalia v5，options + 多机型）";
 
   # 通道 tarball 输入：本机访问 github.com 会被阻断，改用清华镜像的 nixexprs。
   # 由 flake.lock 锁定 narHash，内容漂移会导致校验失败而不是静默变化。

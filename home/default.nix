@@ -47,19 +47,19 @@ let
     "niri/config.kdl" = read ./niri/config.kdl;
     "fastfetch/config.jsonc" = read ./fastfetch/config.jsonc;
     # 能力层库（scripts/lib/de.sh）：脚本被逐个装进 bin/，无法靠相对路径找兄弟文件，
-    # 所以单独落到 ~/.local/share/hyprland-nixos/lib/ 供脚本 source
-    "share/hyprland-nixos/lib/de.sh" = read ../scripts/lib/de.sh;
+    # 所以单独落到 ~/.local/share/hyprbuddy-os/lib/ 供脚本 source
+    "share/hyprbuddy-os/lib/de.sh" = read ../scripts/lib/de.sh;
   } // lib.optionalAttrs nl.enable {
     "noctalia/nightlight.toml" = nightlightToml;
   };
 
   # P2 主题系统：themes/<slug>/tokens.json（唯一真相）+ exporters
-  # （theme-next / de_theme_apply 运行时 source；部署到 share/hyprland-nixos/）
+  # （theme-next / de_theme_apply 运行时 source；部署到 share/hyprbuddy-os/）
   themeEntries = lib.concatLists (
     lib.mapAttrsToList
       (slug: _:
         lib.optional (builtins.pathExists (../themes + "/${slug}/tokens.json")) {
-          name = "share/hyprland-nixos/themes/${slug}/tokens.json";
+          name = "share/hyprbuddy-os/themes/${slug}/tokens.json";
           path = pkgs.writeTextFile {
             name = "theme-${slug}-tokens";
             text = read (../themes + "/${slug}/tokens.json");
@@ -75,7 +75,7 @@ let
       }) (builtins.attrNames (lib.filterAttrs (_: t: t == "regular") (builtins.readDir ../exporters/niri))));
 
   exporterEntries = lib.mapAttrsToList (name: path: {
-    name = "share/hyprland-nixos/exporters/${name}";
+    name = "share/hyprbuddy-os/exporters/${name}";
     path = pkgs.writeTextFile {
       name = "exporter-${lib.replaceStrings [ "/" ] [ "-" ] name}";
       text = read path;
@@ -137,13 +137,13 @@ let
 
   # 主题预览图（assets/theme-previews/，theme-picker 的 fzf 预览用；
   # 由 theme-preview-capture 在虚机捕获后入库，装机即带默认预览图）。
-  # 经 install.sh 的 share/* 映射落到 ~/.local/share/hyprland-nixos/。
+  # 经 install.sh 的 share/* 映射落到 ~/.local/share/hyprbuddy-os/。
   previewDir = ../assets/theme-previews;
   previewEntries = lib.mapAttrsToList
     (name: _: {
-      name = "share/hyprland-nixos/theme-previews/${name}";
+      name = "share/hyprbuddy-os/theme-previews/${name}";
       path = previewDir + "/${name}";
     })
     (builtins.readDir previewDir);
 in
-pkgs.linkFarm "user-config-${hostName}" (entries ++ skillEntries ++ previewEntries ++ [ { name = "share/hyprland-nixos/commands.json"; path = commandsJson; } ])
+pkgs.linkFarm "user-config-${hostName}" (entries ++ skillEntries ++ previewEntries ++ [ { name = "share/hyprbuddy-os/commands.json"; path = commandsJson; } ])

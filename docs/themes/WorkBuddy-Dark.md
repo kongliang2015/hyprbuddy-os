@@ -5,7 +5,7 @@
 - 索引：**6**（主题表第 7 套）
 - 切换：`theme-next 6` 或 Super+Space → 外观 → 主题预览
 - 壁纸：`wallpapers/09-workbuddy-dark.png` → `~/Pictures/wallpapers/09-workbuddy-dark.png`
-- 预览图：`~/.local/share/hyprland-nixos/theme-previews/preview-6.png`
+- 预览图：`~/.local/share/hyprbuddy-os/theme-previews/preview-6.png`
 
 ## 角色配色
 

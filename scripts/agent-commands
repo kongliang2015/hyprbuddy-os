@@ -16,7 +16,7 @@ fi
 
 locate() {
   local f
-  for f in "${HOME}/.local/share/hyprland-nixos/commands.json" "/etc/xdg/hyprland-nixos/commands.json"; do
+  for f in "${HOME}/.local/share/hyprbuddy-os/commands.json" "/etc/xdg/hyprbuddy-os/commands.json"; do
     if [ -f "$f" ]; then printf '%s\n' "$f"; return 0; fi
   done
   echo "错误: 找不到 commands.json（先运行 ./install.sh --host <host> --yes，或确认系统已 switch）" >&2

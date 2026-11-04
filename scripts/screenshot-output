@@ -5,7 +5,7 @@
 # @usage: screenshot-output
 # @effect: 在 ~/Pictures 生成截图并通知
 # @doc: desktop-abstraction.md
-DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprbuddy-os/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
 . "$DE_LIB"
 de_screenshot_output || { de_notify "截图失败" "当前桌面截图命令不可用"; exit 1; }

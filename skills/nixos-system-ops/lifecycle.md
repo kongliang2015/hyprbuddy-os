@@ -5,7 +5,7 @@
 ```bash
 sys-update --check          # 临时副本里试更新，30s，有更新时退出码 1
 sys-update --apply          # 真更新 flake.lock + 构建（不 switch）
-sudo nixos-rebuild switch --flake ~/hyprland-nixos#leonard
+sudo nixos-rebuild switch --flake ~/hyprbuddy-os#leonard
 git add flake.lock && git commit -m "chore(flake): update inputs"
 ```
 

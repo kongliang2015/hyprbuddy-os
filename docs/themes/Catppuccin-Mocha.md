@@ -5,7 +5,7 @@
 - 索引：**2**（主题表第 3 套）
 - 切换：`theme-next 2` 或 Super+Space → 外观 → 主题预览
 - 壁纸：`wallpapers/03-catppuccin-mocha.png` → `~/Pictures/wallpapers/03-catppuccin-mocha.png`
-- 预览图：`~/.local/share/hyprland-nixos/theme-previews/preview-2.png`
+- 预览图：`~/.local/share/hyprbuddy-os/theme-previews/preview-2.png`
 
 ## 角色配色
 

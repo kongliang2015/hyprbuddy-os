@@ -1,5 +1,7 @@
 # 实施计划：从配置仓库到发行版骨架
 
+> 注：本文中的 `hyprland-nixos` 为更名前的仓库名（现为 `hyprbuddy-os`），按历史原样保留。
+
 > **历史 / 设计稿（2026-11-04 标注）**：本文是 flake + options + host 重构的实施计划（2026-10-20 快照）；该结构已落地，§8 的「当前状态」是当时记录。
 > 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
 > `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。

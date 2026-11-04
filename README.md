@@ -1,6 +1,6 @@
-# NixOS 桌面配置（niri + Noctalia v5 · distro/v1-nn）
+# HyprBuddy OS（niri + Noctalia v5 · distro/v1-nn）
 
-flake 化的桌面配置：SDDM → **唯一的 niri 会话**（滚动平铺合成器 26.04）+
+**HyprBuddy OS** 是 flake 化的桌面配置：SDDM → **唯一的 niri 会话**（滚动平铺合成器 26.04）+
 **Noctalia v5**（`pkgs.noctalia` 5.0.1，原生 C++ 运行时，非 v4 的 quickshell）。
 Hyprland / COSMIC 于 2026-10-28 在 `distro/v1-nn` 退役，历史版本见 `distro/v1-cosmic`。
 按 host 选择架构 / GPU / 虚拟化适配；桌面能力通过 `scripts/lib/de.sh` 抽象层收敛。
@@ -36,7 +36,7 @@ Hyprland / COSMIC 于 2026-10-28 在 `distro/v1-nn` 退役，历史版本见 `di
 ## 目录结构
 
 ```
-hyprland-nixos/
+hyprbuddy-os/
 ├── flake.nix            # nixosConfigurations / packages(per-host home + iso / liveIso) / checks
 ├── flake.lock           # nixpkgs 指向清华 nixos-26.05 nixexprs
 ├── install.sh           # 构建 home 配置树并软链到 ~/.config / ~/.local/bin / ~/.codebuddy/skills
@@ -108,7 +108,7 @@ hyprland-nixos/
 
 ### 技能与镜像
 - 5 个技能随 `install.sh` 软链到 `~/.codebuddy/skills/`（`~/.claude` 存在时同步）
-- installer ISO（`.#packages.<system>.iso`）：root 文本界面 + `install-hyprland-nixos`
+- installer ISO（`.#packages.<system>.iso`）：root 文本界面 + `install-hyprbuddy-os`
 - live ISO（`.#packages.<system>.liveIso`）：live+install 一体盘，保留安装器
 
 ## host 与 distro 选项
@@ -200,7 +200,7 @@ agent / 自动化改动走 `scripts/agent-apply <host>`：`git diff --stat` → 
 ```bash
 nix build .#packages.<system>.iso       # 通用安装盘（root 文本界面）
 nix build .#packages.<system>.liveIso   # live+install 一体盘
-sudo dd if=result/iso/hyprland-nixos-live.iso of=/dev/sdX bs=4M status=progress oflag=sync
+sudo dd if=result/iso/hyprbuddy-live.iso of=/dev/sdX bs=4M status=progress oflag=sync
 ```
 
 installer 镜像启动后以 root 登录，分区并挂载到 /mnt，然后执行 `installer/install.sh`

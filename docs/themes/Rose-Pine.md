@@ -5,7 +5,7 @@
 - 索引：**3**（主题表第 4 套）
 - 切换：`theme-next 3` 或 Super+Space → 外观 → 主题预览
 - 壁纸：`wallpapers/04-rose-pine.png` → `~/Pictures/wallpapers/04-rose-pine.png`
-- 预览图：`~/.local/share/hyprland-nixos/theme-previews/preview-3.png`
+- 预览图：`~/.local/share/hyprbuddy-os/theme-previews/preview-3.png`
 
 ## 角色配色
 

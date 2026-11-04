@@ -5,7 +5,7 @@
 # @usage: night-mode
 # @effect: 通过 noctalia msg nightlight-toggle 切换色温
 # 夜间模式：niri + Noctalia v5 内置 night light（Hyprland 已退役）
-DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprland-nixos/lib/de.sh"
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprbuddy-os/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
 . "$DE_LIB"
 de=$(de_name)

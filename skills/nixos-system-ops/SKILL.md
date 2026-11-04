@@ -1,13 +1,13 @@
 ---
 name: nixos-system-ops
-description: hyprland-nixos 系统运维入口：机器变慢、服务挂了、磁盘满、要更新或回滚时的第一动作。先用 sys-* 只读命令拿事实，再决定是否把 sudo 命令交给人；不执行 sudo。
+description: HyprBuddy OS 系统运维入口：机器变慢、服务挂了、磁盘满、要更新或回滚时的第一动作。先用 sys-* 只读命令拿事实，再决定是否把 sudo 命令交给人；不执行 sudo。
 ---
 
 # nixos-system-ops
 
 系统层运维与排障。**桌面外观/键位/主题**这类请求走 `nixos-desktop-settings`，这里只管"机器状态"。
 
-仓库：`~/hyprland-nixos`（`HYPRLAND_NIXOS_REPO` 可覆盖）；host 默认 `leonard`。
+仓库：`~/hyprbuddy-os`（`HYPRBUDDY_OS_REPO` 可覆盖）；host 默认 `leonard`。
 
 ## 铁律
 

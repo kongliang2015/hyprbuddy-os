@@ -59,8 +59,8 @@ sys-log --system --level err           # 系统侧（当前用户可读）
 ## 5. 判断「是不是我改的东西坏了」
 
 ```bash
-git -C ~/hyprland-nixos log --oneline -5       # 最近改了什么
-git -C ~/hyprland-nixos status --short         # 有没有未提交改动（flake 会包含它们）
+git -C ~/hyprbuddy-os log --oneline -5       # 最近改了什么
+git -C ~/hyprbuddy-os status --short         # 有没有未提交改动（flake 会包含它们）
 sys-rollback                                   # 上一代能不能回
 ```
 

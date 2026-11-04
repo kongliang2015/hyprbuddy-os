@@ -128,8 +128,8 @@ nixos-install --flake "path:$work/src#$HOST_NAME" --root "$TARGET" --no-root-pas
 
 say "把仓库放进新系统，便于日后重建"
 mkdir -p "$TARGET/home/$USER_NAME"
-cp -a "$work/src" "$TARGET/home/$USER_NAME/hyprland-nixos"
-nixos-enter --root "$TARGET" -c "chown -R $USER_NAME:users /home/$USER_NAME/hyprland-nixos"
+cp -a "$work/src" "$TARGET/home/$USER_NAME/hyprbuddy-os"
+nixos-enter --root "$TARGET" -c "chown -R $USER_NAME:users /home/$USER_NAME/hyprbuddy-os"
 
 say "完成"
 cat <<EOF
@@ -137,7 +137,7 @@ cat <<EOF
   1. 设置用户密码：  nixos-enter --root $TARGET -c "passwd $USER_NAME"
   2. 重启进入系统
   3. 首登后部署用户级配置：
-       cd ~/hyprland-nixos && ./install.sh
+       cd ~/hyprbuddy-os && ./install.sh
   4. 日常重建：
-       sudo nixos-rebuild switch --flake ~/hyprland-nixos#$HOST_NAME
+       sudo nixos-rebuild switch --flake ~/hyprbuddy-os#$HOST_NAME
 EOF

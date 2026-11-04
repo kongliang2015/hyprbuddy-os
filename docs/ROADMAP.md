@@ -1,4 +1,4 @@
-# 路线图（v1-nn：niri + Noctalia v5）
+# HyprBuddy OS 路线图（v1-nn：niri + Noctalia v5）
 
 > 更新：2026-11-04。Hyprland / COSMIC 时代的功能清单已归档到
 > `docs/desktop-retire-hyprland.md` 与 `docs/niri-noctalia-plan.md`；

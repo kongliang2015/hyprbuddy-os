@@ -4,7 +4,7 @@
 
 - 切换：`theme-next 7` 或 Super+Space → 外观 → 主题预览
 - 壁纸：`wallpapers/11-cybertron.png` → `~/Pictures/wallpapers/11-cybertron.png`（赛博坦星球 + 星云，配色与主题一致）
-- 预览图：`~/.local/share/hyprland-nixos/theme-previews/preview-7.png`
+- 预览图：`~/.local/share/hyprbuddy-os/theme-previews/preview-7.png`
 
 ## 角色配色
 

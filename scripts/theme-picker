@@ -19,7 +19,7 @@ command -v kitten >/dev/null 2>&1 || die "需要 kitten（kitty 包自带）"
 
 rows=$("$TN" --print-themes)
 [ -n "$rows" ] || die "主题清单为空"
-shot_dir="$HOME/.local/share/hyprland-nixos/theme-previews"
+shot_dir="$HOME/.local/share/hyprbuddy-os/theme-previews"
 
 # --list：输出原始清单
 if [ "${1:-}" = "--list" ]; then

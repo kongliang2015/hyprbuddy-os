@@ -7,13 +7,13 @@ let
   # 把仓库源码打进 ISO（安装器需要它）
   src = builtins.path {
     path = ../.;
-    name = "hyprland-nixos-src";
+    name = "hyprbuddy-os-src";
     filter = path: _type: !(builtins.elem (baseNameOf path) [ ".git" "result" ]);
   };
 
-  srcPkg = pkgs.runCommand "hyprland-nixos" { } ''
-    mkdir -p $out/share/hyprland-nixos
-    cp -r ${src}/. $out/share/hyprland-nixos
+  srcPkg = pkgs.runCommand "hyprbuddy-os" { } ''
+    mkdir -p $out/share/hyprbuddy-os
+    cp -r ${src}/. $out/share/hyprbuddy-os
   '';
 
   # 复用发行版的用户级 dotfiles（linkFarm，结构对齐 ~/.config + ~/.local/bin）
@@ -54,8 +54,8 @@ in
     vim
     srcPkg
     (writeShellScriptBin "install-hyprbuddy" ''
-      echo "repo: ${srcPkg}/share/hyprland-nixos" >&2
-      exec ${srcPkg}/share/hyprland-nixos/installer/install.sh "$@"
+      echo "repo: ${srcPkg}/share/hyprbuddy-os" >&2
+      exec ${srcPkg}/share/hyprbuddy-os/installer/install.sh "$@"
     '')
   ];
 
@@ -96,10 +96,10 @@ in
     if [ -e "$cfg/bin" ]; then
       ln -sfn "$cfg/bin" /home/live/.local/bin
     fi
-    # share/hyprland-nixos（commands.json + 主题预览图）——theme-picker 预览用
-    if [ -e "$cfg/share/hyprland-nixos" ]; then
+    # share/hyprbuddy-os（commands.json + 主题预览图）——theme-picker 预览用
+    if [ -e "$cfg/share/hyprbuddy-os" ]; then
       mkdir -p /home/live/.local/share
-      ln -sfn "$cfg/share/hyprland-nixos" /home/live/.local/share/hyprland-nixos
+      ln -sfn "$cfg/share/hyprbuddy-os" /home/live/.local/share/hyprbuddy-os
     fi
     chown -R live:users /home/live
   '';

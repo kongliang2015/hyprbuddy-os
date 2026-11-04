@@ -15,7 +15,7 @@
 # 里真跑一次」的方式，不改动仓库。
 set -uo pipefail
 
-REPO="${HYPRLAND_NIXOS_REPO:-$HOME/hyprland-nixos}"
+REPO="${HYPRBUDDY_OS_REPO:-$HOME/hyprbuddy-os}"
 MODE="info"
 HOST="leonard"
 JSON=0

@@ -10,9 +10,9 @@
 set -uo pipefail
 
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
-# 仓库内：scripts/../exporters；部署后：share/hyprland-nixos/exporters
+# 仓库内：scripts/../exporters；部署后：share/hyprbuddy-os/exporters
 LIB_DIR="$(dirname "$(dirname "$SELF")")/exporters"
-[ -d "$LIB_DIR" ] || LIB_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprland-nixos/exporters"
+[ -d "$LIB_DIR" ] || LIB_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprbuddy-os/exporters"
 . "$LIB_DIR/lib.sh"
 
 slug="${1:-}"
@@ -24,8 +24,8 @@ if [ -z "$slug" ]; then
 fi
 
 # 能力实现在 de.sh（与脚本层共用）。仓库内：scripts/lib/de.sh；部署后：
-# share/hyprland-nixos/lib/de.sh
+# share/hyprbuddy-os/lib/de.sh
 DE_SH="$(dirname "$SELF")/lib/de.sh"
-[ -r "$DE_SH" ] || DE_SH="${XDG_DATA_HOME:-$HOME/.local/share}/hyprland-nixos/lib/de.sh"
+[ -r "$DE_SH" ] || DE_SH="${XDG_DATA_HOME:-$HOME/.local/share}/hyprbuddy-os/lib/de.sh"
 . "$DE_SH"
 de_theme_apply "$slug"

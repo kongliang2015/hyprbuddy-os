@@ -4,6 +4,8 @@
 
 # Agent 驱动的 COSMIC UX 定制方案
 
+> 注：本文中的 `hyprland-nixos` 为更名前的仓库名（现为 `hyprbuddy-os`），按历史原样保留。
+
 > 前置调研见 `docs/cosmic-customization.md`。本文补充实测细节，并给出一套
 > 「自然语言 → 受控变更 → 验证 → 可回滚」的 agent 工作流设计。
 

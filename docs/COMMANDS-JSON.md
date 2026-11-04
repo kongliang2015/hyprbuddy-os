@@ -13,8 +13,8 @@
 
 ```
 scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生成器  ──►  commands.json (store)
-                                                                    ├─► ~/.local/share/hyprland-nixos/commands.json
-                                                                    └─► /etc/xdg/hyprland-nixos/commands.json（可选回退）
+                                                                    ├─► ~/.local/share/hyprbuddy-os/commands.json
+                                                                    └─► /etc/xdg/hyprbuddy-os/commands.json（可选回退）
                                                                         ▲
                                           scripts/agent-commands ───────┘（--json / list / show / --category）
 ```
@@ -77,12 +77,12 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
     {
       "name": "deploy-system",
       "summary": "系统级应用（用户执行）",
-      "steps": [ "sudo nixos-rebuild switch --flake ~/hyprland-nixos#<host>" ],
+      "steps": [ "sudo nixos-rebuild switch --flake ~/hyprbuddy-os#<host>" ],
       "requires_sudo": true
     }
   ],
   "paths": {
-    "repo": "~/hyprland-nixos",
+    "repo": "~/hyprbuddy-os",
     "user_config": [ "~/.config/hypr", "~/.config/waybar", "~/.config/fuzzel", "~/.config/kitty", "~/.config/swaync", "~/.config/eww", "~/.config/swayosd", "~/.config/Thunar" ],
     "skills": [ "~/.codebuddy/skills/", "~/.claude/skills/" ]
   }
@@ -97,7 +97,7 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
 
 ```nix
 { pkgs, lib, hostName, version, agentEnabled }:
-pkgs.runCommand "hyprland-nixos-commands" { } ''
+pkgs.runCommand "hyprbuddy-os-commands" { } ''
   ${pkgs.python3}/bin/python3 ${./gen-commands.py} \
       ${../scripts} ${hostName} ${version} ${lib.boolToString agentEnabled} > $out
 ''
@@ -110,9 +110,9 @@ pkgs.runCommand "hyprland-nixos-commands" { } ''
 
 | 环节 | 改动 |
 |---|---|
-| `home/default.nix` | linkFarm 增加 `share/hyprland-nixos/commands.json` |
+| `home/default.nix` | linkFarm 增加 `share/hyprbuddy-os/commands.json` |
 | `install.sh` | 新增 `share/*)` → `~/.local/share/${rel#share/}` 分支 |
-| `modules/desktop/hyprland.nix` | `environment.etc."xdg/hyprland-nixos/commands.json"`（未部署用户配置时兜底） |
+| `modules/desktop/hyprland.nix` | `environment.etc."xdg/hyprbuddy-os/commands.json"`（未部署用户配置时兜底） |
 | `scripts/agent-commands` | `--json` 原样输出；`list` 分组；`show <name>` 详情；`--category <c>` 过滤 |
 
 `agent-commands` 读取顺序：`~/.local/share/…` → `/etc/xdg/…`。

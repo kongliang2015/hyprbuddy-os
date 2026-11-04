@@ -4,14 +4,14 @@ let
   # 只带 git 跟踪之外也要排除的：.git / result
   src = builtins.path {
     path = ../.;   # installer/ 的上一级即仓库根
-    name = "hyprland-nixos-src";
+    name = "hyprbuddy-os-src";
     filter = path: _type: !(builtins.elem (baseNameOf path) [ ".git" "result" ]);
   };
 
   # 仓库作为普通 store 包（/etc 的目录软链在 ISO 构建时会失败）
-  srcPkg = pkgs.runCommand "hyprland-nixos" { } ''
-    mkdir -p $out/share/hyprland-nixos
-    cp -r ${src}/. $out/share/hyprland-nixos
+  srcPkg = pkgs.runCommand "hyprbuddy-os" { } ''
+    mkdir -p $out/share/hyprbuddy-os
+    cp -r ${src}/. $out/share/hyprbuddy-os
   '';
 in
 {
@@ -20,9 +20,9 @@ in
     pciutils
     vim
     srcPkg
-    (writeShellScriptBin "install-hyprland-nixos" ''
-      echo "仓库位置: ${srcPkg}/share/hyprland-nixos" >&2
-      exec ${srcPkg}/share/hyprland-nixos/installer/install.sh "$@"
+    (writeShellScriptBin "install-hyprbuddy-os" ''
+      echo "仓库位置: ${srcPkg}/share/hyprbuddy-os" >&2
+      exec ${srcPkg}/share/hyprbuddy-os/installer/install.sh "$@"
     '')
   ];
 

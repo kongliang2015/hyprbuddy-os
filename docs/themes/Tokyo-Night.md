@@ -5,7 +5,7 @@
 - 索引：**1**（主题表第 2 套）
 - 切换：`theme-next 1` 或 Super+Space → 外观 → 主题预览
 - 壁纸：`wallpapers/02-tokyo-night.png` → `~/Pictures/wallpapers/02-tokyo-night.png`
-- 预览图：`~/.local/share/hyprland-nixos/theme-previews/preview-1.png`
+- 预览图：`~/.local/share/hyprbuddy-os/theme-previews/preview-1.png`
 
 ## 角色配色
 

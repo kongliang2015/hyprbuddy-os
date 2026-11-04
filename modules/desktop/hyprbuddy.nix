@@ -169,7 +169,7 @@ lib.mkIf cfg.desktop.enable {
   ];
 
   # 命令清单（agent / CLI 自检用）
-  environment.etc."xdg/hyprland-nixos/commands.json".source = import ../../lib/commands.nix {
+  environment.etc."xdg/hyprbuddy-os/commands.json".source = import ../../lib/commands.nix {
     inherit pkgs lib;
     hostName = config.networking.hostName;
     version = config.distro.version;

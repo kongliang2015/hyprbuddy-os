@@ -5,6 +5,8 @@
 
 # 桌面抽象层：COSMIC 接入与 Hyprland 渐进退役
 
+> 注：本文中的 `hyprland-nixos` 为更名前的仓库名（现为 `hyprbuddy-os`），按历史原样保留。
+
 目标：**不是迁移**，而是把 COSMIC 当作与 Hyprland 并列的桌面提供方接入现有
 系统层 / agent 层 / skill 层，用同一份能力契约让两者共存，再逐步让 Hyprland 退役。
 

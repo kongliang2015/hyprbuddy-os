@@ -26,9 +26,9 @@ STATE="$STATE_DIR/idx"
 mkdir -p "$STATE_DIR"
 
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
-# 仓库内：scripts/../exporters；部署后：share/hyprland-nixos/exporters
+# 仓库内：scripts/../exporters；部署后：share/hyprbuddy-os/exporters
 LIB_DIR="$(dirname "$(dirname "$SELF")")/exporters"
-[ -d "$LIB_DIR" ] || LIB_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprland-nixos/exporters"
+[ -d "$LIB_DIR" ] || LIB_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/hyprbuddy-os/exporters"
 . "$LIB_DIR/lib.sh"
 
 mapfile -t SLUGS < <(theme_list)

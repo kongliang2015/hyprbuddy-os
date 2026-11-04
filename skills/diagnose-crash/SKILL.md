@@ -1,6 +1,6 @@
 ---
 name: diagnose-crash
-description: 分析进程崩溃/段错误/core dump：定位原因、排除资源耗尽、符号化栈，输出客观诊断报告。适用于 hyprland-nixos 发行版的机器（含 coredump 自动分析链路）。
+description: 分析进程崩溃/段错误/core dump：定位原因、排除资源耗尽、符号化栈，输出客观诊断报告。适用于 HyprBuddy OS的机器（含 coredump 自动分析链路）。
 ---
 
 # diagnose-crash

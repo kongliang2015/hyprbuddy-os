@@ -1,5 +1,7 @@
 # Hyprland 退役记录（distro/v1-nn，2026-10-28）
 
+> 注：本文中的 `hyprland-nixos` 为更名前的仓库名（现为 `hyprbuddy-os`），按历史原样保留。
+
 本文记录从「Hyprland + niri 双提供方」收敛到「只有 niri」的改动、顺序与回滚方式。
 
 ## 最终形态

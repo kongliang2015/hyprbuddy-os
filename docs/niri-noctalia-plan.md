@@ -1,5 +1,7 @@
 # niri + Noctalia 接入实施方案（v1 架构第三提供方）
 
+> 注：本文中的 `hyprland-nixos` 为更名前的仓库名（现为 `hyprbuddy-os`），按历史原样保留。
+
 > **状态（2026-10-29）**：本文记录的是 **Noctalia v4（noctalia-shell 4.7.6）** 的接入过程。
 > 仓库现已切到 **Noctalia v5（pkgs.noctalia 5.0.1，原生 C++ 运行时）**：
 > 配置为 `~/.config/noctalia/*.toml`、IPC 为 `noctalia msg ...`、配色走壁纸取色。
