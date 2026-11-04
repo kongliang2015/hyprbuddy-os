@@ -17,6 +17,10 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 | `scifi-ui` | 科幻风视觉规范 | "做成 HUD 风格"、改 SDDM/kitty/fuzzel 观感 | — |
 | `diagnose-crash` | 崩溃 / core dump 分析 | 进程段错误、系统崩了 | — |
 
+> 注：`~/.codebuddy/skills/` 下还可能看到宿主 / CodeBuddy 内置的 `cosmic-ux` 技能
+> （COSMIC 时代残留，COSMIC 已退役）。它**不在本仓库**、不随 `install.sh` 部署，
+> 不属于上表 5 个技能，不要按本表路由使用。
+
 ## 2. 怎么选
 
 ```
@@ -102,12 +106,17 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 |---|---|
 | 目录结构 | `skills/<name>/SKILL.md`（必需）+ 可选参考资料 |
 | frontmatter | 必须有 `name` / `description`，description 写清"什么时候用" |
-| 部署 | 先 `git commit`，再 `./install.sh --host leonard --yes`（flake 只认 git 跟踪文件） |
+| 部署 | 先 `git commit`，再 `./install.sh --host <host> --yes`（flake 只认 git 跟踪文件） |
 | 死引用检查 | 组件退役后，`grep -rn "已删组件名" skills/` 必须为 0（或在"已退役"清单里） |
 | 命令一致性 | 技能里提到的命令必须存在于 `agent-commands list` |
 | 新增技能 | 同步更新本文第 1、2、3 节与 `nixos-desktop-settings` 的分工表 |
 
 ## 6. 命令全景（26 条）
+
+下表是**仓库能力**，不代表本机都可用：`commands.json` 的 `available` 字段反映
+本机构建状态。例如 `distro.agent.enable = false` 的机器上，
+`agent-apply` / `agent-menu` / `agent-theme-sync` 未部署、`available=false`。
+以 `agent-commands --json` 为准。
 
 | 分类 | 命令 |
 |---|---|

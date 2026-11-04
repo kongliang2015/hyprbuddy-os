@@ -223,7 +223,7 @@ P3 skill 清理（可与 P2 并行）
 | 文件 | 内容 |
 |---|---|
 | `SKILL.md` | 铁律、症状→命令决策树、命令速查（含退出码与耗时）、三步排障法 |
-| `diagnose.md` | 五类症状的判读与处置，含本机三次真实事故的判据 |
+| `diagnose.md` | 7 类症状的判读与处置（P3 初版 5 类，P2 补充网络/电源后为 7 类），含本机三次真实事故的判据 |
 | `lifecycle.md` | 更新/回滚/GC 流程，以及「先 commit 再 install」的顺序铁律 |
 
 `nixos-desktop-settings` 的决策树加了交叉引用：系统运维类请求转 `nixos-system-ops`。

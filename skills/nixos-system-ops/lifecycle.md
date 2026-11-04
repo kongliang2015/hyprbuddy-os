@@ -14,7 +14,7 @@ git add flake.lock && git commit -m "chore(flake): update inputs"
 - `--apply` 只到「构建通过」。构建失败用 `git checkout flake.lock` 撤销
 - 全量更新往往意味着上百个包重编；只想跟 unstable 时单独更：
   `nix flake update nixpkgs-unstable`
-- **更新后必须重新部署用户配置**：`./install.sh --host leonard --yes`
+- **更新后必须重新部署用户配置**：`./install.sh --host <host> --yes`
   （rebuild 只换 `/run/current-system`，`~/.config`、`~/.local/bin`、skills 由 install.sh 管）
 
 ## 回滚

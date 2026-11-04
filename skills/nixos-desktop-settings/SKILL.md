@@ -5,7 +5,7 @@ description: HyprBuddy OS 桌面配置入口：改仓库 → 求值构建 → �
 
 # nixos-desktop-settings
 
-HyprBuddy OS的桌面配置入口。**当前桌面提供方只有 niri + Noctalia**
+HyprBuddy OS 的桌面配置入口。**当前桌面提供方只有 niri + Noctalia**
 （Hyprland / COSMIC 均已退役，见 `docs/desktop-retire-hyprland.md`）；
 共享底座（SDDM / fcitx5 / Qt / polkit / 通用 CLI）在 `modules/desktop/hyprbuddy.nix`。
 仓库：`~/hyprbuddy-os`（`HYPRBUDDY_OS_REPO` 可覆盖）；host 名默认 `$(hostname)`。

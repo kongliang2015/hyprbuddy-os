@@ -6,7 +6,7 @@
 |---|---|---|
 | `enable` | false | 安装 agent 包与专用脚本（agent-menu / agent-apply / agent-theme-sync） |
 | `agents` | `[ "claude-code" ]` | 安装哪些 agent；**claude-code 构建期需访问 downloads.claude.ai**，网络不通时用 `[ "opencode" "codebuddy" ]` |
-| `usage` | true | 部署 `~/.local/bin/agent-usage`，供 Noctalia bar 的 CustomButton 显示 |
+| `usage` | true | 部署 `~/.local/bin/agent-usage`，供 **fastfetch 的 command 模块**调用；v5 下若要上栏需在 Noctalia 设置里自行加组件（`CustomButton` 是 v4 字段，已失效） |
 | `diagnostics` | true | coredump 诊断单元；`modules/agent/diagnostics.nix` 内的断言要求 `localModels = true`（否则求值失败），且需已 `ollama pull` |
 | `localModels` | false | 启用本地模型（ollama） |
 | `model` | `qwen2.5-coder:1.5b` | 诊断/摘要使用的模型 |

@@ -59,6 +59,7 @@ XF86MonBrightnessUp  allow-when-locked=true { spawn "noctalia" "msg" "brightness
 | `Print` | `noctalia msg screenshot-region` | `~/图片/screenshot_<时间戳>.png`（XDG 图片目录）+ 剪贴板 `image/png` |
 | `Shift+Print` | `noctalia msg screenshot-fullscreen` | 同上 |
 | `Mod+Shift+A` | `screenshot-annotate`（grim+slurp+swappy） | 由 swappy 决定（默认 `~/Pictures`） |
+| 命令 | `screenshot-output`（能力层 `de_screenshot_output`，niri 走 grim） | `~/Pictures` + 通知 |
 
 要点：
 
@@ -69,6 +70,16 @@ XF86MonBrightnessUp  allow-when-locked=true { spawn "noctalia" "msg" "brightness
 - 因为截图落在 `~/图片`，**不要**把壁纸目录设成 `~/图片`，否则
   `wallpaper-next` 会把截图当壁纸轮播（我们显式设的是 `~/Pictures/wallpapers`）。
 - 区域截图会起一层 overlay 等框选，未选中按 `Escape` 取消。
+
+## 系统信息命令（fastfetch 链路）
+
+- `show-sysinfo`：浮动 kitty 里跑 fastfetch，按内容自适应窗口大小，Enter 关闭；
+  fastfetch 配色由 `theme-next` 按主题生成。标记 `@interactive: true`，
+  agent 不要直接调用（会阻塞等输入）。
+- `sysinfo-os`：给 fastfetch 的 command 模块提供 OS 行
+  （`HyprBuddy <NixOS 版本> · <分支>@<短提交>`）。仓库路径默认 `~/hyprbuddy-os`，
+  可用 `HYPRBUDDY_REPO` 覆盖——注意这个变量名与 agent 脚本的
+  `HYPRBUDDY_OS_REPO` 不同，是历史命名。
 
 一次性动作加 `repeat=false`（窗口切换、截图），否则按住会连续弹面板。
 
@@ -97,7 +108,8 @@ output "HDMI-A-1" {
 ```
 
 临时调整（不重启）：`wlr-randr --output HDMI-A-1 --mode 2560x1440 --scale 1.25`。
-Noctalia 4.7.6 没有显示器 GUI，`wlr-randr` 是唯一手段。
+显示器配置写进 `config.kdl` 的 `output` 段（持久化）或用 `wlr-randr`（临时）；
+Noctalia 外壳不代管输出布局。
 
 ## 输入法（fcitx5）
 

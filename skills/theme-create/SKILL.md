@@ -1,6 +1,6 @@
 ---
 name: theme-create
-description: 为 hyprbuddy-os 生成一套新主题（参考网站/品牌配色 → 壁纸 + themes/<slug>/tokens.json），并接入 theme-picker 预览选择。适用于「照 X 官网风格做套主题」这类请求。
+description: 为 HyprBuddy OS 生成一套新主题（参考网站/品牌配色 → 壁纸 + themes/<slug>/tokens.json），并接入 theme-picker 预览选择。适用于「照 X 官网风格做套主题」这类请求。
 ---
 
 # theme-create
@@ -8,7 +8,7 @@ description: 为 hyprbuddy-os 生成一套新主题（参考网站/品牌配色 
 一套主题 = **一张壁纸 + 一个 `themes/<slug>/tokens.json`**。
 `theme-picker` / `theme-next` 会自动收录，无需改任何数组。
 
-仓库：`~/hyprbuddy-os`；host：`leonard`（`hostname` 输出是 `nixos`，flake 里没有该 host，别照抄）。
+仓库：`~/hyprbuddy-os`；host 取 `hosts/` 下的真实目录名（当前机器是 `vmware`），不要照抄别处的示例 host。
 
 ## 0. 先定三件事
 
@@ -70,8 +70,8 @@ identify -format '%wx%h %[channels] %[bit-depth]bit\n' wallpapers/NN-<slug>.png
 ## 4. 部署
 
 ```bash
-scripts/agent-apply leonard        # 求值 + 构建（无 sudo）
-./install.sh --host leonard --yes  # 部署 tokens + 复制 wallpapers/ 到 ~/Pictures/wallpapers
+scripts/agent-apply <host>        # 求值 + 构建（无 sudo）
+./install.sh --host <host> --yes  # 部署 tokens + 复制 wallpapers/ 到 ~/Pictures/wallpapers
 ```
 
 ## 5. 应用与验证
