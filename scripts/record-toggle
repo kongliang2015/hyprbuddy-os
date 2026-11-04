@@ -3,9 +3,9 @@
 # @summary: 屏幕录制开始/停止（wf-recorder，保存到 XDG 视频目录）
 # @category: runtime
 # @usage: record-toggle
-# @effect: 写视频文件到 ~/视频（或 ~/Videos）
-# 开始/停止屏幕录制（wf-recorder）。输出目录取 xdg-user-dir VIDEOS，
-# 中文环境下是 ~/视频，硬编码 ~/Videos 会和文件管理器里的位置对不上。
+# @effect: 按 XDG 视频目录写录屏文件（由 de_xdg_dir 解析）
+# 开始/停止屏幕录制（wf-recorder）。输出目录按 XDG 视频目录解析，
+# 与文件管理器里的位置保持一致（本机为 ~/Videos，中文 locale 为 ~/视频）。
 set -uo pipefail
 
 toggle_notify() { command -v notify-send >/dev/null 2>&1 && timeout 3 notify-send -a record-toggle "$1" "$2" 2>/dev/null || true; }
@@ -17,18 +17,11 @@ fi
 
 command -v wf-recorder >/dev/null 2>&1 || { toggle_notify "录屏" "wf-recorder 未安装"; exit 1; }
 
-# 注意 xdg-user-dir 命令本身没装（xdg-user-dirs 不在包集里），
-# 直接读 user-dirs.dirs；它只有 XDG_*_DIR= 赋值，source 即得变量。
-dir="${XDG_VIDEOS_DIR:-}"
-if [ -z "$dir" ] && [ -f "$HOME/.config/user-dirs.dirs" ]; then
-  dir=$(
-    # shellcheck disable=SC1091
-    . "$HOME/.config/user-dirs.dirs" >/dev/null 2>&1
-    printf '%s' "${XDG_VIDEOS_DIR:-}"
-  )
-fi
-# 未配置时该值为 $HOME 本身，此时回落到 ~/Videos
-[ -n "$dir" ] && [ "$dir" != "$HOME" ] || dir="$HOME/Videos"
+# XDG 目录解析统一走能力层 de_xdg_dir（与 screenshot-output 同一份实现）
+DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprbuddy-os/lib/de.sh"
+[ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
+if [ -r "$DE_LIB" ]; then . "$DE_LIB"; else echo "错误: 找不到能力层 de.sh" >&2; exit 1; fi
+dir="$(de_xdg_dir VIDEOS Videos)" || exit 1
 mkdir -p "$dir" || exit 1
 
 file="$dir/rec-$(date +%Y%m%d-%H%M%S).mp4"

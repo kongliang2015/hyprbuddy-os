@@ -104,10 +104,41 @@ de_theme_apply() {
   esac
 }
 
+# XDG 用户目录解析（构建期静态清单无法知道，统一在这里按运行时解析）。
+# $1 = PICTURES / VIDEOS；$2 = 未配置时的回退目录名（相对 $HOME）。
+# user-dirs.dirs 里是 XDG_PICTURES_DIR="$HOME/xxx"，source 后即绝对路径。
+# xdg-user-dir 命令未装（xdg-user-dirs 不在包集里），直接读配置文件。
+de_xdg_dir() {
+  local key="$1" fallback="$2" dir=""
+  case "$key" in
+    PICTURES) dir="${XDG_PICTURES_DIR:-}" ;;
+    VIDEOS)   dir="${XDG_VIDEOS_DIR:-}" ;;
+    *) return 1 ;;
+  esac
+  if [ -z "$dir" ] && [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs" ]; then
+    dir=$(
+      # shellcheck disable=SC1091
+      . "${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs" >/dev/null 2>&1
+      case "$key" in
+        PICTURES) printf '%s' "${XDG_PICTURES_DIR:-}" ;;
+        VIDEOS)   printf '%s' "${XDG_VIDEOS_DIR:-}" ;;
+      esac
+    )
+  fi
+  # 未配置时该值可能是 $HOME 本身，此时回落到 ~/Pictures / ~/Videos
+  [ -n "$dir" ] && [ "$dir" != "$HOME" ] || dir="$HOME/$fallback"
+  printf '%s' "$dir"
+}
+
 # 整屏截图（区域截图见 de_screenshot_annotate）
 de_screenshot_output() {
   case "$(de_name)" in
-    niri) grim "$HOME/Pictures/Screenshot_$(date +%Y%m%d_%H%M%S).png" || return 1 ;;
+    niri)
+      local dir
+      dir="$(de_xdg_dir PICTURES Pictures)" || return 1
+      mkdir -p "$dir" || return 1
+      grim "$dir/Screenshot_$(date +%Y%m%d_%H%M%S).png" || return 1
+      ;;
     *) return 1 ;;
   esac
 }

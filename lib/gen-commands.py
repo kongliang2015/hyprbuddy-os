@@ -129,6 +129,16 @@ payload = {
             "~/.config/Thunar",
         ],
         "skills": ["~/.codebuddy/skills/", "~/.claude/skills/"],
+        # 产物落点：<XDG_*_DIR> 是运行时展开标记（构建期无法知道用户的 XDG 目录），
+        # 由 agent-commands paths 解析；其余为与主机无关的固定落点。
+        "artifacts": {
+            "screenshots": "<XDG_PICTURES_DIR>",
+            "recordings": "<XDG_VIDEOS_DIR>",
+            "wallpapers": "~/Pictures/wallpapers",
+            "theme_tokens": "~/.local/share/hyprbuddy-os/themes",
+            "state": "~/.local/state",
+            "config_backups": "~/.config.bak-*",
+        },
     },
 }
 

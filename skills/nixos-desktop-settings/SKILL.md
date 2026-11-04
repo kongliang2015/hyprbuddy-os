@@ -83,5 +83,5 @@ HyprBuddy OS 的桌面配置入口。**当前桌面提供方只有 niri + Noctal
 
 - `diagnose-crash`：崩溃 / 段错误 / core dump 分析（本机启用自动诊断时先读
   `~/.local/state/agent/coredump-report.md`）
-- `agent-commands`：机器可读命令清单（`--json` / `list` / `show <name>` / `--category`）
+- `agent-commands`：机器可读命令清单（`--json` / `list` / `show <name>` / `--category` / `paths`）
 - `theme-create`：照某网站/品牌风格做一套新主题（取色 → 壁纸 → 主题表 → 接入主题预览）

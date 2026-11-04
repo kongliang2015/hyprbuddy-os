@@ -56,8 +56,11 @@
 - [x] 剪贴板维持现状（2026-11-04 决定）：`Mod+V` → cliphist + fuzzel，
       不把 v5 `panel-toggle clipboard` 绑进键位。理由：键盘单行列表更快，
       且 fuzzel 配色跟随 tokens；v5 面板保留为手动 `noctalia msg panel-toggle clipboard`
-- [x] 截图落盘策略：v5 保存到 XDG 图片目录（`~/图片`）并同时写剪贴板，
-      5.0.1 无保存目录配置键；已写入 `skills/.../niri.md`
+- [x] 截图落盘策略：v5 截图 overlay 保存到 XDG 图片目录并同时写剪贴板，
+      5.0.1 无保存目录配置键；目录由 `~/.config/user-dirs.dirs` 决定
+      （本机为 `~/Pictures`），已写入 `skills/.../niri.md`
+- [x] 产物落点统一：`commands.json` 增 `paths.artifacts` + `agent-commands paths`；
+      截图/录屏统一按 XDG 目录解析，修正文档里写死的 `~/图片` / `~/视频`
 - [x] `desktop-check` 增补：键位引用的命令存在性（负向已测）、壁纸目录可用性、
       夜间模式日程是否解析、Noctalia 配置 unknown setting 告警
 

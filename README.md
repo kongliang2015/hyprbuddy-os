@@ -101,7 +101,7 @@ hyprbuddy-os/
 
 ### Agent 层（modules/agent/ + lib/agent-usage.nix）
 - agent 脚本随 `distro.agent.enable` 部署（vmware 为 false，leonard / vm-virtio 为 true）
-- `agent-commands`：机器可读命令清单（`--json` / `list` / `show <name>` / `--category`），
+- `agent-commands`：机器可读命令清单（`--json` / `list` / `show <name>` / `--category` / `paths`），
   由脚本头部 `@command` 元数据在构建期生成，缺 `@summary` 直接构建失败
 - 系统运维命令：`sys-health` / `svc-status` / `sys-log` / `sys-rollback` / `sys-gc` /
   `sys-update` / `net-status` / `power-status`（全部只读或只打印 sudo 命令）

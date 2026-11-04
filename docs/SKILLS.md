@@ -126,4 +126,5 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 | runtime（14） | `agent-menu` `clipboard-menu` `de-theme-apply` `night-mode` `notif-dnd` `record-toggle` `screenshot-annotate` `screenshot-output` `sddm-theme` `show-sysinfo` `sysinfo-os` `theme-next` `theme-picker` `wallpaper-next` |
 
 详细参数：`agent-commands show <name>`；结构：`agent-commands --json`；
-分类筛选：`agent-commands --category check`。
+分类筛选：`agent-commands --category check`；路径落点：`agent-commands paths`
+（XDG 目录在运行时展开，构建期清单里是 `<XDG_*_DIR>` 占位符）。

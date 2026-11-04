@@ -3,7 +3,7 @@
 # @summary: 整屏截图（niri: grim）
 # @category: runtime
 # @usage: screenshot-output
-# @effect: 在 ~/Pictures 生成截图并通知
+# @effect: 按 XDG 图片目录生成整屏截图并通知
 # @doc: niri.md
 DE_LIB="${XDG_DATA_HOME:-@HOME@/.local/share}/hyprbuddy-os/lib/de.sh"
 [ -r "$DE_LIB" ] || DE_LIB="$(dirname "$(readlink -f "$0")")/lib/de.sh"
