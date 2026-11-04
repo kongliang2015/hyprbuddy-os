@@ -17,8 +17,10 @@ description: 分析进程崩溃/段错误/core dump：定位原因、排除资�
 同时弹桌面通知（应用名 `agent-diagnostics`，标题「崩溃诊断」）。
 报告含：`coredumpctl info` 头部 40 行 + 本地模型分析（300 字内）。
 
-前提：`distro.agent.diagnostics` 的断言要求 `distro.agent.localModels = true`，
-且已 `ollama pull <distro.agent.model>`；不满足则整条链路不启用。
+前提：断言在 `modules/agent/diagnostics.nix` **模块内部**（不在 `modules/assertions.nix`），
+当 `enable && diagnostics` 时要求 `localModels = true`；不满足会在求值阶段**构建失败**，
+不是运行时降级。另需已 `ollama pull <distro.agent.model>`，否则分析脚本拿不到模型响应、
+只写 coredumpctl 头部或不写报告。
 
 ## 手动排查顺序
 

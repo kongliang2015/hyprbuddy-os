@@ -4,7 +4,7 @@
 # @category: check
 # @usage: net-status [--json]
 # @effect: 只读；网关不可达或 DNS 解析全失败时退出码 1
-# @doc: agent-coverage-review.md
+# @doc: diagnose.md
 #
 # 设计：四件事回答「为什么连不上」——
 #   1) 有没有拿到地址  2) 默认路由指向谁  3) 网关通不通  4) DNS 解析得出来吗

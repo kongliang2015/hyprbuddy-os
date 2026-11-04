@@ -43,7 +43,7 @@ scripts/<cmd>  ──(头部 @command 元数据)──►  lib/commands.nix 生�
 | `@usage` | 否 | 用法字符串 |
 | `@arg` | 否 | 可多条，`name: 说明` |
 | `@effect` | 否 | 副作用，`;` 分隔（agent 判断安全性的依据） |
-| `@doc` | 否 | 对应指南文件（相对 `skills/nixos-desktop-settings/`） |
+| `@doc` | 否 | 指南文件名，须存在于 `skills/<skill>/` 下；**构建期校验**，指向不存在的指南会构建失败 |
 | `@interactive` | 否 | `true` = 会阻塞等输入，agent 不得直接调用 |
 | `@requires-sudo` | 否 | `true` = 必须交用户执行 |
 

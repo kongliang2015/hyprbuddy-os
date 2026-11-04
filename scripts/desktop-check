@@ -4,7 +4,7 @@
 # @category: check
 # @usage: desktop-check [niri]
 # @effect: 只读检查，返回 1 表示有告警（含键位命令存在性、壁纸目录、夜间模式、配置告警）
-# @doc: desktop-abstraction.md
+# @doc: troubleshooting.md
 # COSMIC 于 2026-10-28 退役，Hyprland 于 v1-nn 退役；当前只有 niri 提供方。
 set -uo pipefail
 self=$(dirname "$(readlink -f "$0")")

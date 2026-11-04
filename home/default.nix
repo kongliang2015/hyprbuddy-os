@@ -35,6 +35,8 @@ let
   '';
 
   agentEnabled = distro.agent.enable;
+  # 仅在 agent.enable 时部署的脚本（供 scriptNames 与 commands.json 的 available 共用，避免漂移）
+  agentOnlyScripts = [ "agent-menu" "agent-apply" "agent-theme-sync" ];
   usageEnabled = agentEnabled && distro.agent.usage;
   # agent-usage 部署到 ~/.local/bin，供 fastfetch 的 command 模块调用
   agentUsage = if usageEnabled then import ../lib/agent-usage.nix { inherit pkgs; } else null;
@@ -86,7 +88,7 @@ let
   scriptNames = let
     entries = builtins.readDir ../scripts;
     all = builtins.filter (n: entries.${n} == "regular") (builtins.attrNames entries);
-    agentOnly = [ "agent-menu" "agent-apply" "agent-theme-sync" ];
+    agentOnly = agentOnlyScripts;
   in
     if agentEnabled then all
     else builtins.filter (n: !(builtins.elem n agentOnly)) all;
@@ -132,6 +134,7 @@ let
   # 机器可读命令清单（由 scripts/ 头部 @command 元数据生成）
   commandsJson = import ../lib/commands.nix {
     inherit pkgs lib hostName agentEnabled;
+    agentOnly = agentOnlyScripts;
     version = distro.version;
   };
 

@@ -4,7 +4,7 @@
 # @category: check
 # @usage: power-status [--json]
 # @effect: 只读；电池电量 <10% 时退出码 1
-# @doc: agent-coverage-review.md
+# @doc: diagnose.md
 #
 # 台式机没有电池/背光时对应项显示「—」，不算异常。
 set -uo pipefail

@@ -4,7 +4,7 @@
 # @category: workflow
 # @usage: sys-update [--check|--apply] [--host NAME] [--json]
 # @effect: 默认只读；--apply 会改写 flake.lock 并构建；switch 只打印不执行
-# @doc: agent-coverage-review.md
+# @doc: lifecycle.md
 #
 #   sys-update                 只读：列当前锁定的输入 rev（秒回）
 #   sys-update --check         在临时副本里试更新，报告哪些输入有更新（联网，约 30s）

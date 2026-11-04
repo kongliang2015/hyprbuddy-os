@@ -11,6 +11,10 @@ scripts_dir, host, version, agent_enabled = (
     sys.argv[3],
     sys.argv[4] == "true",
 )
+# 仅在 agent.enable 时部署的脚本清单（与 home/default.nix 的 agentOnlyScripts 同一份）
+agent_only = set(filter(None, sys.argv[5].split(",")))
+# skills/ 目录（store 副本），用于校验 @doc 指向的指南真实存在
+skills_dir = sys.argv[6]
 
 FIELD = re.compile(r"^#\s*@([\w-]+):\s*(.*)$")
 ARG = re.compile(r"^#\s*@arg\s+([^:]+):\s*(.*)$")
@@ -62,10 +66,21 @@ for name in sorted(os.listdir(scripts_dir)):
         "effects": effects,
         "interactive": meta.get("interactive", "false").lower() == "true",
         "requires_sudo": meta.get("requires-sudo", "false").lower() == "true",
-        "available": not (meta["category"] == "agent" and not agent_enabled),
+        # available = 该脚本会被 install.sh 部署到 PATH；
+        # 不能只看 category（agent-apply/agent-menu 是 workflow/runtime 但同样 agent-only）
+        "available": not (name in agent_only and not agent_enabled),
     }
-    if meta.get("doc"):
-        cmd["doc"] = meta["doc"]
+    doc = meta.get("doc")
+    if doc:
+        # @doc 是 skills/<skill>/ 下的指南文件名；不存在即构建失败，防死引用
+        found = any(
+            os.path.isfile(os.path.join(skills_dir, skill, doc))
+            for skill in os.listdir(skills_dir)
+            if os.path.isdir(os.path.join(skills_dir, skill))
+        ) if os.path.isdir(skills_dir) else False
+        if not found:
+            errors.append("%s: @doc=%r 在 skills/ 下找不到对应指南" % (name, doc))
+        cmd["doc"] = doc
     commands.append(cmd)
 
 if errors:
@@ -106,12 +121,11 @@ payload = {
     "paths": {
         "repo": "~/hyprbuddy-os",
         "user_config": [
-            "~/.config/hypr",
-            "~/.config/waybar",
-            "~/.config/fuzzel",
+            "~/.config/niri",
             "~/.config/kitty",
-            "~/.config/mako",
-            "~/.config/swayosd",
+            "~/.config/fuzzel",
+            "~/.config/noctalia",
+            "~/.config/fastfetch",
             "~/.config/Thunar",
         ],
         "skills": ["~/.codebuddy/skills/", "~/.claude/skills/"],

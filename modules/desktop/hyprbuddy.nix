@@ -174,5 +174,7 @@ lib.mkIf cfg.desktop.enable {
     hostName = config.networking.hostName;
     version = config.distro.version;
     agentEnabled = config.distro.agent.enable;
+    # 与 home/default.nix 的 agentOnlyScripts 保持一致（决定 available 字段）
+    agentOnly = [ "agent-menu" "agent-apply" "agent-theme-sync" ];
   };
 }

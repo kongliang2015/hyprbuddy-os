@@ -4,7 +4,7 @@
 # @category: check
 # @usage: sys-gc [--fast] [--json]
 # @effect: 只读：统计 store 占用与 dead 路径，只打印清理命令
-# @doc: agent-coverage-review.md
+# @doc: lifecycle.md
 #
 # 说明：
 #   - 固定成本：nix-store --gc --print-dead 约 8s（不可省）

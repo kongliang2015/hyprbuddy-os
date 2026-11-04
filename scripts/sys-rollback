@@ -4,7 +4,7 @@
 # @category: check
 # @usage: sys-rollback [--limit N] [--json]
 # @effect: 只读：读 /nix/var/nix/profiles 与 /run/current-system，只打印命令
-# @doc: agent-coverage-review.md
+# @doc: lifecycle.md
 #
 # 为什么要这条：回滚命令长且容易记错（system-N-link 的编号 vs --rollback），
 # agent 又不应执行 sudo，所以做成「列清单 + 打印可直接粘贴的命令」。

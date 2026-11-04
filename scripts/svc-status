@@ -4,7 +4,7 @@
 # @category: check
 # @usage: svc-status [unit...] [--json]
 # @effect: 只读；单元 failed/not-found 或关键进程缺失时退出码 1（inactive 视为按需启动）
-# @doc: agent-coverage-review.md
+# @doc: diagnose.md
 #
 # 默认检查：
 #   user   niri.service fcitx5.service polkit-agent.service

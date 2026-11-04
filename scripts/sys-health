@@ -4,7 +4,7 @@
 # @category: check
 # @usage: sys-health [--json]
 # @effect: 只读；磁盘使用率 >=90% 或存在 failed 单元时退出码 1
-# @doc: agent-coverage-review.md
+# @doc: diagnose.md
 #
 # 设计：一条命令回答「机器现在怎么样」。只读、无 sudo、<2s。
 # 系统日志在无权限时标记为 n/a，不报错退出。

@@ -4,7 +4,7 @@
 # @category: check
 # @usage: sys-log [--user|--system] [--since T] [--unit U] [--grep PAT] [-n N] [--level L] [--json] [-- 额外参数]
 # @effect: 只读，输出原样 journal 行（--json 时为 json-lines）
-# @doc: agent-coverage-review.md
+# @doc: diagnose.md
 #
 # 设计：不加工内容，只补默认值，保证输出可追溯。
 #   --user    查用户日志（默认）
