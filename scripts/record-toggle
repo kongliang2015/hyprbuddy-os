@@ -1,15 +1,42 @@
 #!/usr/bin/env bash
 # @command: record-toggle
-# @summary: 屏幕录制开始/停止（wf-recorder，保存到 ~/Videos）
+# @summary: 屏幕录制开始/停止（wf-recorder，保存到 XDG 视频目录）
 # @category: runtime
 # @usage: record-toggle
-# @effect: 写 ~/Videos 视频文件
-# 开始/停止屏幕录制（wf-recorder），文件保存到 ~/Videos
+# @effect: 写视频文件到 ~/视频（或 ~/Videos）
+# 开始/停止屏幕录制（wf-recorder）。输出目录取 xdg-user-dir VIDEOS，
+# 中文环境下是 ~/视频，硬编码 ~/Videos 会和文件管理器里的位置对不上。
+set -uo pipefail
+
+toggle_notify() { command -v notify-send >/dev/null 2>&1 && timeout 3 notify-send -a record-toggle "$1" "$2" 2>/dev/null || true; }
+
 if pgrep -x wf-recorder >/dev/null 2>&1; then
-  pkill -INT -x wf-recorder
+  pkill -INT -x wf-recorder && toggle_notify "录屏" "已停止"
+  exit 0
+fi
+
+command -v wf-recorder >/dev/null 2>&1 || { toggle_notify "录屏" "wf-recorder 未安装"; exit 1; }
+
+# 注意 xdg-user-dir 命令本身没装（xdg-user-dirs 不在包集里），
+# 直接读 user-dirs.dirs；它只有 XDG_*_DIR= 赋值，source 即得变量。
+dir="${XDG_VIDEOS_DIR:-}"
+if [ -z "$dir" ] && [ -f "$HOME/.config/user-dirs.dirs" ]; then
+  dir=$(
+    # shellcheck disable=SC1091
+    . "$HOME/.config/user-dirs.dirs" >/dev/null 2>&1
+    printf '%s' "${XDG_VIDEOS_DIR:-}"
+  )
+fi
+# 未配置时该值为 $HOME 本身，此时回落到 ~/Videos
+[ -n "$dir" ] && [ "$dir" != "$HOME" ] || dir="$HOME/Videos"
+mkdir -p "$dir" || exit 1
+
+file="$dir/rec-$(date +%Y%m%d-%H%M%S).mp4"
+setsid wf-recorder -f "$file" >/dev/null 2>&1 < /dev/null &
+sleep 1
+if pgrep -x wf-recorder >/dev/null 2>&1; then
+  toggle_notify "录屏" "已开始 → ${file/#$HOME/~}"
 else
-  dir="$HOME/Videos"
-  mkdir -p "$dir"
-  setsid wf-recorder -f "$dir/rec-$(date +%Y%m%d-%H%M%S).mp4" \
-    >/dev/null 2>&1 < /dev/null &
+  toggle_notify "录屏" "启动失败（看 wf-recorder 是否支持当前合成器）"
+  exit 1
 fi

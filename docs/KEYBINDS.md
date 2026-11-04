@@ -204,6 +204,7 @@ COSMIC 的键位不写在仓库里，来源是 cosmic-comp 自带的默认表：
 | `Mod+Shift+N` | 夜间模式（`nightlight-toggle`） |
 | `Mod+Shift+W` | 下一张壁纸（`wallpaper-next`，目录 `~/Pictures/wallpapers`） |
 | `Mod+Shift+M` | btop（任务管理器） |
+| `Mod+Alt+R` | 录屏开始/停止（`record-toggle`，保存到 `~/视频`） |
 | `Mod+V` | 剪贴板历史（cliphist + fuzzel） |
 | `Print` / `Shift+Print` | v5 截图 overlay：区域 / 整屏 |
 | `Mod+Shift+A` | 区域截图并标注（grim + slurp + swappy） |

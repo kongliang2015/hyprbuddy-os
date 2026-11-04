@@ -40,6 +40,7 @@ window-rule { ... }      // 窗口规则
 | `Mod+Shift+N` | 夜间模式（`nightlight-toggle`） |
 | `Mod+Shift+W` | 下一张壁纸（`wallpaper-next`，需 `[wallpaper] directory`） |
 | `Mod+Shift+M` | btop |
+| `Mod+Alt+R` | 录屏开始/停止（`record-toggle` → wf-recorder，存 `~/视频`） |
 | `Print` / `Shift+Print` | v5 截图 overlay：区域 / 整屏 |
 | `Mod+Shift+A` | 区域截图并标注（grim+slurp+swappy） |
 | `XF86Audio*` / `XF86MonBrightness*` | 音量/静音/亮度（**必须显式绑定**，niri 不内置硬件键；`allow-when-locked=true`） |

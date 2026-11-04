@@ -115,6 +115,8 @@ binds {
     Mod+Shift+N  { spawn "noctalia" "msg" "nightlight-toggle"; }
     Mod+Shift+W  { spawn "noctalia" "msg" "wallpaper-next"; }
     Mod+Shift+M  { spawn "kitty" "-e" "btop"; }
+    // 录屏开始/停止（wf-recorder → ~/视频）
+    Mod+Alt+R    repeat=false { spawn "record-toggle"; }
 
     // 截图：Print 走 v5 overlay（框选/复制/保存），Shift+Print 整屏，
     // Mod+Shift+A 走 grim+slurp+swappy 标注链路
