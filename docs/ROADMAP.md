@@ -52,7 +52,9 @@
 ### P2 质量
 
 - [ ] 重建 live/install ISO（niri 提供方换 v5 后未验证）
-- [ ] 剪贴板双轨收敛：`Mod+V`（cliphist+fuzzel）vs v5 `panel-toggle clipboard`
+- [x] 剪贴板维持现状（2026-11-04 决定）：`Mod+V` → cliphist + fuzzel，
+      不把 v5 `panel-toggle clipboard` 绑进键位。理由：键盘单行列表更快，
+      且 fuzzel 配色跟随 tokens；v5 面板保留为手动 `noctalia msg panel-toggle clipboard`
 - [x] 截图落盘策略：v5 保存到 XDG 图片目录（`~/图片`）并同时写剪贴板，
       5.0.1 无保存目录配置键；已写入 `skills/.../niri.md`
 - [x] `desktop-check` 增补：键位引用的命令存在性（负向已测）、壁纸目录可用性、
