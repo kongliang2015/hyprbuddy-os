@@ -89,3 +89,4 @@
 | 文件 | 主题 |
 |---|---|
 | `next-feature/local-memory-timeline.md` | Linux / niri 版 Recall：本地时间轴 + 语义检索（2026-11-04 评估） |
+| `next-feature/file-ops-skill.md` | 文件操作能力：落点统一 + 备份查恢 + 介质只读视图（2026-11-04 评估） |
