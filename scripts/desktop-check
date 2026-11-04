@@ -77,7 +77,7 @@ case "$de" in
       elif printf '%s' "$status" | grep -q '"barVisible": true'; then
         info "Noctalia 状态栏运行中"
       else
-        bad "Noctalia 未报告运行中的 bar（检查 ~/.cache/noctalia/noctalia.log）"
+        bad "Noctalia bar 未显示（被 bar-toggle/bar-hide 隐藏？用 noctalia msg bar-show 恢复）"
       fi
     fi
     # 5) 中文字体解析

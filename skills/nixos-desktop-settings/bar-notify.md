@@ -13,6 +13,16 @@
 以下组件**已随 Hyprland 退役删除，不要再引用**：
 `waybar`、`mako`、`swaync`/`swaync-client`、`swayosd`、`eww`、`hyprshell`、`lib/waybar.nix`。
 
+## bar 属"运行态"，不是仓库基线
+
+仓库**只**声明 `[theme]` 与 `[wallpaper]`（exporter 生成的 `theme.toml`）。
+`[bar.*]` 故意不做声明式基线：GUI 改动写进 `~/.local/state/noctalia/settings.toml`
+且优先级更高，基线会被逐项覆盖；5.0.1 的 bar/widget schema 又与文档版本不一致。
+
+所以：**改 bar 布局走 GUI**（`Mod+Shift+S` → Bar），换机/重装会回默认。
+bar 被误隐藏时用 `noctalia msg bar-show` 恢复（`bar-toggle`/`bar-hide` 只改运行态，
+不落盘，但也不会被解锁自动清除）。
+
 ## v5 的配置分层（重要）
 
 - 手写：`~/.config/noctalia/*.toml`（按文件名排序合并，支持 `[include]`）
