@@ -3,7 +3,7 @@
 # @summary: 桌面自检（niri + Noctalia）
 # @category: check
 # @usage: desktop-check [niri]
-# @effect: 只读检查，返回 1 表示有告警
+# @effect: 只读检查，返回 1 表示有告警（含键位命令存在性、壁纸目录、夜间模式、配置告警）
 # @doc: desktop-abstraction.md
 # COSMIC 于 2026-10-28 退役，Hyprland 于 v1-nn 退役；当前只有 niri 提供方。
 set -uo pipefail
@@ -87,18 +87,69 @@ case "$de" in
       *) bad "中文解析为 $cjk（期望文泉驿）" ;;
     esac
 
-    # 5) 常用命令
-    for c in niri noctalia grim slurp swappy; do
+    # 6) 常用命令
+    for c in niri noctalia grim slurp swappy wf-recorder; do
       command -v "$c" >/dev/null 2>&1 && info "命令 $c 可用" || bad "命令 $c 缺失"
     done
 
-    # 6) 主题与配置
-    if [ -f "$HOME/.config/noctalia/theme.toml" ]; then
+    # 7) 键位引用的命令是否存在（防止「绑了但命令没装」这类静默失效）
+    cfg="$HOME/.config/niri/config.kdl"
+    if [ -r "$cfg" ]; then
+      missing=""
+      for c in $(grep -o 'spawn "[^"]*"' "$cfg" | cut -d'"' -f2 | sort -u); do
+        command -v "$c" >/dev/null 2>&1 || missing="$missing $c"
+      done
+      if [ -z "$missing" ]; then
+        info "键位引用的命令都存在"
+      else
+        bad "键位引用了不存在的命令:$missing"
+      fi
+    else
+      bad "缺少 niri config.kdl"
+    fi
+
+    # 8) 主题、壁纸目录与夜间模式（Noctalia v5 的生成配置）
+    td="$HOME/.config/noctalia/theme.toml"
+    if [ -f "$td" ]; then
       info "Noctalia 配色基线存在（theme.toml，壁纸取色）"
+      wdir=$(sed -n 's/^directory *= *"\(.*\)"/\1/p' "$td" | head -n1)
+      if [ -n "$wdir" ]; then
+        if [ -d "$wdir" ]; then
+          info "壁纸目录可用（$wdir）"
+        else
+          bad "壁纸目录不存在：$wdir（wallpaper-next 会失败）"
+        fi
+      else
+        info "未配置壁纸目录（wallpaper-next 不可用；wallpaper-set 不受影响）"
+      fi
     else
       bad "缺少 ~/.config/noctalia/theme.toml（切一次主题或跑 theme-next restore）"
     fi
-    [ -f "$HOME/.config/niri/config.kdl" ] && info "niri 配置存在" || bad "缺少 niri config.kdl"
+
+    nlc="$HOME/.config/noctalia/nightlight.toml"
+    if [ -f "$nlc" ]; then
+      if grep -q 'enabled *= *true' "$nlc" 2>/dev/null; then
+        # 日志里最后一次 gamma 判定若是 no schedule，说明 location 没解析出坐标
+        glog=$(tail -n 400 "$HOME/.cache/noctalia/noctalia.log" 2>/dev/null | grep -a 'gamma' | tail -n1)
+        case "$glog" in
+          *"no schedule"*) bad "夜间模式已启用但日程未解析（gamma no schedule：检查 location）" ;;
+          *gamma*) info "夜间模式已启用，色温日程已由 location 解析" ;;
+          *) info "夜间模式已启用（尚无 gamma 日志，登录后生效）" ;;
+        esac
+      else
+        info "夜间模式已配置但未启用（nightlight.toml enabled=false）"
+      fi
+    else
+      info "未启用夜间模式（无 nightlight.toml）"
+    fi
+
+    # 9) 配置告警（unknown setting 会让配置项静默失效）
+    nlog="$HOME/.cache/noctalia/noctalia.log"
+    if [ -r "$nlog" ] && tail -n 300 "$nlog" | grep -aq 'unknown setting'; then
+      bad "Noctalia 配置有 unknown setting（看 noctalia.log 最近的 [config] 告警）"
+    else
+      info "Noctalia 配置无 unknown setting"
+    fi
     ;;
   *)
     bad "未识别的桌面: $de（当前仅支持 niri）"

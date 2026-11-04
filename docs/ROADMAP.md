@@ -54,7 +54,8 @@
 - [ ] 重建 live/install ISO（niri 提供方换 v5 后未验证）
 - [ ] 剪贴板双轨收敛：`Mod+V`（cliphist+fuzzel）vs v5 `panel-toggle clipboard`
 - [ ] 截图落盘策略确认（v5 overlay 保存路径）
-- [ ] `desktop-check` 增补：夜间模式、壁纸目录、命令存在性
+- [x] `desktop-check` 增补：键位引用的命令存在性（负向已测）、壁纸目录可用性、
+      夜间模式日程是否解析、Noctalia 配置 unknown setting 告警
 
 ### P3 长期
 
