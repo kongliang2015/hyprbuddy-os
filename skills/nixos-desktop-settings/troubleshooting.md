@@ -67,3 +67,79 @@ cd ~/hyprland-nixos && ./install.sh --host vmware --yes
 ## fuzzel.ini 变成 0 字节
 
 store 中间软链未就绪时直接写会得空文件；theme-next 已用「写 tmp → 非空才替换」规避。
+
+## Noctalia v5：bar 突然消失
+
+**现象**：登录后或解锁后看不到 bar，桌面只有壁纸。
+
+**判读顺序**：
+
+```bash
+noctalia msg status          # {"barVisible": false, "locked": false}
+ls ~/.config/noctalia/       # 应该只有 theme.toml（+ GUI 生成的 state 不在这里）
+```
+
+- `locked: true` + `barVisible: false` → **锁屏中，bar 本来就会隐藏**，解锁后自动恢复。
+- `locked: false` + `barVisible: false` → bar 被**显式隐藏**了：`noctalia msg bar-toggle` /
+  `bar-hide` 都会留下运行态标志，锁屏→解锁**不会**清除它。
+
+**恢复**：
+
+```bash
+noctalia msg bar-show
+```
+
+该标志不写进 `~/.local/state/noctalia/settings.toml`，也不在 `shell-state.json` 里，
+所以重启/重登也会恢复；但**当次会话必须手动 bar-show**。
+
+> 教训：验证命令可用性别用 `bar-toggle`（有副作用）。用 `noctalia msg --help`
+> 或 `status` / `*-status` 这类只读命令。
+
+## Noctalia v5：配置里有 unknown setting 告警
+
+日志形如：
+
+```
+[WRN] [config] ~/.config/noctalia/theme.toml:11:13: wallpaper.recursive: unknown setting
+```
+
+5.0.1 的 schema 比官网文档（2.0/新版）窄，文档里有的键它不一定认。已踩过：
+`wallpaper.recursive`、`theme.sync_color_scheme`。处理：从 exporter 里删掉该键。
+校验方式：改完 `noctalia config validate` 应无 warning。
+
+## Noctalia v5：夜间模式没反应
+
+日志：`[WRN] [gamma] no schedule: enable auto-locate, set an address, ...`
+
+夜间模式需要 Location（地址或经纬度）或自定义日程才有依据。`noctalia msg nightlight-toggle`
+依然返回 `ok`，但不会真的改色温。修法：Noctalia 设置 → Location 填地址，或设自定义日程。
+
+## Noctalia v5：自定义调色板（source="custom"）加载失败
+
+日志：`[WRN] [theme] custom palette '<name>' not found or invalid; falling back to builtin`
+
+排查结论（2026-10-29，5.0.1 实测）：
+
+- 文件路径确认无误：`~/.config/noctalia/palettes/<name>.json`（strace 确认被 open 成功）
+- 失败原因是**内容校验**，不是路径。已试过并全部被判 invalid 的写法：
+  1. 扁平 16 个 `m*` 键
+  2. `{"dark":{m*},``light``:{m*}}`
+  3. `{"name","dark":{plain},"light":{plain}}`（社区 catalog 的写法）
+  4. 数组 `[{"name","dark","light"}]`
+  5. `{"name","colors":{m*}}`
+  6. `noctalia theme <image> --both` 的完整 token 表（72 键、无 null），含/不含 `name`
+
+当前策略：外壳配色走 `source="wallpaper"`（壁纸取色），不写死 custom palette。
+`~/.local/state/noctalia/settings.toml` 的优先级高于 `~/.config/noctalia/*.toml`，
+GUI 里点过主题设置后，手写 config 会被 state 覆盖——验证时先删 state 里对应段落。
+
+## Noctalia v5：bar 布局改在仓库里无效
+
+仓库**只**声明 `[theme]` 与 `[wallpaper]`（exporter 生成的 theme.toml）。
+`[bar.*]` 故意不做声明式基线，原因有两个：
+
+1. GUI 改动写进 `~/.local/state/noctalia/settings.toml`，优先级更高，基线会被逐项覆盖，
+   容易造成"改了仓库没反应"的错觉；
+2. 5.0.1 的 bar/widget schema 与文档版本不一致，写错就是 unknown setting。
+
+所以 bar 布局属于**本机运行态**：换机/重装会回默认，需要重新在 GUI 里调。

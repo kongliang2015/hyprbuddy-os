@@ -1,69 +1,60 @@
-# 后续路线（与 omarchy 的差距）
+# 路线图（v1-nn：niri + Noctalia v5）
 
-当前已具备 omarchy 的核心桌面骨架。下面按"可实现难度"列出剩余特性。
+> 更新：2026-10-29。Hyprland / COSMIC 时代的功能清单已归档到
+> `docs/desktop-retire-hyprland.md` 与 `docs/niri-noctalia-plan.md`，本文只写当前现实。
+
+## 当前形态
+
+| 层 | 现状 |
+|---|---|
+| 合成器 | niri 26.04（唯一提供方，滚动平铺） |
+| 外壳 | Noctalia v5（`pkgs.noctalia` 5.0.1，原生 C++，无 quickshell） |
+| 主题 | `themes/<slug>/tokens.json` 单一真相 → kitty/fuzzel 精确 16 色 + 外壳壁纸取色 |
+| 会话 | SDDM → niri；fcitx5 输入法；xwayland-satellite |
+| 键位 | `home/niri/config.kdl` 60 条，速查见 `docs/KEYBINDS.md` |
+| 自检 | `desktop-check`（图形会话全量、非图形降级） |
+| agent 层 | 26 条命令 + 5 个技能，索引见 `docs/SKILLS.md` |
 
 ## 已完成
 
-- Hyprland 平铺桌面、动画、渐变边框
-- SDDM 登录 + 默认 Hyprland 会话
-- Waybar 状态栏（Kanagawa）
-- fuzzel 启动器 + `Super+Space` 系统菜单
-- hyprlock 锁屏、hypridle 自动锁屏/熄屏
-- hyprpaper 壁纸 + 壁纸轮换
-- swaync 通知中心 + 控制中心（勿扰、历史、MPRIS；已替代 mako）
-- hyprshell 窗口总览 / Alt-Tab 缩略图（依赖 Lua 配置管理器，样式随主题）
-- eww 弹窗：日历 / 会话面板 / 系统信息（跟随焦点显示器）
-- Hyprland 配置迁移到 Lua 管理器（hyprland.lua）
-- fastfetch 配置随主题联动；hypr-menu 系统信息弹窗
-- SwayOSD 音量/亮度屏显
-- 截图（hyprshot）+ 标注（swappy）+ 取色（hyprpicker）
-- 录屏（wf-recorder）
-- 剪贴板历史（cliphist）
-- 夜间模式（hyprsunset）
-- fcitx5 中文输入
-- Nerd Font 图标
+- **桌面抽象 P0–P3**：`distro.desktop.sessions`、能力层 `scripts/lib/de.sh`、
+  tokens + exporters、Hyprland/COSMIC 退役（v1-nn）
+- **Noctalia v4 → v5**：包装、PAM 锁屏、upower/bluetooth 前置、exporter 重写、
+  13+ 处键位与脚本换 `msg`
+- **键位补齐（B 套）**：窗口切换器、通知/勿扰、夜间模式、壁纸、btop、
+  上下工作区、截图 overlay、`allow-when-locked`
+- **agent 层 P0–P3**：sys-* 6 条、svc/net/power-status、技能 `nixos-system-ops`、
+  过时技能重写（`theme-create` / `scifi-ui`）
 
-## 低难度（可直接继续做）
+## 待做（按优先级）
 
-- **一键主题切换器**：需要按应用生成配置（kitty 16 色、hyprlock 十进制 rgba、Waybar CSS），建议用"模板 + 备份"方式实现，比 sed 更稳。
-- SDDM 图形登录主题美化（sddm-astronaut-theme 等）。
-- 通知操作按钮（mako `actions=1` 已开，可加"打开/复制"）。
-- 通知居中大卡片样式。
-- 电池/蓝牙/etc. 更多 Waybar 模块。
+### P0 一致性
 
-## 中难度
+- [ ] bar 布局的定位写死：目前**不做声明式基线**（state 优先级更高 + schema 不稳），
+      需在 `bar-notify.md` 与自检里持续提示「bar 属运行态」
+- [x] `docs/ROADMAP.md` 重写（本次）
+- [x] 清理 `~/.config/noctalia/` 的 v4 残留（settings.json / colors.json / colorschemes）
 
-- 多编辑器（VSCode/Cursor/Zed/Helix）与多终端（Foot/Alacritty/Ghostty）切换菜单。
-- mise 开发栈一键安装（Node/Rails/Laravel…）。
-- 游戏套件（Steam / RetroArch+CRT / Lutris / Heroic / Moonlight）。
-- Waybar 自定义插件（天气、系统更新提示、蓝牙电量等，近似 omarchy 插件）。
-- `hypr-menu` 扩展为 `omarchy` 风格子命令（theme/update/install）。
-- 电源/合盖策略（hypridle + logind）。
+### P1 功能缺口
 
-## 难以直接移植
+- [ ] 夜间模式：配 Location / 自定义日程，否则 `Mod+Shift+N` 只有 `ok` 没有效果
+- [ ] 录屏：`scripts/record-toggle` 尚无键位（建议 `Mod+Alt+R`）
+- [ ] 自定义调色板：5.0.1 的 `source="custom"` 格式未攻克，外壳只能壁纸取色
+- [ ] 多 host 验证：`leonard`（NVIDIA）、`vm-virtio`（aarch64）未跑过 v5
 
-- **Quickshell 顶栏 + 数千插件**：omarchy 专属 QML 组件，只能用 Waybar 做功能近似。
-- **omarchy 安装器 / `omarchy update`**：绑定 Arch/pacman，NixOS 用 `nixos-rebuild`。
-- **Windows 11 VM 自动化 + `omarchy windows key`**：可手动用 libvirt/QEMU 搭，无一键封装。
-- **agentic 生态**（首次启动配 agent、崩溃派 agent、skills 市场）：可自行接 Claude Code 等近似。
-- **`omarchy-theme-install`**：Arch 脚本，需自写取色/生成脚本代替。
+### P2 质量
 
-## 桌面抽象（COSMIC 并存，distro/v1）
+- [ ] 重建 live/install ISO（niri 提供方换 v5 后未验证）
+- [ ] 剪贴板双轨收敛：`Mod+V`（cliphist+fuzzel）vs v5 `panel-toggle clipboard`
+- [ ] 截图落盘策略确认（v5 overlay 保存路径）
+- [ ] `desktop-check` 增补：夜间模式、壁纸目录、命令存在性
 
-当前进度（详见 docs/desktop-abstraction.md）：
+### P3 长期
 
-- **已完成**：P0 并存骨架（`distro.desktop.sessions/.default`）、P1 能力层
-  `scripts/lib/de.sh` + `desktop-check`；vmware host 已默认登录 COSMIC（日用中）
-- **待做**：
-  - P2 主题 token 拆分：`themes/*/tokens.json` + exporters（hyprland 13 writer /
-    cosmic RON），`de_theme_apply` 补 COSMIC 实现
-  - P3 COSMIC 功能对齐：OSD（cosmic-osd）、键位速查、夜间模式（gammastep）、
-    输入法实测（text-input-v3）
-  - P4 其余 host 切 `default = cosmic`（leonard 的 NVIDIA + smithay 先实测）
-  - P5 删 hyprland.nix + hyprland exporters，打 tag 留回退
-- **已知硬缺口**：剪贴板历史、夜间模式（COSMIC 无内置）；窗口总览依赖
-  Hyprland IPC，COSMIC 下大概率放弃
+- [ ] `sys-doctor`：聚合 sys-health + net/power-status + desktop-check
+- [ ] omarchy 差距表的中难度项（多终端/编辑器切换、开发栈、游戏套件）
 
-## NixOS 相对优势
+## 明确不做
 
-- 声明式配置、generation 回滚、可复现、系统/用户层分离。
+- 包管理命令（声明式即可）、需要 sudo 的写操作（只打印命令交给人）
+- Hyprland/COSMIC 相关特性（已退役，勿回写）
