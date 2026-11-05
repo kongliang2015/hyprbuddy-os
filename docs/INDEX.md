@@ -32,7 +32,7 @@
 ### 路线与全局
 - `README.md` — 项目定位、三条设计原则、复现路径、agent 层、部署与选项参考
 - `README.en.md` — 英文 1 页对外入口（定位 / 原则 / 复现 / 非目标 / 状态）
-- `docs/ROADMAP.md` — 按 agent 底座定位重写的 P0–P3 进度、验收标准、暂缓项、明确不做（权威清单见 `README.md` §8）
+- `docs/ROADMAP.md` — 按 agent 底座定位重写的 P0–P3 进度、验收标准、**P1 leonard 实施清单（runbook）**、暂缓项、明确不做（权威清单见 `README.md` §8）
 - `docs/SKILLS.md` — 5 个技能 / 26 条命令的分工与路由
 - `docs/KEYBINDS.md` — 文末 niri 键位表（60 条，源 `home/niri/config.kdl`）
 - `docs/agent-coverage-review.md` — agent 层覆盖度评审与 P0–P3 补齐记录

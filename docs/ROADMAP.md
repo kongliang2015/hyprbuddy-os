@@ -1,6 +1,6 @@
 # HyprBuddy OS 路线图
 
-> 更新：2026-11-05 · 分支 `distro/v1-nn`
+> 更新：2026-11-05 · 分支 `distro/v1-nn` · 夜间补充：P1 实施顺序（leonard runbook）
 > 本版按项目定位 **「对外可复现的 agent 桌面底座」** 重写。2026-11-04 及以前的版本以桌面外壳功能清单为主体，其已完成项已并入第 2 节，被替换的优先级见文末变更表。
 > 状态口径：**已实现 / 已实现未启用 / 计划 / 暂缓** 分开写，不把计划写成能力；现状永远以代码为准，索引见 `docs/INDEX.md`。
 
@@ -63,20 +63,113 @@
 | 停用「AI-native / Recall / Copilot+ 对标」措辞 | `README*`、`docs/ROADMAP.md`、`next-feature/` | 全仓库检索仅出现在否定 / 历史 / 非目标语境 | [x] 本轮 |
 | 砍掉 P3 的 Omarchy UI 差距项 | `docs/ROADMAP.md` | 待办中不含「多终端 / 编辑器 / 开发栈 / 游戏套件」 | [x] 本版 |
 | 时间轴方案改名重写为「agent 执行审计日志」 | `next-feature/agent-execution-audit.md` | 状态横幅为未实施、探针附录保留、不进待办 | [x] 本轮 |
-| 仓库 `description` / `homepage` 补齐 | Gitee 仓库设置 | 一句话定位与英文关键词可被检索 | [ ] |
+| 仓库 `description` / `homepage` 补齐，并同步 `flake.nix` 的 `description` | Gitee 仓库设置、`flake.nix` | 一句话定位与英文关键词可被检索；`flake.nix` 现行描述「AI-agent 原生的 NixOS 发行版」仍带 AI-native 措辞，须改为 agent 底座口径 | [ ] |
 | GitHub 镜像 | 新仓库 | 与 Gitee 同步；**等 P1 跑通再公开**，避免过早放大未验证项 | [ ] |
 
 ### P1 点亮已有模块（对应外部最强需求：本地模型 7×24 常驻）
 
 > 前提认知：本地模型当前是「core dump 诊断的隐私兜底」，外部需求把它当「常驻基础设施」。**先改定位，再改代码**；`modules/agent/local-llm.nix` 已有按 GPU 选包变体的抽象，改造面很小。
+> **实施地点：`leonard`，由本机用户执行。** 本仓库不预先把 host 开关改成 `true`——避免「文档写已启用、代码仍关闭」的状态漂移；下面的顺序即验收口径。
 
 | 动作 | 落点 | 验收标准 | 状态 |
 |---|---|---|---|
-| 在 `leonard` 或新 host 打开 `localModels` + `diagnostics` | `hosts/*/default.nix`、`modules/agent/diagnostics.nix` | systemd 单元活跃；coredump 报告落 `~/.local/state/agent/` 且与 `coredumpctl info` 原文可交叉验证 | [ ] |
-| 跑通 ollama OpenAI 兼容端点 `/v1/chat/completions` 与多客户端并发 | 新增回归脚本 | 2–3 个并发请求不互相挤占、无 OOM | [ ] |
-| 新增 `model-status` / `model-bench` | `scripts/`、`lib/commands.nix` | `agent-commands --json` 条目 +2，`@summary` / `@effect` 齐全；输出 tok/s、内存 / 显存、整机功耗 | [ ] |
-| `power-status` 补 idle / 单请求 / 并发三档功耗 | `scripts/power-status` | 输出可机器解析（JSON），形成 7×24 常驻的可量化证据 | [ ] |
+| 在 `leonard` 打开 `localModels` + `diagnostics` | `hosts/leonard/default.nix` | `ollama.service` 与 `coredump-watch.path` 活跃；coredump 报告落 `~/.local/state/agent/` 且与 `coredumpctl info` 原文可交叉验证 | [ ] |
+| 跑通 ollama OpenAI 兼容端点 `/v1/chat/completions` 与多客户端并发 | 本机回归脚本 | 2–3 个并发请求不互相挤占、无 OOM | [ ] |
+| 新增 `model-status` / `model-bench` | `scripts/`（`home/default.nix` 自动扫描，无需改 `lib/commands.nix`） | `agent-commands --json` 条目 +2，`@summary` / `@effect` 齐全；输出 tok/s、内存 / 显存、功耗采样 | [ ] |
+| `power-status` 补 idle / 单请求 / 并发三档功耗 | `scripts/power-status` | 输出可机器解析（JSON），**并用 `power_source` 标注数据来源** | [ ] |
 | 新增 `distro.agent.localEndpoint`：`bind` / LAN 开关 / token / 并发上限 | `modules/options.nix`、`modules/agent/local-llm.nix` | 默认仍只绑 `127.0.0.1`；LAN 暴露需显式开关 + 断言 | [ ] |
+
+#### P1 实施顺序（leonard runbook）
+
+**步骤 0 · 前置检查**（任一不通过就先解决，别进步骤 1）
+
+```bash
+git status -sb                                                        # 仓库根目录：干净、分支 distro/v1-nn
+nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv    # 580 LTSB；GTX 1050 Ti 约 4GB 显存
+df -h ~/.ollama /nix/store                                            # 模型 + CUDA 运行时需数 GB 空闲
+systemctl status ollama --no-pager || true                             # 现在应未安装/未启用
+```
+
+> 本机已有「`downloads.claude.ai` 不可达、构建期拉 claude-code 失败」的记录（`hosts/leonard/default.nix` 注释）。**`ollama pull` 同样要外网**：若失败，可在有网机器 `ollama pull` 后拷贝 `~/.ollama/models`，或用本地 GGUF `ollama create` 导入；不要为此改动 `agents` 列表。
+
+**步骤 1 · 打开开关**（只改 `hosts/leonard/default.nix` 的 `distro.agent` 段）
+
+```nix
+    agent = {
+      enable = true;
+      agents = [ "opencode" "codebuddy" ];
+      usage = true;
+      diagnostics = true;    # 必须与 localModels 同时为 true
+      localModels = true;
+      # model = "qwen2.5-coder:1.5b";   # 默认值，可不写
+    };
+```
+
+> 两处断言是硬约束：`modules/assertions.nix` 要求 `localModels ⇒ agent.enable`；`modules/agent/diagnostics.nix` 要求 `diagnostics ⇒ localModels`。**只开 `diagnostics` 不开 `localModels` 会直接 build 失败**，不是运行期报错。
+> 保持 `gpu.vendor = "nvidia"` / `pciIds = [ "10de:1c82" ]` 的 580 LTSB 分支不变；`system.stateVersion = "25.11"` 也不要顺手改成 26.05（会触发状态目录迁移）。
+
+**步骤 2 · 构建验证 → 由人执行 sudo**
+
+```bash
+git add hosts/leonard/default.nix && git commit -m "leonard: enable localModels + diagnostics"
+nix --extra-experimental-features 'nix-command flakes' eval .#nixosConfigurations.leonard.config.system.build.toplevel.drvPath
+nixos-rebuild build --flake .#leonard
+sudo nixos-rebuild switch --flake .#leonard      # 你自己执行；agent 只打印、不执行 sudo
+./install.sh --host leonard --yes                # 用户级必须显式 --host
+nix flake check
+```
+
+> flake 只认 git 跟踪的文件，**先 commit 再 build**。本机 `networking.hostName = "nixos"` 而 host 目录叫 `leonard`，所以 `install.sh` 不带 `--host leonard` 会找不到 `hosts/nixos/default.nix`。
+> `switch` 只换 `/run/current-system`，用户级脚本 / 技能仍要单独跑 `install.sh`。`nix flake check` 若因 `vm-virtio` 是 aarch64 而无法在本机构建，退化为 `nix build .#packages.x86_64-linux.leonard` + 已通过的 `nixos-rebuild build` 即可。
+
+**步骤 3 · 拉模型、验端点、验并发**
+
+```bash
+ollama pull qwen2.5-coder:1.5b
+systemctl status ollama --no-pager
+curl -sS http://127.0.0.1:11434/api/tags
+curl -sS http://127.0.0.1:11434/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"qwen2.5-coder:1.5b","messages":[{"role":"user","content":"ping"}],"stream":false}'
+for i in 1 2 3; do curl -sS -o /tmp/p1-$i.json -w "%{http_code}\n" \
+  http://127.0.0.1:11434/v1/chat/completions -H 'Content-Type: application/json' \
+  -d '{"model":"qwen2.5-coder:1.5b","messages":[{"role":"user","content":"ping"}],"stream":false}' & done; wait
+journalctl -k --since '5 min ago' | grep -i oom || true
+systemctl status coredump-watch.path --no-pager
+```
+
+> 诊断走 `/api/generate`（不是 OpenAI 兼容端点），报告落在 `~/.local/state/agent/coredump-report.md`；`coredump-analyze.service` 是 oneshot，触发后才运行，验收要与 `coredumpctl info` 原文交叉验证。4GB 显存下先确认 1.5B 稳定，**不要直接试 7B 以上**。
+
+**步骤 4 · 补命令与功耗观测**
+
+- 在 `scripts/` 新建 `model-status`、`model-bench`：`home/default.nix` 会自动扫描 `scripts/` 并部署，`lib/commands.nix` / `commands.json` **无需改动**。
+- 头部必填 `@command`（须等于文件名）、`@summary`、`@category`（用 `check`），建议补 `@usage`、`@effect: 只读`。**`@doc` 若写，必须指向 `skills/<skill>/` 下真实存在的指南文件名，否则构建失败**；没有对应指南就省略。
+- `model-bench` 输出 tok/s、内存 / 显存（`nvidia-smi --query-gpu=memory.used`）；`power-status --json` 增加 idle / 单请求 / 并发三档字段。
+- ⚠️ **整机功耗在台式机上通常读不到**：可用 `nvidia-smi --query-gpu=power.draw` 取 GPU 功耗，`/sys/class/powercap/intel-rapl` 仅 Intel CPU，主板 hwmon 的 `power*_input` 视机型而定。读不到就输出 `power_source` 标明来源并留空，**不要伪造整机瓦数**；这套字段也是 P2 上 NPU 主机后做功耗对比的基线格式。
+
+**步骤 5 · 可选：LAN 端点**（最后做，默认不做）
+
+`distro.agent.localEndpoint` 目前**尚不存在**，需在 `modules/options.nix` 新增选项、`local-llm.nix` 消费：`bind` 默认 `127.0.0.1`、LAN 开关、token、并发上限，并加断言「仅开关为 true 时允许非回环地址」。与 `README.md` §8 的「默认只绑本机、显式开关 + token + 并发上限 + 断言」一致；跳过这一步不影响 P1 其余验收。
+
+**验收清单**
+
+- [ ] `ollama.service` active，`/api/tags` 能列出 `qwen2.5-coder:1.5b`
+- [ ] `/v1/chat/completions` 单次返回 200；3 路并发互不挤占、无 OOM
+- [ ] `coredump-report.md` 可生成，且与 `coredumpctl info` 原文可交叉验证
+- [ ] `agent-commands --json` 条目 +2、`available=true`，`@summary` / `@effect` 齐全
+- [ ] `power-status --json` 含三档字段并标注 `power_source`
+- [ ] `nix flake check`（或上述退化路径）通过
+- [ ] **回写文档**：更新本文档 §6 状态口径表与 `README.md` §5.3（当前写的是「三台全关」），否则状态漂移
+
+**回滚**
+
+```bash
+sudo nixos-rebuild --rollback          # 系统世代
+git revert <本次 commit>               # 配置
+./install.sh --host leonard --yes      # 用户级重新软链
+```
+
+或直接把 `diagnostics` / `localModels` 一起改回 `false` 后重新 build；注意两个开关必须同时回退，否则断言会拦下。
 
 ### P2 新增 NPU host（承接 MACO470 选型）
 
@@ -126,6 +219,8 @@
 | `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` / `vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
 | 数字 | 26 命令 / 5 技能 / 60 键位 / 10 主题 / 18 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
+
+> 本表记录的是 **2026-11-05 推送时**的仓库状态，不会随 `leonard` 上的实施自动变化。P1 在 `leonard` 跑通后，必须回写本表与 `README.md` §5.3（当前写「三台 host 全部关闭」），否则违反「现状永远以代码为准」的口径。
 
 ## 附：本版相对 2026-11-04 版的变更
 
