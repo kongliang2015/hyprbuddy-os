@@ -1,10 +1,12 @@
 # 文件操作能力（文件落点与数据安全）评估
 
-> **状态：未实施（2026-11-04 评估）** · 基准仓库 `hyprbuddy-os` @ `746b723`
-> `next-feature/` 存放**尚未落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md`
+> **状态：P0 已实施（2026-11-04，提交 `499435e`）；P1–P3 未实施（2026-11-04 评估）**
+> 评估基准 `hyprbuddy-os` @ `746b723`；2026-11-05 事实核对基准 `499435e`
+> `next-feature/` 存放**尚未整体落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md`
 > 的技能数、不随 `install.sh` 部署。现状说明以 `docs/ROADMAP.md` 与 `docs/INDEX.md` 为准。
-> 注：P0 一致性修复已于 2026-11-04 拆出实施（见 `docs/ROADMAP.md` P2「产物落点统一」）；
-> 第 2 节现状盘点为评估时点（基准 `746b723`）的快照，部分条目此后已变化；P1–P3 仍未实施。
+> 注：P0 一致性修复已拆出实施（见 `docs/ROADMAP.md` P2「产物落点统一」、提交 `499435e`）；
+> 第 2 节现状盘点为评估时点（`746b723`）的快照，带「已由 P0 改变」括注的条目此后已变化；
+> P1–P3 仍未实施。本次仅修正事实错误与更新基准，**方案结论不变**。
 >
 > 背景：agent 层现有 26 条命令 / 5 个技能，主线是「配置闭环 + 系统排障 + 崩溃诊断」
 > （`docs/agent-coverage-review.md`）。文件与数据这一层既没有技能也没有专用命令，
@@ -24,19 +26,23 @@
 
 ## 2. 现状盘点
 
+下表为评估时点（`746b723`）快照；标「已由 P0 改变」的条目在 `499435e` 后已不成立。
+
 | 能力 | 现状 | 依据 |
 |---|---|---|
 | 配置文件的修改与部署 | 已覆盖 | `nixos-desktop-settings`：改仓库 → `agent-apply` → `install.sh` → `desktop-check` |
 | 桌面产物写入 | 散落在各脚本 | `theme-next` 写 `~/.local/state/`；`install.sh` 复制壁纸到 `~/Pictures/wallpapers`、把被替换的真实文件备份到 `~/.config.bak-<时间戳>/` |
-| 截图 / 录屏落点 | **不一致** | `record-toggle` 读 `XDG_VIDEOS_DIR`；`scripts/lib/de.sh` 的 `de_screenshot_output` 硬编码 `~/Pictures/Screenshot_*.png`；`docs/ROADMAP.md` P2 与 `docs/KEYBINDS.md` 写「v5 保存到 XDG 图片目录 `~/图片`」 |
-| 能力自描述 | 部分 | `commands.json` 的 `paths` 段只有 `repo` / `user_config` / `skills`，不含运行时产物目录 |
+| 截图 / 录屏落点 | **不一致 → 已由 P0 改变** | 评估时：`record-toggle` 读 `XDG_VIDEOS_DIR`、`de_screenshot_output` 硬编码 `~/Pictures`；现已统一走 `de_xdg_dir` 按 XDG 解析 |
+| 能力自描述 | 部分 → 已由 P0 改变 | 评估时 `paths` 段只有 `repo` / `user_config` / `skills`；现已有 `paths.artifacts` 六项与 `agent-commands paths` |
 | 备份 | 只写不读 | `install.sh` 创建 `~/.config.bak-<时间戳>/`，无 list / restore |
 | 可移动介质 / 回收站 | 软件已装、无封装 | `services.udisks2.enable` 与 `gvfs`（`modules/desktop/hyprbuddy.nix`）；Thunar 由 `Super+E` 打开（`docs/KEYBINDS.md`） |
 | 存储状态 | 部分 | `sys-health`（磁盘占用）、`sys-gc`（store 与 GC）已有；设备 / 挂载点 / 回收站无视图 |
 
-补充：本机（host `leonard`）的 `~/.config/user-dirs.dirs` 实测为英文 `Pictures` / `Videos`，
-与文档中 `~/图片` / `~/视频` 的描述不一致 —— 落点问题不是纯文档问题，
-agent 按元数据会找错目录。
+补充：评估时曾记录「本机（host `leonard`）的 `user-dirs.dirs` 为英文 `Pictures` / `Videos`」，
+该判断不适用于当前机器（`vmware`）：2026-11-05 实测 `XDG_PICTURES_DIR="$HOME/图片"`、
+`XDG_VIDEOS_DIR="$HOME/视频"`，`agent-commands paths` 也输出这两个中文目录。
+结论仍是「落点问题不是纯文档问题」——P0 已用 `de_xdg_dir` 按运行时解析解决；
+agent 应查 `agent-commands paths`，不要按中英文目录名做假设。
 
 ## 3. 三种形态的取舍
 
@@ -50,8 +56,9 @@ agent 按元数据会找错目录。
 
 **P0 统一落点 —— 已于 2026-11-04 拆出实施，不再是本评估的待办**
 
-> 见 `docs/ROADMAP.md` P2「产物落点统一」。原方案（扩 `paths.artifacts`、
+> 见 `docs/ROADMAP.md` P2「产物落点统一」（提交 `499435e`）。原方案（扩 `paths.artifacts`、
 > XDG 解析对齐、修文档写死路径、`agent-commands paths`）已作为一致性修复落地；
+> 2026-11-05 核对：`paths.artifacts` 六项、`de_xdg_dir`、两条脚本落点均已生效。
 > 保留标题以便对照 P1–P3 的编号，不要再按本节推进。
 
 **P1 备份可查可恢复**
@@ -108,7 +115,7 @@ agent 按元数据会找错目录。
 
 | 路线 | 内容 | 改动面 | 建议 |
 |---|---|---|---|
-| A 先修一致性 | 只做 P0 | — | **已拆出实施**（见 ROADMAP P2「产物落点统一」），不再属于本评估 |
+| A 先修一致性 | 只做 P0 | — | **已拆出实施**（提交 `499435e`，见 ROADMAP P2「产物落点统一」），不再属于本评估 |
 | B 完整落地 | 按第 4 节 P1–P3 加 3 条命令 + 一份指南，同步技能矩阵与索引 | 新增脚本 + 技能 / 参考文档 + 文档同步，在已装机器上试跑 | A 之后按序推进 |
 
 **当前决定：尚未实施，仅存档评估。** 未写入 `docs/ROADMAP.md` 的待办清单，

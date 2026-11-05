@@ -65,8 +65,9 @@ XF86MonBrightnessUp  allow-when-locked=true { spawn "noctalia" "msg" "brightness
 
 - v5 的截图服务会**同时**保存文件并写入剪贴板，所以 `Print` 之后可以直接粘贴。
 - 5.0.1 没有暴露「保存目录」的配置键（`settings.toml` 里没有 screenshot 段），
-  目录跟随 XDG 图片目录，由 `~/.config/user-dirs.dirs` 决定（中文 locale 常是
-  `~/图片`，本机为 `~/Pictures`）。要换目录就改该文件，或改用 `Mod+Shift+A` 那条链路。
+  目录跟随 XDG 图片目录，由 `~/.config/user-dirs.dirs` 决定（本机为 `~/图片`，
+  录屏为 `~/视频`；`agent-commands paths` 可查全部落点）。要换目录就改该文件，
+  或改用 `Mod+Shift+A` 那条链路。注意 `xdg-user-dir` 命令未安装，判断请直接读该配置文件。
 - `screenshot-output` 与 `record-toggle` 都走能力层 `de_xdg_dir` 按 XDG 目录解析，
   不再硬编码 `~/Pictures` / `~/Videos`；`agent-commands paths` 可查全部产物落点。
 - 因为截图落在 XDG 图片目录，**不要**把壁纸目录设成该目录，否则

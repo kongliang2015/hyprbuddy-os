@@ -1,6 +1,8 @@
 # 本地时间轴 + 语义检索（Linux / niri 版 Recall）评估
 
-> **状态：未实施（2026-11-04 评估）** · 基准仓库 `hyprbuddy-os` @ `6199353`
+> **状态：未实施（2026-11-04 评估）** · 评估基准 `hyprbuddy-os` @ `6199353`
+> 2026-11-05 事实核对基准 `499435e`（核对了 niri IPC 的 `focused-window`、
+> SQLite FTS5 / trigram 支持、`paths.artifacts` 落地情况）；**本次仅更新基准与标注，方案结论不变**。
 > `next-feature/` 存放**尚未落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md`
 > 的技能数、不随 `install.sh` 部署。现状说明以 `docs/ROADMAP.md` 与 `docs/INDEX.md` 为准。
 >
