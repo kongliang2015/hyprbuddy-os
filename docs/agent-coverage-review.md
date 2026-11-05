@@ -2,6 +2,7 @@
 
 > 评审日期：2026-10-29 · 対象：`distro/v1-nn` 的 agent 层（模块 + 脚本 + skill）
 > 关联：`docs/AGENT-LAYER.md`（2026-10-21 设计稿，仍含 Hyprland 时代内容）、`docs/COMMANDS-JSON.md`
+> **2026-11-05 更新**：本地模型默认改用 `pkgs.ollama-cpu`（GPU 加速为显式 opt-in），命令 26→28（新增 `model-status` / `model-bench`）；第 2 节的规模与命令数为此前评审时点快照，现状以 `agent-commands --json` 与 `docs/ROADMAP.md` 为准。
 
 ## 1. 结论
 

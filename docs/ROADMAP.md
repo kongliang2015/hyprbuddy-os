@@ -14,7 +14,7 @@
 | 会话 | SDDM → niri；fcitx5；polkit KDE 代理；xwayland-satellite；Noctalia 自有 PAM 锁屏 |
 | 主题 | `themes/<slug>/tokens.json` 单一真相 → kitty/fuzzel 精确 16 色 + 外壳壁纸取色；10 套 |
 | 键位 | `home/niri/config.kdl` 61 条，速查见 `docs/KEYBINDS.md` |
-| 自检 | `desktop-check` 18 项（图形会话全量、非图形降级） |
+| 自检 | `desktop-check` 19 项（图形会话全量、非图形降级） |
 | agent 层 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成；索引见 `docs/SKILLS.md` |
 | 实测 | `vmware`（x86_64 软渲染）日用中；`leonard` / `vm-virtio` 仅求值；ISO 切换 v5 后未重建 |
 
@@ -218,7 +218,7 @@ git revert <本次 commit>               # 配置
 | 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`）；**`leonard` 已在仓库打开 `localModels` + `diagnostics`，但运行态未验收**（未 switch、未 `ollama pull`，服务未激活）；`vmware` / `vm-virtio` 仍为 `false`。无 OpenAI 兼容端点实测、并发控制、功耗观测。属 P1，不是已交付能力 |
 | `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` 已打开（与 `localModels` 同步，运行态待验收），`vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
-| 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 18 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
+| 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 19 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
 
 > 本表记录的是**仓库代码状态**；`leonard` 的 P1 开关已打开，但**运行态验收（switch / `ollama pull` / 端点与并发）尚未完成**，所以「本地模型」一行仍标为未交付。P1 验收清单勾完后，把运行态结论（服务活跃、tok/s、功耗）补进本表与 `README.md` §5.3。
 

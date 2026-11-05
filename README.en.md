@@ -79,7 +79,7 @@ cd hyprbuddy-os && git checkout distro/v1-nn
 cp -r hosts/_template hosts/<your-host>       # edit distro.* for your GPU / hypervisor
 ./install.sh --host <your-host> --yes          # user-level links
 sudo nixos-rebuild boot --flake .#<your-host> # system-level, executed by you
-desktop-check                                 # 18 checks; degrades outside a graphical session
+desktop-check                                 # 19 checks; degrades outside a graphical session
 agent-commands --json                         # what is actually available on this host
 ```
 
