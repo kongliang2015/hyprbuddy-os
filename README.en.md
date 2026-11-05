@@ -97,11 +97,11 @@ Desktop shell details (60 niri keybinds, 10 token-based themes, `desktop-check`,
 
 ---
 
-## Roadmap (planned, not delivered)
+## Roadmap (P0 mostly complete as of 2026-11-05; P1–P3 planned)
 
 | Priority | Direction |
 |---|---|
-| P0 | English entry point, consistent wording (drop "AI-native" / "Recall" / "Copilot+ parity"), remove UI-parity chasing from the roadmap |
+| P0 (mostly done) | README rewrite, English entry point, roadmap re-scoped to the agent-base positioning, timeline proposal rewritten as an agent execution audit; remaining: repo description/homepage and a GitHub mirror (publish after P1) |
 | P1 | Enable `localModels` + `diagnostics` on real hardware; verify an OpenAI-compatible endpoint under concurrent clients; add `model-status` / `model-bench` and idle / single-request / concurrent power figures |
 | P2 | New NPU host (`amdxdna`, `render` group, systemd `LimitMEMLOCK=infinity`, kernel ≥ 7.0); AMD iGPU Vulkan and low-power NPU paths; dedicated model volume in `paths.artifacts` |
 | P3 | Extract `skills/` + `commands.json` into a portable spec any NixOS can import; append-only **agent execution audit log** (exportable / replayable); CI with `nix flake check` + schema validation + ISO build |

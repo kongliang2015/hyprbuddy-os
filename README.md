@@ -177,12 +177,12 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 | 优先级 | 方向 | 主要落点 |
 |---|---|---|
-| **P0** | 对外可发现性：英文入口、仓库 description / homepage、文档措辞统一（停用「AI-native / Recall / Copilot+ 对标」）；路线图去掉「追平其它发行版 UI 差距」这类无差异化项 | `README.en.md`、`docs/ROADMAP.md` |
+| **P0（基本完成）** | 对外可发现性：README 重构 + 英文入口 + ROADMAP 按新定位重写 + 时间轴方案改名重写为 agent 执行审计日志；**剩余**：仓库 description / homepage、GitHub 镜像（等 P1 跑通再公开） | `README.md`、`README.en.md`、`docs/ROADMAP.md`、`next-feature/` |
 | **P1** | **点亮已有模块**：在真机打开 `localModels` + `diagnostics`，跑通 OpenAI 兼容端点与多客户端并发；新增 `model-status` / `model-bench`，输出 tok/s、内存 / 显存、整机功耗；`power-status` 补 idle / 单请求 / 并发三档 | `modules/options.nix`、`modules/agent/local-llm.nix`、`scripts/` |
 | **P2** | 承接 NPU 主机：新增 `hosts/maco470`（`amdxdna`、`render` 组、systemd `LimitMEMLOCK=infinity`、内核 ≥ 7.0）；`local-llm.nix` 增 AMD iGPU Vulkan 与 NPU 低功耗分支；模型盘独立挂载点写入 `paths.artifacts` | `hosts/`、`modules/agent/`、`lib/` |
 | **P3** | 把优势变成可移植规范：`skills/` + `commands.json` 抽成任意 NixOS 可导入的规范；append-only **agent 执行审计日志**（可导出 / 可回放）；CI 加 `nix flake check` + schema 校验 + ISO 构建 | `lib/commands.nix`、`skills/`、CI |
 
-> 逐项进度以 `docs/ROADMAP.md` 为准；该文件目前仍按旧定位编写，正在同步。P3 的审计日志复用的是「agent 执行事件 + `@effect` + 变更前后 diff」，**不是**持续截屏或屏幕时间轴。
+> 逐项进度与验收标准以 `docs/ROADMAP.md` 为准（2026-11-05 已按本定位重写）。P3 的审计日志数据源是「agent 执行事件 + `@effect` + 变更前后 diff」，**不是**持续截屏或屏幕时间轴；评估见 `next-feature/agent-execution-audit.md`（未实施、未登记待办）。
 
 ---
 

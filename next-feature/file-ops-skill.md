@@ -108,7 +108,7 @@ agent 应查 `agent-commands paths`，不要按中英文目录名做假设。
 | 通用文件管理器 / 文件操作命令 | Thunar 已由 `Super+E` 绑定；宿主 agent 已具备，重复且无预期状态可编码 |
 | `rm` / 批量删除 / 回收站清空封装 | 不可逆，与「只读优先」冲突 |
 | 需要 sudo 的写操作 | 沿用评审 §7，只打印命令交给人 |
-| 把文件内容索引 / 语义检索做进来 | 与 `next-feature/local-memory-timeline.md` 是两件事，不要合并 |
+| 把文件内容索引 / 语义检索做进来 | 与 `next-feature/agent-execution-audit.md`（agent 执行审计）是两件事，不要合并；本评估也不做任何屏幕 / 内容采集 |
 | 把本评估直接写进 `ROADMAP.md` 待办 | 决定推进时再登记（`docs/INDEX.md` 第 5 节约定） |
 
 ## 8. 决策与后续

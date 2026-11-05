@@ -1,7 +1,9 @@
 # HyprBuddy OS 文档索引（唯一入口）
 
-> 更新：2026-11-04 · 分支 `distro/v1-nn` · 桌面 **niri 26.04 + Noctalia v5**
-> 本索引是找文档的第一站。全仓库文档只分三类：**现行规范 / 历史归档 / 设计稿**。
+> 更新：2026-11-05 · 分支 `distro/v1-nn` · 桌面 **niri 26.04 + Noctalia v5**
+> 项目定位：**对外可复现的 agent 桌面底座**（声明式 / 可审计 / 可回滚）；桌面外壳是载体，不是主体。
+> 本索引是找文档的第一站。全仓库文档分三类：**现行规范 / 历史归档 / 设计稿**，
+> 另有单独一类 `next-feature/`（待评估特性，见第 5 节）。
 > 现状永远以代码为准：`modules/options.nix`、`hosts/`、`home/`、`scripts/`。
 > 改配置从技能 `nixos-desktop-settings` 进入，不要直接改 `~/.config` 下的 store 软链。
 
@@ -9,8 +11,9 @@
 
 | 需求 | 去哪 |
 |---|---|
-| 快速上手 / 部署命令 | `README.md` 的「部署」「修改配置」 |
-| 现在做到哪、下一步做什么 | `docs/ROADMAP.md`（唯一进度表） |
+| 项目定位 / 对外说明 | `README.md`（中文完整版）、`README.en.md`（英文 1 页入口） |
+| 快速上手 / 复现 / 部署命令 | `README.md` 第 3、9 节 |
+| 现在做到哪、下一步做什么 | `docs/ROADMAP.md`（唯一进度表，含验收标准） |
 | 该用哪个技能 | `docs/SKILLS.md`（技能路由 + 技能×命令矩阵） |
 | 有哪些命令、参数、副作用 | `agent-commands --json`（机器可读）；机制见 `docs/COMMANDS-JSON.md` |
 | 快捷键 | `docs/KEYBINDS.md` **文末「niri 当前键位」表**（中间表格是历史对照） |
@@ -27,8 +30,9 @@
 ## 2. 现行规范
 
 ### 路线与全局
-- `README.md` — 项目说明、环境、目录结构、部署、选项速查
-- `docs/ROADMAP.md` — 当前形态、P0–P3 进度、暂缓项、明确不做
+- `README.md` — 项目定位、三条设计原则、复现路径、agent 层、部署与选项参考
+- `README.en.md` — 英文 1 页对外入口（定位 / 原则 / 复现 / 非目标 / 状态）
+- `docs/ROADMAP.md` — 按 agent 底座定位重写的 P0–P3 进度、验收标准、暂缓项、明确不做
 - `docs/SKILLS.md` — 5 个技能 / 26 条命令的分工与路由
 - `docs/KEYBINDS.md` — 文末 niri 键位表（60 条，源 `home/niri/config.kdl`）
 - `docs/agent-coverage-review.md` — agent 层覆盖度评审与 P0–P3 补齐记录
@@ -79,6 +83,8 @@
    键位数看 `home/niri/config.kdl`、技能数用 `ls skills`；统一写进 `ROADMAP.md`。
 6. **文档不进 `install.sh`**：只有 `skills/` 会部署到 `~/.codebuddy/skills/`；
    `docs/` 与根 `README.md` 只在仓库里供人/agent 阅读。
+7. **对外措辞**：不使用「AI-native OS」「Recall」「Copilot+ 对标」作为卖点；
+   这些词只出现在否定、历史或非目标语境中（`README.md` 第 8 节、`ROADMAP.md` 第 5 节）。
 
 ## 5. 待评估特性（`next-feature/`）
 
@@ -88,5 +94,9 @@
 
 | 文件 | 主题 |
 |---|---|
-| `next-feature/local-memory-timeline.md` | Linux / niri 版 Recall：本地时间轴 + 语义检索（2026-11-04 评估） |
-| `next-feature/file-ops-skill.md` | 文件操作能力：落点统一 + 备份查恢 + 介质只读视图（2026-11-04 评估） |
+| `next-feature/agent-execution-audit.md` | **Agent 执行审计日志**（可导出 / 可回放）：记录 `agent-apply` 与写操作事件；由 2026-11-04 的 Recall 式屏幕时间轴方案于 2026-11-05 改名重写，**不采集屏幕内容**，状态未实施 |
+| `next-feature/file-ops-skill.md` | 文件操作能力：落点统一 + 备份查恢 + 介质只读视图（2026-11-04 评估，P0 已拆出实施于 `499435e`） |
+
+> 2026-11-05 变更：原 `next-feature/local-memory-timeline.md` 已改名重写为 `agent-execution-audit.md`。
+> 原方案的一次性探针数据、FTS5 中文按字切分、systemd user timer、`paths.artifacts`、`desktop-check` 集成点
+> 保留在附录并继续复用；`grim` / `tesseract` / 缩略图 / 语义 embedding 等屏幕采集组件不再使用。
