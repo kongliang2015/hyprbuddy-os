@@ -46,7 +46,7 @@
       # P1（docs/ROADMAP.md「P1 实施顺序」）：两者必须同时为 true，
       # diagnostics ⇒ localModels 与 localModels ⇒ agent.enable 都是构建期硬断言。
       diagnostics = true;
-      localModels = true;    # ollama-cuda 常驻；端点只绑 127.0.0.1，须先 ollama pull
+      localModels = true;    # ollama-cpu 常驻（默认，无 CUDA 依赖）；端点只绑 127.0.0.1，须先 ollama pull
       # model = "qwen2.5-coder:1.5b";   # 默认值，可不写
     };
     hardware.battery = false;

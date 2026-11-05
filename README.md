@@ -148,7 +148,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 ### 5.3 本地模型：代码就绪，默认关闭（如实说明）
 
-`modules/agent/local-llm.nix` 已实现按 `distro.gpu.vendor` 选 ollama 包变体（nvidia→`ollama-cuda`、amd→`ollama-rocm`、intel→`ollama-vulkan`、其他→`ollama-cpu`），并固定 `host = "127.0.0.1"`；启用条件是 `cfg.enable && cfg.localModels`。
+`modules/agent/local-llm.nix` 默认使用 `pkgs.ollama-cpu`（不引入 CUDA/ROCm 工具链），并固定 `host = "127.0.0.1"`；只有把 `distro.agent.ollamaAcceleration` 显式设为 `"gpu"` 时，才按 `distro.gpu.vendor` 选 `ollama-cuda` / `ollama-rocm` / `ollama-vulkan`。启用条件是 `cfg.enable && cfg.localModels`。
 
 | host | `agent.enable` | `diagnostics` | `localModels` |
 |---|:---:|:---:|:---:|
@@ -237,7 +237,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 | `distro.gpu.vendor` | nvidia / amd / intel / virtio / none | 选择 GPU 模块 |
 | `distro.gpu.nvidia.branch` | auto / legacy_580 / production / beta | auto 按 pciIds 判断 |
 | `distro.hardware.battery` / `backlight` | bool | 影响 bar 组件与键位 |
-| `distro.agent.*` | `enable` / `agents` / `usage` / `diagnostics` / `localModels` / `model` | agent 层；默认值见 `modules/options.nix`（`enable` 与 `localModels` 默认 `false`） |
+| `distro.agent.*` | `enable` / `agents` / `usage` / `diagnostics` / `localModels` / `ollamaAcceleration` / `model` | agent 层；默认值见 `modules/options.nix`（`enable` / `localModels` 默认 `false`，`ollamaAcceleration` 默认 `cpu`） |
 
 > NVIDIA 必须留在 580 LTSB：26.05 的 `nvidiaPackages.stable` 已指向 595.x，该分支不支持 Pascal，误用会黑屏。
 > `distro.agent.model` 默认 `qwen2.5-coder:1.5b`，启用 `localModels` 前需先 `ollama pull`。

@@ -211,6 +211,14 @@ in
         default = "qwen2.5-coder:1.5b";
         description = "本地模型名；需先 `ollama pull`。诊断与摘要都使用它";
       };
+      # 默认 CPU 变体：nvidia 变体会把 CUDA 12.9 工具链拉进系统 closure，
+      # 本机镜像下载不稳定；1.5B 模型 CPU 推理足够。需要 GPU 加速时显式设为
+      # "gpu"，由 local-llm.nix 按 distro.gpu.vendor 选包变体。
+      ollamaAcceleration = mkOption {
+        type = types.enum [ "cpu" "gpu" ];
+        default = "cpu";
+        description = "本地模型推理后端：cpu（默认，无 CUDA 依赖）或 gpu（按 GPU 厂商选包变体）";
+      };
     };
   };
 }

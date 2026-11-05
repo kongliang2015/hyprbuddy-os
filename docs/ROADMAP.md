@@ -68,7 +68,7 @@
 
 ### P1 点亮已有模块（对应外部最强需求：本地模型 7×24 常驻）
 
-> 前提认知：本地模型当前是「core dump 诊断的隐私兜底」，外部需求把它当「常驻基础设施」。**先改定位，再改代码**；`modules/agent/local-llm.nix` 已有按 GPU 选包变体的抽象，改造面很小。
+> 前提认知：本地模型当前是「core dump 诊断的隐私兜底」，外部需求把它当「常驻基础设施」。**先改定位，再改代码**；`modules/agent/local-llm.nix` 默认走 CPU 变体（无 CUDA 依赖），GPU 加速为显式 opt-in，改造面很小。
 > **实施地点：`leonard`，由本机用户执行。** 本仓库不预先把 host 开关改成 `true`——避免「文档写已启用、代码仍关闭」的状态漂移；下面的顺序即验收口径。
 
 | 动作 | 落点 | 验收标准 | 状态 |
@@ -86,7 +86,7 @@
 ```bash
 git status -sb                                                        # 仓库根目录：干净、分支 distro/v1-nn
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv    # 580 LTSB；GTX 1050 Ti 约 4GB 显存
-df -h ~/.ollama /nix/store                                            # 模型 + CUDA 运行时需数 GB 空闲
+df -h ~/.ollama /nix/store                                            # 模型 + 运行时需数 GB 空闲（CPU 版无 CUDA 工具链）
 systemctl status ollama --no-pager || true                             # 现在应未安装/未启用
 ```
 
@@ -215,7 +215,7 @@ git revert <本次 commit>               # 配置
 
 | 项 | 真实状态 |
 |---|---|
-| 本地模型 | `modules/agent/local-llm.nix` 代码就绪（按 GPU 选包变体、`127.0.0.1`），但**三台 host 全部 `localModels = false`**；无 OpenAI 兼容端点、并发控制、功耗观测。属 P1，不是已交付能力 |
+| 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`），但**三台 host 全部 `localModels = false`**；无 OpenAI 兼容端点、并发控制、功耗观测。属 P1，不是已交付能力 |
 | `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` / `vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
 | 数字 | 26 命令 / 5 技能 / 60 键位 / 10 主题 / 18 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
