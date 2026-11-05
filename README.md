@@ -166,7 +166,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 - **会话**：SDDM → 唯一的 niri 26.04 会话；fcitx5 + 拼音、polkit KDE 代理、xwayland-satellite、upower / bluetooth、Noctalia 自有 PAM 锁屏。
 - **外壳**：Noctalia v5 提供面板 / launcher / 通知 / 锁屏 / OSD / 夜间模式 / 壁纸 / 截图 overlay；IPC 为 `noctalia msg <cmd>`，脚本与键位都走它。
-- **键位**：`home/niri/config.kdl` 声明 60 条，媒体键 `allow-when-locked=true`；完整列表见 `docs/KEYBINDS.md`。
+- **键位**：`home/niri/config.kdl` 声明 61 条，媒体键 `allow-when-locked=true`；完整列表见 `docs/KEYBINDS.md`。
 - **主题**：`themes/<slug>/tokens.json` 是唯一真相；`theme-next` 循环、`theme-next restore` 登录恢复、`theme-picker` 预览、`de-theme-apply <slug>` 直接应用。外壳配色来自壁纸取色（`source="wallpaper"`），与 tokens 同源但**不等于** tokens。
 - **自检**：`desktop-check` 18 项（进程、portal、壁纸、bar、字体、键位引用命令存在性、夜间模式日程、配置告警等），非图形会话自动降级。
 - **其他**：`scripts/lib/de.sh` 能力层、`distro.desktop.nightlight` 声明式夜间模式、cliphist + fuzzel 剪贴板历史、grim/slurp/swappy 截图、wf-recorder 录屏。
