@@ -69,7 +69,7 @@
 ### P1 点亮已有模块（对应外部最强需求：本地模型 7×24 常驻）
 
 > 前提认知：本地模型当前是「core dump 诊断的隐私兜底」，外部需求把它当「常驻基础设施」。**先改定位，再改代码**；`modules/agent/local-llm.nix` 默认走 CPU 变体（无 CUDA 依赖），GPU 加速为显式 opt-in，改造面很小。
-> **实施地点：`leonard`，由本机用户执行。** 本仓库不预先把 host 开关改成 `true`——避免「文档写已启用、代码仍关闭」的状态漂移；下面的顺序即验收口径。
+> **实施地点：`leonard`，由本机用户执行。** 步骤 1 的开关改动已在仓库落地（`hosts/leonard/default.nix`），但**验收清单全部勾完之前不视为已启用**——避免「代码已开、运行态未验」被误读；下面的顺序即验收口径。
 
 | 动作 | 落点 | 验收标准 | 状态 |
 |---|---|---|---|
@@ -159,7 +159,7 @@ systemctl status coredump-watch.path --no-pager
 - [ ] `agent-commands --json` 条目 +2、`available=true`，`@summary` / `@effect` 齐全
 - [ ] `power-status --json` 含三档字段并标注 `power_source`
 - [ ] `nix flake check`（或上述退化路径）通过
-- [ ] **回写文档**：更新本文档 §6 状态口径表与 `README.md` §5.3（当前写的是「三台全关」），否则状态漂移
+- [ ] **回写文档**：把运行态验收结论（`ollama.service` 活跃、tok/s、功耗）补进本文档 §6 状态口径表与 `README.md` §5.3；代码状态已同步，缺的是运行态结论
 
 **回滚**
 
@@ -215,12 +215,12 @@ git revert <本次 commit>               # 配置
 
 | 项 | 真实状态 |
 |---|---|
-| 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`），但**三台 host 全部 `localModels = false`**；无 OpenAI 兼容端点、并发控制、功耗观测。属 P1，不是已交付能力 |
-| `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` / `vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
+| 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`）；**`leonard` 已在仓库打开 `localModels` + `diagnostics`，但运行态未验收**（未 switch、未 `ollama pull`，服务未激活）；`vmware` / `vm-virtio` 仍为 `false`。无 OpenAI 兼容端点实测、并发控制、功耗观测。属 P1，不是已交付能力 |
+| `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` 已打开（与 `localModels` 同步，运行态待验收），`vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
 | 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 18 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
 
-> 本表记录的是 **2026-11-05 推送时**的仓库状态，不会随 `leonard` 上的实施自动变化。P1 在 `leonard` 跑通后，必须回写本表与 `README.md` §5.3（当前写「三台 host 全部关闭」），否则违反「现状永远以代码为准」的口径。
+> 本表记录的是**仓库代码状态**；`leonard` 的 P1 开关已打开，但**运行态验收（switch / `ollama pull` / 端点与并发）尚未完成**，所以「本地模型」一行仍标为未交付。P1 验收清单勾完后，把运行态结论（服务活跃、tok/s、功耗）补进本表与 `README.md` §5.3。
 
 ## 附：本版相对 2026-11-04 版的变更
 

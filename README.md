@@ -146,19 +146,19 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 技能的 `SKILL.md` frontmatter 必须写清「什么时候用」；技能里提到的命令必须存在于 `agent-commands list`；组件退役后要过死引用检查。
 
-### 5.3 本地模型：代码就绪，默认关闭（如实说明）
+### 5.3 本地模型：代码就绪，仅 leonard 打开开关（运行态待验收）
 
 `modules/agent/local-llm.nix` 默认使用 `pkgs.ollama-cpu`（不引入 CUDA/ROCm 工具链），并固定 `host = "127.0.0.1"`；只有把 `distro.agent.ollamaAcceleration` 显式设为 `"gpu"` 时，才按 `distro.gpu.vendor` 选 `ollama-cuda` / `ollama-rocm` / `ollama-vulkan`。启用条件是 `cfg.enable && cfg.localModels`。
 
-| host | `agent.enable` | `diagnostics` | `localModels` |
-|---|:---:|:---:|:---:|
-| `vmware` | `false` | — | `false` |
-| `leonard` | `true` | `false` | `false` |
-| `vm-virtio` | `true` | `false` | `false` |
+| host | `agent.enable` | `diagnostics` | `localModels` | 说明 |
+|---|:---:|:---:|:---:|---|
+| `vmware` | `false` | — | `false` | 整个 agent 模块不生效 |
+| `leonard` | `true` | `true` | `true` | 代码已打开；**运行态未验收**（未 switch、未 `ollama pull`） |
+| `vm-virtio` | `true` | `false` | `false` | 未启用 |
 
-`diagnostics` 在 `modules/options.nix` 中默认为 `true`，但 `vmware` 的 `agent.enable = false` 让整个 agent 模块不生效，另外两台则显式设为 `false`。
+`diagnostics` 在 `modules/options.nix` 中默认为 `true`；`vmware` 的 `agent.enable = false` 让整个 agent 模块不生效，`vm-virtio` 显式设为 `false`。
 
-也就是说：**目前三台机器都没有本地模型服务，core dump → 本地模型报告同样未启用**；仓库里也没有 OpenAI 兼容端点、并发控制与功耗观测。这属于已明确记录的下一步，不是已交付能力——请勿按「本机自带本地推理」来理解。
+**代码状态 ≠ 运行状态**：`leonard` 的开关已在仓库打开，但本机尚未执行 `sudo nixos-rebuild switch`，也未 `ollama pull`，因此 `ollama.service` 与 coredump 诊断链路**尚未验收**。验收口径见 `docs/ROADMAP.md` P1 的验收清单；勾完之前不要把这行当成「已交付的本地推理」。
 
 ---
 
