@@ -90,7 +90,7 @@ df -h ~/.ollama /nix/store                                            # 模型 +
 systemctl status ollama --no-pager || true                             # 现在应未安装/未启用
 ```
 
-> 本机已有「`downloads.claude.ai` 不可达、构建期拉 claude-code 失败」的记录（`hosts/leonard/default.nix` 注释）。**`ollama pull` 同样要外网**：若失败，可在有网机器 `ollama pull` 后拷贝 `~/.ollama/models`，或用本地 GGUF `ollama create` 导入；不要为此改动 `agents` 列表。
+> 本机已有「`downloads.claude.ai` 不可达、构建期拉 claude-code 失败」的记录（`hosts/leonard/default.nix` 注释）。**`ollama pull` 同样要外网**：若失败，可在有网机器 `ollama pull` 后拷贝 `/var/lib/ollama/models`（NixOS `services.ollama` 用 systemd StateDirectory，非 `~/.ollama/models`），或用本地 GGUF `ollama create` 导入；不要为此改动 `agents` 列表。
 
 **步骤 1 · 打开开关**（只改 `hosts/leonard/default.nix` 的 `distro.agent` 段）
 
