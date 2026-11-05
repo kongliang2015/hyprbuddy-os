@@ -1,6 +1,6 @@
 # 技能总览（HyprBuddy OS / SKILLS）
 
-> 更新：2026-11-04 · 5 个技能 · 26 条命令
+> 更新：2026-11-05 · 5 个技能 · 28 条命令
 > 相关：`docs/INDEX.md`（全仓库文档总入口）、`docs/agent-coverage-review.md`（命令的来龙去脉）、
 > `docs/AGENT-LAYER.md`（设计稿，已标注历史）
 
@@ -111,7 +111,7 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 | 命令一致性 | 技能里提到的命令必须存在于 `agent-commands list` |
 | 新增技能 | 同步更新本文第 1、2、3 节与 `nixos-desktop-settings` 的分工表 |
 
-## 6. 命令全景（26 条）
+## 6. 命令全景（28 条）
 
 下表是**仓库能力**，不代表本机都可用：`commands.json` 的 `available` 字段反映
 本机构建状态。例如 `distro.agent.enable = false` 的机器上，
@@ -120,7 +120,7 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 
 | 分类 | 命令 |
 |---|---|
-| check（9） | `agent-commands` `desktop-check` `sys-health` `svc-status` `sys-log` `sys-rollback` `sys-gc` `net-status` `power-status` |
+| check（11） | `agent-commands` `desktop-check` `sys-health` `svc-status` `sys-log` `sys-rollback` `sys-gc` `net-status` `power-status` `model-status` `model-bench` |
 | workflow（2） | `agent-apply` `sys-update` |
 | agent（1） | `agent-theme-sync` |
 | runtime（14） | `agent-menu` `clipboard-menu` `de-theme-apply` `night-mode` `notif-dnd` `record-toggle` `screenshot-annotate` `screenshot-output` `sddm-theme` `show-sysinfo` `sysinfo-os` `theme-next` `theme-picker` `wallpaper-next` |

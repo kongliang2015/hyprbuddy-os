@@ -33,7 +33,7 @@
 - `README.md` — 项目定位、三条设计原则、复现路径、agent 层、部署与选项参考
 - `README.en.md` — 英文 1 页对外入口（定位 / 原则 / 复现 / 非目标 / 状态）
 - `docs/ROADMAP.md` — 按 agent 底座定位重写的 P0–P3 进度、验收标准、**P1 leonard 实施清单（runbook）**、暂缓项、明确不做（权威清单见 `README.md` §8）
-- `docs/SKILLS.md` — 5 个技能 / 26 条命令的分工与路由
+- `docs/SKILLS.md` — 5 个技能 / 28 条命令的分工与路由
 - `docs/KEYBINDS.md` — 文末 niri 键位表（60 条，源 `home/niri/config.kdl`）
 - `docs/agent-coverage-review.md` — agent 层覆盖度评审与 P0–P3 补齐记录
 - `docs/COMMANDS-JSON.md` — **生成机制现行**（`lib/commands.nix` + `scripts/agent-commands`），仅文中示例是历史数据
@@ -57,7 +57,7 @@
 
 ### 配置权威源（不是文档，但比文档准）
 `modules/options.nix`（选项）、`modules/desktop/niri.nix`（桌面栈）、`home/niri/config.kdl`（键位）、
-`exporters/niri/theme.sh`（主题链路）、`themes/<slug>/tokens.json`（10 套主题）、`scripts/`（27 个文件 / 26 条命令）。
+`exporters/niri/theme.sh`（主题链路）、`themes/<slug>/tokens.json`（10 套主题）、`scripts/`（28 个文件 / 28 条命令）。
 
 ## 3. 历史 / 设计稿（勿按现状引用）
 

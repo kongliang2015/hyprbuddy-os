@@ -8,7 +8,7 @@
 | 项 | 当前状态 |
 |---|---|
 | 底座 | NixOS 26.05（flake）· niri 26.04（唯一会话）· Noctalia v5（`pkgs.noctalia` 5.0.1，原生 C++） |
-| Agent 能力 | **26 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成 |
+| Agent 能力 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成 |
 | 分支 | `distro/v1-nn`（当前）；`distro/v1-cosmic`（Hyprland + COSMIC，2026-10-28 退役） |
 | 实测 | `vmware`（x86_64 软渲染）日用中；`leonard` / `vm-virtio` 仅求值；install/live ISO 切换 v5 后未重建 |
 | 镜像依赖 | nixpkgs 走清华 nixexprs 镜像，**不依赖 GitHub** |
@@ -111,7 +111,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 | 系统层 | `modules/` | `options.nix` / `assertions` / `desktop`（hyprbuddy + niri + sessions）/ `base` / `boot` / `users` / `hardware/gpu` / `agent` |
 | 机器层 | `hosts/` | `vmware` / `leonard` / `vm-virtio` / `_template`（模板不参与构建），只写 `distro.*` |
 | 用户层 | `home/` | `default.nix`（linkFarm）、niri / kitty / fuzzel / fastfetch / thunar |
-| 能力层 | `scripts/`、`lib/` | 26 条命令；`lib/de.sh` 桌面能力抽象；`lib/commands.nix` + `gen-commands.py` 生成 `commands.json` |
+| 能力层 | `scripts/`、`lib/` | 28 条命令；`lib/de.sh` 桌面能力抽象；`lib/commands.nix` + `gen-commands.py` 生成 `commands.json` |
 | 技能层 | `skills/` | 5 个技能 / 13 篇指南，软链到 agent 的 skills 目录 |
 | 主题层 | `themes/`、`exporters/`、`wallpapers/` | 10 套 `tokens.json` → `exporters/niri/theme.sh` → `theme.toml` + kitty/fuzzel 16 色 |
 | 交付层 | `installer/`、`install.sh` | install ISO / live ISO / 用户级软链部署 |
@@ -121,18 +121,18 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 ## 5. Agent 层：现在具备什么
 
-### 5.1 命令（26 条，`agent-commands --json` 可查）
+### 5.1 命令（28 条，`agent-commands --json` 可查）
 
-`@category` 枚举允许 `runtime / workflow / check / agent / system` 五类，当前实际分布为 **check 9 · runtime 14 · workflow 2 · agent 1**（`system` 暂未使用）：
+`@category` 枚举允许 `runtime / workflow / check / agent / system` 五类，当前实际分布为 **check 11 · runtime 14 · workflow 2 · agent 1**（`system` 暂未使用）：
 
 | 类别 | 命令 |
 |---|---|
-| `check`（9） | `sys-health` `svc-status` `sys-log` `net-status` `power-status` `sys-gc` `sys-rollback` `desktop-check`（18 项自检）`agent-commands` —— 全部只读或只打印 sudo 命令 |
+| `check`（11） | `sys-health` `svc-status` `sys-log` `net-status` `power-status` `model-status` `model-bench` `sys-gc` `sys-rollback` `desktop-check`（18 项自检）`agent-commands` —— 除 `model-bench` 会发起本地推理并写状态文件外，其余只读或只打印 sudo 命令 |
 | `runtime`（14） | `theme-next` `theme-picker` `de-theme-apply` `wallpaper-next` `night-mode` `notif-dnd` `sddm-theme` `clipboard-menu` `record-toggle` `screenshot-output` `screenshot-annotate` `agent-menu` `sysinfo-os` `show-sysinfo` |
 | `workflow`（2） | `agent-apply`（改动唯一入口）、`sys-update` |
 | `agent`（1） | `agent-theme-sync` |
 
-> 上表是**仓库能力**，不代表任一台机器都可用。例如 `distro.agent.enable = false` 的机器上，`agent-apply` / `agent-menu` / `agent-theme-sync` 未部署，`available=false`。`install.sh` 是部署脚本，不属于这 26 条命令。完整清单见 `docs/agent-coverage-review.md` 与 `docs/SKILLS.md`。
+> 上表是**仓库能力**，不代表任一台机器都可用。例如 `distro.agent.enable = false` 的机器上，`agent-apply` / `agent-menu` / `agent-theme-sync` 未部署，`available=false`。`install.sh` 是部署脚本，不属于这 28 条命令。完整清单见 `docs/agent-coverage-review.md` 与 `docs/SKILLS.md`。
 
 ### 5.2 技能（5 个，路由见 `docs/SKILLS.md`）
 

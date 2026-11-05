@@ -15,7 +15,7 @@
 | 主题 | `themes/<slug>/tokens.json` 单一真相 → kitty/fuzzel 精确 16 色 + 外壳壁纸取色；10 套 |
 | 键位 | `home/niri/config.kdl` 60 条，速查见 `docs/KEYBINDS.md` |
 | 自检 | `desktop-check` 18 项（图形会话全量、非图形降级） |
-| agent 层 | **26 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成；索引见 `docs/SKILLS.md` |
+| agent 层 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成；索引见 `docs/SKILLS.md` |
 | 实测 | `vmware`（x86_64 软渲染）日用中；`leonard` / `vm-virtio` 仅求值；ISO 切换 v5 后未重建 |
 
 ## 1. 优先级原则
@@ -218,7 +218,7 @@ git revert <本次 commit>               # 配置
 | 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`），但**三台 host 全部 `localModels = false`**；无 OpenAI 兼容端点、并发控制、功耗观测。属 P1，不是已交付能力 |
 | `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` / `vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
-| 数字 | 26 命令 / 5 技能 / 60 键位 / 10 主题 / 18 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
+| 数字 | 28 命令 / 5 技能 / 60 键位 / 10 主题 / 18 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
 
 > 本表记录的是 **2026-11-05 推送时**的仓库状态，不会随 `leonard` 上的实施自动变化。P1 在 `leonard` 跑通后，必须回写本表与 `README.md` §5.3（当前写「三台 host 全部关闭」），否则违反「现状永远以代码为准」的口径。
 
