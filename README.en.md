@@ -4,7 +4,7 @@
 
 HyprBuddy OS is a NixOS flake that turns "what an agent is allowed to do on this machine" into a **buildable, queryable, revertible artifact**. The desktop shell is the carrier, not the point: niri 26.04 + Noctalia v5 run on top, but the project is defined by declarative configuration, a machine-readable capability manifest, and explicit permission boundaries.
 
-This is **not** an "AI-native desktop". There is no screenshot timeline, no Recall-style memory, no background assistant watching you, and no mandatory cloud inference. Local inference (ollama) binds to `127.0.0.1` and is **off by default**.
+This is **not** an "AI-native desktop". There is no screenshot timeline, no Recall-style memory, no background assistant watching you, and no **built-in inference that requires the network** (agent orchestration may still call external LLM APIs). Local inference (ollama) is **off by default** and, when enabled, binds to `127.0.0.1` by default.
 
 | | |
 |---|---|
@@ -112,12 +112,15 @@ The P3 audit log records **agent** events (`@effect`, before/after diffs), not t
 
 ## Non-goals
 
-- System-level AI features: continuous screenshot indexing, Recall-style memory, an assistant that acts on the user's behalf unprompted.
-- "AI-native OS" / "Copilot+ parity" branding and TOPS-driven marketing.
-- Any inference dependency that requires the network; local models stay bound to `127.0.0.1` and off by default.
-- Agents executing sudo, editing `/etc` directly, or bypassing build verification.
-- Private update channels or a config format tied to a single vendor repository.
-- Hyprland / COSMIC features (retired 2026-10-28).
+> This is the **authoritative boundary list**; `docs/ROADMAP.md` §5 refers here. Entries mix three tones: hard red lines, defaults that can be explicitly enabled, and historical scope cleanup. Changes must satisfy the admission rules in `docs/ROADMAP.md` §1.
+
+- **System-level AI features**: continuous screenshot indexing, Recall-style memory, an assistant that acts on the user's behalf unprompted. The audit direction records **agent** execution events only; see `next-feature/agent-execution-audit.md` (not implemented).
+- **"AI-native OS" / "Copilot+ parity" branding** and TOPS-driven marketing. Using an NPU does not mean marketing TOPS: the metrics are always-on power draw and concurrency isolation, not TOPS / tok/s comparisons.
+- **Built-in inference must not require the network** (this does not forbid agent orchestration calling external LLM APIs). Local models are **off by default** and bind to `127.0.0.1` **by default**; exposing them on the LAN via `distro.agent.localEndpoint` (P1) requires an explicit switch, a token, a concurrency cap, and an assertion.
+- **Agents executing sudo, editing `/etc` directly, or bypassing build verification**.
+- **Private update channels or a config format tied to a single vendor repository**.
+- **Chasing UI parity with other distros** (multi-terminal / editor switching, dev stacks, game bundles): no differentiation at that layer; personal needs belong on a personal branch.
+- **Wrapping package-manager commands** (declarative config already covers it); **Hyprland / COSMIC features** (retired 2026-10-28).
 
 ---
 
