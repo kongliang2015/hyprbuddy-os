@@ -37,6 +37,7 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 | "服务挂了 / 某某没起来" | `nixos-system-ops` | `svc-status` |
 | "连不上网 / 网很慢" | `nixos-system-ops` | `net-status` |
 | "发烫 / 想换性能档" | `nixos-system-ops` | `power-status` |
+| "本地模型状态 / 测 tok/s 与功耗" | `nixos-desktop-settings` | `model-status` / `model-bench` |
 | "磁盘满了 / store 太大" | `nixos-system-ops` | `sys-gc` |
 | "升级 / 回滚" | `nixos-system-ops` | `sys-update --check` / `sys-rollback` |
 | "面板没了 / 输入法不能用" | `nixos-desktop-settings` | `desktop-check`，再 `sys-log` |
@@ -64,6 +65,7 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 | `wallpaper-next` / `screenshot-*` / `record-toggle` / `notif-dnd` / `night-mode` | ● | | | | |
 | `sddm-theme` | ● | | | ● | |
 | `agent-commands` | ● | ○ | | | |
+| `model-status` / `model-bench` | ● | ○（引用） | | | |
 
 （● 主用 · ○ 辅助引用）
 
