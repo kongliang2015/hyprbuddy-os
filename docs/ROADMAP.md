@@ -75,7 +75,7 @@
 |---|---|---|---|
 | 在 `leonard` 打开 `localModels` + `diagnostics` | `hosts/leonard/default.nix` | `ollama.service` 与 `coredump-watch.path` 活跃；coredump 报告落 `~/.local/state/agent/` 且与 `coredumpctl info` 原文可交叉验证 | [ ] |
 | 跑通 ollama OpenAI 兼容端点 `/v1/chat/completions` 与多客户端并发 | 本机回归脚本 | 2–3 个并发请求不互相挤占、无 OOM | [ ] |
-| 新增 `model-status` / `model-bench` | `scripts/`（`home/default.nix` 自动扫描，无需改 `lib/commands.nix`） | `agent-commands --json` 条目 +2，`@summary` / `@effect` 齐全；输出 tok/s、内存 / 显存、功耗采样 | [ ] |
+| 新增 `model-status` / `model-bench` | `scripts/`（`home/default.nix` 自动扫描，无需改 `lib/commands.nix`） | `agent-commands --json` 条目 +2，`@summary` / `@effect` 齐全；输出 tok/s、RAM / 显存；功耗按可读来源采样，读不到留空（CPU 版见步骤 4） | [ ] |
 | `power-status` 补 idle / 单请求 / 并发三档功耗 | `scripts/power-status` | 输出可机器解析（JSON），**并用 `power_source` 标注数据来源** | [ ] |
 | 新增 `distro.agent.localEndpoint`：`bind` / LAN 开关 / token / 并发上限 | `modules/options.nix`、`modules/agent/local-llm.nix` | 默认仍只绑 `127.0.0.1`；LAN 暴露需显式开关 + 断言 | [ ] |
 
@@ -85,7 +85,7 @@
 
 ```bash
 git status -sb                                                        # 仓库根目录：干净、分支 distro/v1-nn
-nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv    # 580 LTSB；GTX 1050 Ti 约 4GB 显存
+nvidia-smi --query-gpu=name,driver_version --format=csv                # 可选：确认 NVIDIA 驱动（CPU 版 ollama 不依赖 GPU）
 df -h ~/.ollama /nix/store                                            # 模型 + 运行时需数 GB 空闲（CPU 版无 CUDA 工具链）
 systemctl status ollama --no-pager || true                             # 现在应未安装/未启用
 ```
@@ -138,14 +138,14 @@ journalctl -k --since '5 min ago' | grep -i oom || true
 systemctl status coredump-watch.path --no-pager
 ```
 
-> 诊断走 `/api/generate`（不是 OpenAI 兼容端点），报告落在 `~/.local/state/agent/coredump-report.md`；`coredump-analyze.service` 是 oneshot，触发后才运行，验收要与 `coredumpctl info` 原文交叉验证。4GB 显存下先确认 1.5B 稳定，**不要直接试 7B 以上**。
+> 诊断走 `/api/generate`（不是 OpenAI 兼容端点），报告落在 `~/.local/state/agent/coredump-report.md`；`coredump-analyze.service` 是 oneshot，触发后才运行，验收要与 `coredumpctl info` 原文交叉验证。CPU 版下显存不参与推理：先确认 1.5B 稳定，**不要直接上 7B**（RAM 占用与单次延迟都会明显上升）。
 
 **步骤 4 · 补命令与功耗观测**
 
 - 在 `scripts/` 新建 `model-status`、`model-bench`：`home/default.nix` 会自动扫描 `scripts/` 并部署，`lib/commands.nix` / `commands.json` **无需改动**。
 - 头部必填 `@command`（须等于文件名）、`@summary`、`@category`（用 `check`），建议补 `@usage`、`@effect: 只读`。**`@doc` 若写，必须指向 `skills/<skill>/` 下真实存在的指南文件名，否则构建失败**；没有对应指南就省略。
-- `model-bench` 输出 tok/s、内存 / 显存（`nvidia-smi --query-gpu=memory.used`）；`power-status --json` 增加 idle / 单请求 / 并发三档字段。
-- ⚠️ **整机功耗在台式机上通常读不到**：可用 `nvidia-smi --query-gpu=power.draw` 取 GPU 功耗，`/sys/class/powercap/intel-rapl` 仅 Intel CPU，主板 hwmon 的 `power*_input` 视机型而定。读不到就输出 `power_source` 标明来源并留空，**不要伪造整机瓦数**；这套字段也是 P2 上 NPU 主机后做功耗对比的基线格式。
+- `model-bench` 输出 tok/s 与 RAM / 显存（`nvidia-smi --query-gpu=memory.used` 仅作参考，CPU 版下显存不参与推理）；`power-status --json` 增加 idle / 单请求 / 并发三档字段。
+- ⚠️ **CPU 版下三档功耗的边界**：`nvidia-smi power.draw` 只反映 GPU，CPU 推理时三档会接近 idle；本机 GTX 1050 Ti 更直接返回 `[N/A]`。所以 `power-status` 的 `current_w` / `scenarios` 在 CPU 版下多为 `null`、`power_source` 标 `unavailable`——**这是如实留空，不是缺陷**。需要 CPU 侧功耗时用 `/sys/class/powercap/*/energy_uj` 两次采样求差，或主板 hwmon 的 `power*_input`（视机型）。这套字段仍保留为 P2 NPU 主机的对比格式，**不要伪造整机瓦数**。
 
 **步骤 5 · 可选：LAN 端点**（最后做，默认不做）
 

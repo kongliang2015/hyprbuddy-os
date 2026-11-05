@@ -178,7 +178,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 | 优先级 | 方向 | 主要落点 |
 |---|---|---|
 | **P0（基本完成）** | 对外可发现性：README 重构 + 英文入口 + ROADMAP 按新定位重写 + 时间轴方案改名重写为 agent 执行审计日志；**剩余**：仓库 description / homepage、GitHub 镜像（等 P1 跑通再公开） | `README.md`、`README.en.md`、`docs/ROADMAP.md`、`next-feature/` |
-| **P1** | **点亮已有模块**：在真机打开 `localModels` + `diagnostics`，跑通 OpenAI 兼容端点与多客户端并发；新增 `model-status` / `model-bench`，输出 tok/s、内存 / 显存、整机功耗；`power-status` 补 idle / 单请求 / 并发三档 | `modules/options.nix`、`modules/agent/local-llm.nix`、`scripts/` |
+| **P1** | **点亮已有模块**：在真机打开 `localModels` + `diagnostics`，跑通 OpenAI 兼容端点与多客户端并发；新增 `model-status` / `model-bench`，输出 tok/s、RAM / 显存；功耗按可读来源采样（读不到留空、不伪造）；`power-status` 补 idle / 单请求 / 并发三档 | `modules/options.nix`、`modules/agent/local-llm.nix`、`scripts/` |
 | **P2** | 承接 NPU 主机：新增 `hosts/maco470`（`amdxdna`、`render` 组、systemd `LimitMEMLOCK=infinity`、内核 ≥ 7.0）；`local-llm.nix` 增 AMD iGPU Vulkan 与 NPU 低功耗分支；模型盘独立挂载点写入 `paths.artifacts` | `hosts/`、`modules/agent/`、`lib/` |
 | **P3** | 把优势变成可移植规范：`skills/` + `commands.json` 抽成任意 NixOS 可导入的规范；append-only **agent 执行审计日志**（可导出 / 可回放）；CI 加 `nix flake check` + schema 校验 + ISO 构建 | `lib/commands.nix`、`skills/`、CI |
 
