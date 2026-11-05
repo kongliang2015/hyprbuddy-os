@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # @command: power-status
-# @summary: 电源与散热状态（性能档位/CPU 温度/电池/亮度/空闲抑制），只读
+# @summary: 电源与散热状态（性能档位/温度/电池/亮度/功耗与三档基线），只读
 # @category: check
 # @usage: power-status [--json]
 # @effect: 只读；电池电量 <10% 时退出码 1
 # @doc: diagnose.md
 #
 # 台式机没有电池/背光时对应项显示「—」，不算异常。
+# 功耗只报能真实读到的来源（nvidia-smi / hwmon），整机瓦数读不到就留空，不伪造。
 set -uo pipefail
+
+JQ="@JQ@"
+if [ ! -x "$JQ" ]; then JQ="$(command -v jq || true)"; fi
 
 JSON=0
 [ "${1:-}" = "--json" ] && JSON=1
@@ -63,6 +67,36 @@ if command -v systemd-inhibit >/dev/null 2>&1; then
   inhibits=$(systemd-inhibit --list --no-pager 2>/dev/null | grep -c "block" || true)
 fi
 
+# ── 功耗采样（P1 基线：idle / 单请求 / 并发三档）──────
+power_source=""; power_w=""; power_note=""
+if command -v nvidia-smi >/dev/null 2>&1; then
+  w=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
+  case "$w" in ''|'N/A'|'[N/A]'|'[Not Supported]') ;; *) power_source="nvidia-smi:gpu"; power_w="$w" ;; esac
+fi
+if [ -z "$power_source" ]; then
+  for p in /sys/class/hwmon/hwmon*/power*_input; do
+    [ -r "$p" ] || continue
+    uw=$(cat "$p" 2>/dev/null) || continue
+    case "$uw" in ''|*[!0-9]*) continue ;; esac
+    power_source="hwmon:$(basename "$p")"
+    power_w=$(awk -v u="$uw" 'BEGIN { printf "%.2f", u / 1000000 }')
+    break
+  done
+fi
+if [ -z "$power_source" ]; then
+  power_source="unavailable"
+  power_note="nvidia-smi power.draw 返回 [N/A]、hwmon 无 power*_input；读数留空，不伪造整机瓦数"
+fi
+
+# 三档基线由 model-bench 采样写入；未测一律 null
+scenarios='{"idle":null,"single_request":null,"concurrent":null}'
+bench="${XDG_STATE_HOME:-$HOME/.local/state}/hyprbuddy-os/power-bench.json"
+if [ -r "$bench" ] && [ -n "$JQ" ] && "$JQ" -e . "$bench" >/dev/null 2>&1; then
+  scenarios=$("$JQ" -c '{idle:(.scenarios.idle // null),single_request:(.scenarios.single_request // null),concurrent:(.scenarios.concurrent // null)}' "$bench")
+fi
+
+json_opt() { if [ -n "$1" ]; then printf '"%s"' "$1"; else printf 'null'; fi; }
+
 bad=0
 if [ -n "$bat_cap" ] && [ "$bat_cap" -lt 10 ] 2>/dev/null; then bad=1; fi
 
@@ -71,7 +105,10 @@ if [ "$JSON" = 1 ]; then
     "${profile:-}" "${temp:-null}" "${temp_label:-}"
   printf '"battery":{"percent":%s,"state":"%s"},' "${bat_cap:-null}" "${bat_state:-}"
   printf '"backlight":{"raw":%s,"max":%s,"percent":%s},' "${bl:-null}" "${bl_max:-null}" "${bl_pct:-null}"
-  printf '"inhibitors":%s,"ok":%s}\n' "${inhibits:-0}" "$([ "$bad" = 0 ] && echo true || echo false)"
+  printf '"inhibitors":%s,' "${inhibits:-0}"
+  printf '"power":{"source":%s,"unit":"W","current_w":%s,"note":%s,"scenarios":%s},' \
+    "$(json_opt "$power_source")" "${power_w:-null}" "$(json_opt "$power_note")" "$scenarios"
+  printf '"ok":%s}\n' "$([ "$bad" = 0 ] && echo true || echo false)"
   exit $bad
 fi
 
@@ -94,6 +131,11 @@ else
   echo "屏幕亮度  —（无背光设备）"
 fi
 printf "空闲抑制  %s 条（阻止休眠的 inhibitor）\n" "${inhibits:-0}"
+if [ -n "$power_w" ]; then
+  printf "功耗      %s W（来源 %s，GPU 功耗非整机瓦数）\n" "$power_w" "$power_source"
+else
+  printf "功耗      —（%s）\n" "$power_note"
+fi
 echo
 [ "$bad" = 0 ] && echo "结论      OK" || echo "结论      电池电量偏低"
 exit $bad

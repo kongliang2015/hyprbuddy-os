@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# @command: model-status
+# @summary: 本地模型服务状态（ollama 服务/端点/模型列表/显存与功耗），只读
+# @category: check
+# @usage: model-status [--json]
+# @effect: 只读；端点不可达时退出码 1
+# @doc: agent.md
+set -uo pipefail
+
+JQ="@JQ@"
+if [ ! -x "$JQ" ]; then JQ="$(command -v jq || true)"; fi
+
+JSON=0
+[ "${1:-}" = "--json" ] && JSON=1
+ENDPOINT="http://127.0.0.1:11434"
+
+active="unknown"
+if command -v systemctl >/dev/null 2>&1; then
+  a=$(systemctl is-active ollama 2>/dev/null || true)
+  [ -n "$a" ] && active="$a"
+fi
+
+endpoint_ok=false
+models='[]'
+if command -v curl >/dev/null 2>&1; then
+  body=$(curl -sS --max-time 2 "$ENDPOINT/api/tags" 2>/dev/null || true)
+  if [ -n "$body" ] && [ -n "$JQ" ] && "$JQ" -e . <<<"$body" >/dev/null 2>&1; then
+    endpoint_ok=true
+    models=$("$JQ" -c '[.models[]?.name] // []' <<<"$body")
+  fi
+fi
+
+gpu_used=""; gpu_total=""; gpu_power=""
+gpu_source='null'
+if command -v nvidia-smi >/dev/null 2>&1; then
+  gpu_used=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
+  gpu_total=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
+  gpu_power=$(nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ')
+  case "$gpu_power" in ''|'N/A'|'[N/A]'|'[Not Supported]') gpu_power="" ;; esac
+  [ -n "$gpu_used" ] && gpu_source='"nvidia-smi:gpu"'
+fi
+
+ok=true
+[ "$endpoint_ok" = true ] || ok=false
+
+if [ "$JSON" = 1 ]; then
+  printf '{"service":"%s","endpoint":"%s","endpoint_ok":%s,"models":%s,' \
+    "$active" "$ENDPOINT" "$endpoint_ok" "$models"
+  printf '"gpu":{"source":%s,"memory_used_mib":%s,"memory_total_mib":%s,"power_w":%s},' \
+    "$gpu_source" "${gpu_used:-null}" "${gpu_total:-null}" "${gpu_power:-null}"
+  printf '"ok":%s}\n' "$ok"
+  [ "$ok" = true ] || exit 1
+  exit 0
+fi
+
+model_list=$(printf '%s' "$models" | tr -d '[]"' | sed 's/,/, /g')
+[ -n "$model_list" ] || model_list="（尚未拉取模型）"
+
+echo "本地模型  $(date +%F' '%T)"
+echo
+printf "ollama 服务  %s\n" "$active"
+printf "端点        %s（%s）\n" "$ENDPOINT" "$([ "$endpoint_ok" = true ] && echo 可达 || echo 不可达)"
+printf "模型        %s\n" "$model_list"
+if [ -n "$gpu_used" ]; then
+  printf "显存        %s / %s MiB%s\n" "$gpu_used" "$gpu_total" "${gpu_power:+，功耗 $gpu_power W}"
+  echo "功耗来源    nvidia-smi:gpu（GPU 功耗，非整机瓦数）"
+else
+  echo "显存        —（nvidia-smi 不可用）"
+fi
+echo
+[ "$ok" = true ] && echo "结论      OK" || echo "结论      ollama 端点不可达（先 switch 系统并 ollama pull）"
+[ "$ok" = true ] || exit 1

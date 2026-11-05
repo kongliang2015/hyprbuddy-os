@@ -43,8 +43,11 @@
       # codebuddy 的会话日志（~/.codebuddy/projects/*.jsonl）内含 usage，
       # agent-usage 按 /cost 口径统计当日 output
       usage = true;
-      diagnostics = false;   # 需先开 localModels 并 ollama pull
-      localModels = false;
+      # P1（docs/ROADMAP.md「P1 实施顺序」）：两者必须同时为 true，
+      # diagnostics ⇒ localModels 与 localModels ⇒ agent.enable 都是构建期硬断言。
+      diagnostics = true;
+      localModels = true;    # ollama-cuda 常驻；端点只绑 127.0.0.1，须先 ollama pull
+      # model = "qwen2.5-coder:1.5b";   # 默认值，可不写
     };
     hardware.battery = false;
     hardware.backlight = false;
