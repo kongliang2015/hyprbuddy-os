@@ -28,6 +28,41 @@
 - `agent-menu`：Super+Shift+Ctrl+A，只列出 PATH 中真实存在的 agent
 - `agent-apply`：改动唯一入口（求值 → 构建 → 打印 sudo 命令）
 - `agent-theme-sync`：随主题同步 agent 侧配色
+- 本地模型：`model-status` / `model-bench`，用法见下一节
+
+## 本地模型状态与基准（P1）
+
+两个 `check` 类命令，`@doc` 指向本文件。前提：`distro.agent.localModels = true`、系统已 switch、已 `ollama pull`。
+
+### model-status
+
+```bash
+model-status          # 文本
+model-status --json   # 机器可读
+```
+
+只读：查 `ollama.service` 状态、`127.0.0.1:11434/api/tags` 可达性、模型列表、GPU 显存 / 功耗。**端点不可达时退出码 1**。
+
+JSON 字段：`service`、`endpoint_ok`、`models[]`、`gpu.{source,memory_used_mib,memory_total_mib,power_w}`、`ok`。
+
+### model-bench
+
+```bash
+model-bench                     # 默认 qwen2.5-coder:1.5b
+model-bench --model <name> --json
+```
+
+跑三档并输出 tok/s 与功耗：idle（无请求）、单请求、3 路并发。**有副作用**：会向本机 ollama 发推理请求，并把三档结果写入 `~/.local/state/hyprbuddy-os/power-bench.json`（`power-status --json` 的 `power.scenarios` 从这里读）。端点不可达时直接退出 1，不写文件。
+
+**功耗口径**：只采 `nvidia-smi power.draw`（GPU 功耗，非整机瓦数）。CPU 版下 CPU 推理时 GPU 几乎空闲，三档读数接近 idle；读不到（本机 GTX 1050 Ti 返回 `[N/A]`）则为 `null`、`power_source` 标 `unavailable`——这是如实留空，不是故障，**不要为了让数字好看而伪造**。需要 CPU 侧功耗时用 `/sys/class/powercap/*/energy_uj` 两次采样求差。
+
+### 一次完整验收
+
+```bash
+model-status --json     # 端点可达、模型在列表里
+model-bench --json      # 三档 tok/s；功耗可为 null
+power-status --json     # power.scenarios 应回显 model-bench 的三档值
+```
 
 ## 诊断
 
