@@ -169,7 +169,10 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 
 验证：`bash -n` 通过；渲染输出 `agents=[codebuddy]` + `lazyAgents=[codex claude-code opencode]`；
 差集四组场景（含已选 `opencode`）结果正确；交集断言表达式 false/true 符合预期；
-现有 `vmware` 求值通过（默认空不触发断言）。端到端 `--dry-run` 需 root，未在本机执行。
+现有 `vmware` 求值通过（默认空不触发断言）。
+端到端 `--dry-run` 已用 `unshare -r`（非特权 user namespace 模拟 root）跑通四组：
+`--agents codebuddy --mirror tuna`、`--agents "opencode codex" --mirror official`、
+无参数（全懒加载 + cn）、`--no-agent`（两列表清空）；四组均渲染正确且 `nix eval` 求值通过。
 
 ## 5. 与现有体系集成
 
@@ -202,10 +205,11 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 - [ ] `agent-usage` 能统计 claude 的日志（未触发 claude 首次构建，未测）
 - [x] `desktop-check` 通过；`nix flake check` 待完整跑一次（此前只跑过 `--no-build`）
 - [ ] 移除 `lazyAgents` 后 shim 消失、`~/.local/bin` 干净（未测）
-- [ ] 安装器 `--dry-run --agents "codebuddy"`：`agents=[codebuddy]`、`lazyAgents=[codex claude-code opencode]`
-- [ ] 安装器交互选 `opencode`：`agents=[opencode]`、`lazyAgents=[codex claude-code]`（差集正确）
-- [ ] `--yes` 且未传 `--agents`：全部懒加载，不阻塞
-- [ ] live ISO 配置未变（`codebuddy` + `opencode`）
+- [x] 安装器 `--dry-run --agents "codebuddy" --mirror tuna`：`agents=[codebuddy]`、`lazyAgents=[codex claude-code opencode]`、`mirror="tuna"`
+- [x] 安装器 `--dry-run --agents "opencode codex" --mirror official`：差集正确（`lazyAgents=[claude-code]`）、`mirror="official"`
+- [x] `--yes` 且未传 `--agents` / `--mirror`：全部懒加载 + `cn`，不阻塞
+- [x] `--no-agent`：`enable=false`、`agents` 与 `lazyAgents` 均为空
+- [x] live ISO 配置未变（`codebuddy` + `opencode`）
 - [ ] `claude-code` 的可构建性有实测结论（通过 / 记录失败原因）
 
 ## 8. 决策与后续
