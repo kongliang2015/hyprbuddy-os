@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 部署用户级配置：由 flake 的 homeConfigs.<host> 生成配置树，再软链进 ~/.config、~/.local/bin 与 ~/.codebuddy/skills。
+# 部署用户级配置：由 flake 的 packages.<system>.<host>（`.#<host>`）生成配置树，
+# 再软链进 ~/.config、~/.local/bin 与 ~/.codebuddy/skills。
 #
 # 不再拷贝 + sed：配置文件是 Nix store 里的产物，主机差异（电池/背光/agent）在构建期决定。
 set -euo pipefail
@@ -16,8 +17,9 @@ usage() {
   --yes           覆盖已存在的真实文件时不再询问
 
 说明:
-  配置由 nix build .#homeConfigs.<host> 生成，链接到 ~/.config / ~/.local/bin。
-  被替换的真实文件会备份到 ~/.config.bak-<时间戳>/。
+  配置由 nix build .#<host>（即 packages.<system>.<host>）生成，链接到
+  ~/.config / ~/.local/bin / ~/.codebuddy/skills。被替换的真实文件会备份到
+  ~/.config.bak-<时间戳>/。
 EOF
 }
 
@@ -110,25 +112,29 @@ mkdir -p "$HOME/Pictures/wallpapers"
 cp -f "$here"/wallpapers/* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
 
 echo "==> 运行时样式"
-# style.css 归 theme-next 生成（登录/切主题时按 tokens 重写），不再走 Nix 链接，
-# 否则每次 install.sh 都会把主题色刷回 store 里的默认样式。
-for fz in "$HOME/.config/waybar/style.css" "$HOME/.config/fuzzel/fuzzel.ini"; do
-  if [ -L "$fz" ]; then
-    case "$(readlink "$fz")" in
-      /nix/store/*)
-        rm -f "$fz"
-        echo "  - 移除 ${fz#$HOME/.config/} 的 Nix 链接（改由 theme-next 生成）"
-        ;;
-    esac
-  fi
-done
-# 在活的 Hyprland 会话里立刻重生成一次，避免装完还是旧样式
-if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] && [ -x "$HOME/.local/bin/theme-next" ]; then
-  if "$HOME/.local/bin/theme-next" restore >/dev/null 2>&1; then
-    echo "  - 已按当前主题重生成组件样式"
-  else
-    echo "  - 组件样式重生成失败（可手动运行 theme-next restore）"
-  fi
+# fuzzel.ini 由 theme-next 按主题生成（写 tmp → 非空才替换），不能是 store 软链。
+# 若这里还是旧部署留下的链接，先摘掉，否则 theme-next 写不进去。
+fz="$HOME/.config/fuzzel/fuzzel.ini"
+if [ -L "$fz" ]; then
+  case "$(readlink "$fz")" in
+    /nix/store/*)
+      rm -f "$fz"
+      echo "  - 移除 fuzzel.ini 的 Nix 链接（改由 theme-next 生成）"
+      ;;
+  esac
+fi
+# 图形会话里立刻按当前主题重生成一次，避免装完还是旧样式。theme-next 自己也按
+# XDG_CURRENT_DESKTOP 判断是否动运行态，TTY 下只更新索引。
+if [ -x "$HOME/.local/bin/theme-next" ]; then
+  case "${XDG_CURRENT_DESKTOP:-}" in
+    *niri*|*Niri*)
+      if "$HOME/.local/bin/theme-next" restore >/dev/null 2>&1; then
+        echo "  - 已按当前主题重生成组件样式"
+      else
+        echo "  - 组件样式重生成失败（可手动运行 theme-next restore）"
+      fi
+      ;;
+  esac
 fi
 
 echo "==> 桌面自检"
