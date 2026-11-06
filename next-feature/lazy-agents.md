@@ -181,7 +181,7 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 | `agent-menu` | 无需改：shim 是 PATH 中的真实命令，会被列出；未下载时选中会触发首次拉取 |
 | `agent-usage` | 无需改：按日志路径统计，与是否懒加载无关 |
 | `desktop-check` | 无需改：命令存在性检查看到的是 shim |
-| `commands.json` | `agent-shim` 自身作为一条 runtime 命令进入清单；shim 副本不带 `@command`，不计入命令数 |
+| `commands.json` | shim 放在 `home/agent-shim.sh`，不带 `@command`、不进 `scripts/` 扫描，**不计入 28 条命令**；命令数不变 |
 | `install.sh` | shim 属用户级，随 linkFarm 部署；不涉及系统包 |
 | `installer/` | 交互选择只影响新装机器生成的 host 配置；live ISO 与已装机不受影响 |
 | `nix flake check` | 新增的 `packages.<system>.<agent>` 会被 check 覆盖（求值层面） |
@@ -220,8 +220,8 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 | B 扩到 claude-code / opencode | 验证 `claude-code` 可构建后补齐；opencode 无构建风险 | 视 A 的结果 |
 | C 维持现状 | 只用 `distro.agent.agents` 预装 | 若不接受安装器交互的复杂度 |
 
-**当前决定：尚未实施，仅存档评估。** 未写入 `docs/ROADMAP.md` 的待办清单；
-若决定推进，先在 ROADMAP 登记，再按「先 commit 再 install」的流程落地。
+**当前决定：安装器交互 + agent-shim + distro.mirror 已实施（2026-11-06），本文由「评估」转为「实施记录」。** 未写入 `docs/ROADMAP.md` 的待办清单；
+剩余待验证：`claude` / `opencode` 的首次实际构建、移除 `lazyAgents` 后 shim 是否干净消失（见 §7 未勾选项）。
 
 ## 附：Omarchy 对照（事实核对）
 

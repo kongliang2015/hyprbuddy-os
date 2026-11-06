@@ -12,7 +12,7 @@ This is **not** an "AI-native desktop". There is no screenshot timeline, no Reca
 | Agent layer | **28 commands + 5 skills**, `commands.json` (schema 1) generated at build time |
 | Branch | `distro/v1-nn` (current); `distro/v1-cosmic` (Hyprland/COSMIC, retired 2026-10-28) |
 | Verified | `vmware` (x86_64, software rendering) in daily use; `leonard` / `vm-virtio` evaluated only; ISO not rebuilt since v5 |
-| Mirror | nixpkgs via Tsinghua nixexprs mirror; **no GitHub dependency** |
+| Mirror | flake inputs via Tsinghua nixexprs; binary caches default to three CN mirrors; some package sources are on GitHub (`codex` / `opencode`) and are only needed on a cache miss |
 | License | Apache-2.0 |
 
 > Documentation is primarily in Chinese. This page is the English entry point; see [`README.md`](README.md) for the full reference.
@@ -71,7 +71,7 @@ Bad configuration surfaces at **build time**, never in the running system. `sys-
 
 ## Reproduce
 
-Prerequisites: a NixOS 26.05 machine (or install from this repo's ISO), `nix-command` + `flakes`, `git`, and access to `mirrors.tuna.tsinghua.edu.cn`.
+Prerequisites: a NixOS 26.05 machine (or install from this repo's ISO), `nix-command` + `flakes`, `git`, and (on CN networks) access to `mirrors.tuna.tsinghua.edu.cn`. The ISO ships a local nixpkgs source, so installation does not depend on the mirror; overseas or other networks can switch binary caches with `--mirror official`.
 
 ```bash
 git clone https://gitee.com/lele2015/hyprbuddy-os.git

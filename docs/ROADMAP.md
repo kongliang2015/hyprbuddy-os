@@ -8,7 +8,7 @@
 
 | 层 | 现状 |
 |---|---|
-| 底座 | NixOS 26.05 + flake（nixpkgs 走清华 nixexprs 镜像，不依赖 GitHub）；二进制缓存源可选 cn / tuna / sjtu / ustc / official（`distro.mirror`） |
+| 底座 | NixOS 26.05 + flake（nixpkgs 走清华 nixexprs 镜像）；二进制缓存源可选 cn / tuna / sjtu / ustc / official（`distro.mirror`）；个别包源码在 GitHub，缓存未命中时才需要 |
 | 合成器 | niri 26.04（唯一提供方，滚动平铺） |
 | 外壳 | Noctalia v5（`pkgs.noctalia` 5.0.1，原生 C++，无 quickshell） |
 | 会话 | SDDM → niri；fcitx5；polkit KDE 代理；xwayland-satellite；Noctalia 自有 PAM 锁屏 |
