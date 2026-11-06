@@ -336,7 +336,7 @@ git revert <本次 commit>               # 配置
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
 | 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 19 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
 | 懒加载 agent | shim 已实现并在 `vmware` 验证 `codex` 全链路（构建 → 0.146.0 → 缓存）；`claude` / `opencode` 仅 `drvPath` 求值；安装器 `--dry-run` 四组通过，**实机安装未执行** |
-| ISO 离线安装 | 代码已实现（ISO 内置 nixpkgs + 安装时 `path:` override/恢复）；`--dry-run` 验证 override 与 lock 恢复；**完整 ISO 构建已通过**（live ISO 3.6G，首次 `cp -al` 权限失败已修）；**实机安装未执行** |
+| ISO 离线安装 | 代码已实现（ISO 内置 nixpkgs + 安装时 `path:` override/恢复）；`--dry-run` 验证 override 与 lock 恢复；**完整 ISO 构建已通过**（live ISO 3.5G，首次 `cp -al` 权限失败已修）；live 启动软链已修（原先目录列表是 Hyprland 时代，漏掉 `niri` / `fastfetch` / `hyprbuddy-os` / `skills`）；**实机安装未执行** |
 
 > 本表记录的是**仓库代码状态**；`leonard` 的 P1 开关已打开，但**运行态验收（switch / `ollama pull` / 端点与并发）尚未完成**，所以「本地模型」一行仍标为未交付。P1 验收清单勾完后，把运行态结论（服务活跃、tok/s、功耗）补进本表与 `README.md` §5.3。
 

@@ -39,7 +39,7 @@ in
   # 发行版开关：开启桌面 + 虚机显卡（验证虚机写死 virtio）
   distro.desktop.enable = true;
   distro.gpu.vendor = "virtio";
-  # agent 层：live 环境装 codebuddy + opencode，Waybar 显示当日用量。
+  # agent 层：live 环境装 codebuddy + opencode，用量供 fastfetch / 面板显示。
   # 诊断关闭（live 无本地 ollama）；实测对 ISO 体积影响约 +100 MB。
   distro.agent.enable = true;
   distro.agent.agents = [ "codebuddy" "opencode" ];
@@ -85,7 +85,7 @@ in
     settings.PasswordAuthentication = true;
   };
 
-  # SDDM 自动登录 live 用户 -> hyprland-uwsm 会话
+  # SDDM 自动登录 live 用户 -> 默认会话（niri）
   services.displayManager.autoLogin.enable = true;
   services.displayManager.autoLogin.user = "live";
   # live 用户密码 "live"（SHA-512 哈希写入 /etc/shadow，tmpfs 每次开机重建）
@@ -93,22 +93,34 @@ in
   # 免密 sudo（live 在 wheel 组），方便验证时执行命令
   security.sudo.wheelNeedsPassword = lib.mkForce false;
 
-  # 把发行版 dotfiles 软链进 live 用户目录（等价 install.sh 的部署步骤）
+  # 把发行版 dotfiles 软链进 live 用户目录（等价 install.sh 的部署步骤）。
+  # 顶层目录整体链接，不再逐个列名字：早先的列表是 Hyprland 时代写的，退役后
+  # 只剩 kitty / Thunar 命中，niri / fastfetch / hyprbuddy-os 全被漏掉。
   system.activationScripts.liveConfig = lib.stringAfter [ "users" ] ''
     cfg=${userConfig}
-    mkdir -p /home/live/.config /home/live/.local
-    for d in hypr waybar fuzzel kitty mako swayosd Thunar; do
-      if [ -e "$cfg/$d" ]; then
-        ln -sfn "$cfg/$d" /home/live/.config/$d
-      fi
+    mkdir -p /home/live/.config /home/live/.local /home/live/.local/share /home/live/.codebuddy
+    for d in "$cfg"/*; do
+      [ -d "$d" ] || continue
+      case "$(basename "$d")" in
+        bin|share|skills) continue ;;
+      esac
+      ln -sfn "$d" "/home/live/.config/$(basename "$d")"
     done
+    # ~/.local/bin 整体指向 store 的 bin/；先清掉可能残留的真实目录，
+    # 否则 ln 会落成 ~/.local/bin/bin（脚本全不可见）
+    if [ -e /home/live/.local/bin ] && [ ! -L /home/live/.local/bin ]; then
+      rm -rf /home/live/.local/bin
+    fi
     if [ -e "$cfg/bin" ]; then
       ln -sfn "$cfg/bin" /home/live/.local/bin
     fi
     # share/hyprbuddy-os（commands.json + 主题预览图）——theme-picker 预览用
     if [ -e "$cfg/share/hyprbuddy-os" ]; then
-      mkdir -p /home/live/.local/share
       ln -sfn "$cfg/share/hyprbuddy-os" /home/live/.local/share/hyprbuddy-os
+    fi
+    # agent skills：live 已启用 codebuddy / opencode，缺了这些目录技能不可用
+    if [ -e "$cfg/skills" ]; then
+      ln -sfn "$cfg/skills" /home/live/.codebuddy/skills
     fi
     chown -R live:users /home/live
   '';
