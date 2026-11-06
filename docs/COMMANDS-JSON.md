@@ -1,6 +1,6 @@
 # 机器可读命令清单（agent-commands）方案
 
-> **历史 / 设计稿（2026-11-04 标注）**：本文描述的**生成机制已落地**（`lib/commands.nix` + `scripts/agent-commands`，26 条命令）；文中 `@command` 示例与「8 套主题」为 v0 时代数据，勿按现状引用。
+> **历史 / 设计稿（2026-11-04 标注）**：本文描述的**生成机制已落地**（`lib/commands.nix` + `scripts/agent-commands`）；文中「26 条命令」为 2026-11-04 快照（现 28 条），`@command` 示例与「8 套主题」为 v0 时代数据，勿按现状引用。
 > 当前实现为 **niri 26.04 + Noctalia v5**（唯一桌面提供方），现状以
 > `docs/ROADMAP.md`、`docs/SKILLS.md`、`skills/nixos-desktop-settings/` 与代码为准。
 > 本文保留为历史与决策依据，勿按现状引用。

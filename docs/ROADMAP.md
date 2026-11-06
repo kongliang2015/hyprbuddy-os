@@ -81,6 +81,8 @@
 | `power-status` 补 idle / 单请求 / 并发三档功耗 | `scripts/power-status` | 输出可机器解析（JSON），**并用 `power_source` 标注数据来源** | [ ] |
 | 新增 `distro.agent.localEndpoint`：`bind` / LAN 开关 / token / 并发上限 | `modules/options.nix`、`modules/agent/local-llm.nix` | 默认仍只绑 `127.0.0.1`；LAN 暴露需显式开关 + 断言 | [ ] |
 
+> 状态列指 **P1 整体运行态验收**：第 3/4 项（`model-status` / `model-bench`、`power-status` 三档）代码已落地（见 §2.1、README §5.1），但端点评测、功耗实测等运行态结论尚未产生，故仍保留 `[ ]`；第 5 项 `distro.agent.localEndpoint` 尚未实现。
+
 #### P1 实施顺序（leonard runbook）
 
 **步骤 0 · 前置检查**（任一不通过就先解决，别进步骤 1）
