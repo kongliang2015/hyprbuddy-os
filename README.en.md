@@ -23,9 +23,9 @@ This is **not** an "AI-native desktop". There is no screenshot timeline, no Reca
 
 ## Screenshots
 
-**HyprBuddy theme desktop** (niri 26.04 + Noctalia v5, branch `distro/v1-nn`)
+**HyprBuddy theme wallpaper** (`wallpapers/11-cybertron.png`, source of the palette)
 
-<img src="assets/theme-previews/preview-7.png" alt="HyprBuddy theme desktop: cybertron wallpaper with the Noctalia bar">
+<img src="wallpapers/11-cybertron.png" alt="HyprBuddy theme wallpaper: cybertron with cyan and magenta neon">
 
 **Plymouth boot splash**
 

@@ -21,9 +21,9 @@
 
 ## 截图
 
-**HyprBuddy 主题桌面**（niri 26.04 + Noctalia v5，分支 `distro/v1-nn`）
+**HyprBuddy 主题壁纸**（`wallpapers/11-cybertron.png`，主题取色来源）
 
-<img src="assets/theme-previews/preview-7.png" alt="HyprBuddy 主题桌面：赛博坦壁纸 + Noctalia 顶栏">
+<img src="wallpapers/11-cybertron.png" alt="HyprBuddy 主题壁纸：赛博坦星球 + 青/品红霓虹">
 
 **Plymouth 启动画面**
 
