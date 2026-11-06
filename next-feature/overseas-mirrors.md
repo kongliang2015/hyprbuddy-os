@@ -1,6 +1,7 @@
 # 海外用户镜像源适配评估（live ISO 安装）
 
 > **状态：方案 C 已实施（2026-11-06；完整 ISO 构建已通过，实机安装待验证）** · 评估基准 `hyprbuddy-os` @ `10f5df3`
+> **2026-11-06 更新**：`codebuddy` 已改用**官方原生构建**（单文件 70 MB，无 npm 依赖），方案 E（npm 双变体）**撤回**。
 > `next-feature/` 存放**尚未落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md`
 > 的技能数、不随 `install.sh` 部署。现状说明以 `docs/ROADMAP.md` 与 `docs/INDEX.md` 为准。
 >
@@ -27,7 +28,7 @@
 |---|---|---|---|
 | flake 输入（`nixpkgs` / `nixpkgs-unstable`） | 清华 nixexprs（`flake.nix:6`、`:11`），`flake.lock` 锁 narHash | ❌ 慢或失败 | **不能**：`nixos-install` 不支持 `--override-input` |
 | 二进制缓存 | `distro.mirror = cn`（清华 / 上交 / 中科大，`modules/base.nix`） | ❌ 慢 | ✅ `--mirror official` 已支持 |
-| `codebuddy` 的 npm 依赖 | `pkgs/codebuddy/package-lock.json`：31 处 resolved 指向 npmmirror，2 处 GitHub | ❌ 构建慢 | ❌ 锁在 lockfile 里，运行时不能切 |
+| `codebuddy`（历史） | 曾用 npm 包 + 31 个依赖（npmmirror）；**2026-11-06 已改用官方原生构建**（单文件 70 MB，COS） | ✅ 已解决 | — |
 | `codex` / `opencode` 源码 | GitHub（`openai/codex`、`anomalyco/opencode`） | ✅ 海外正常 | —（中国靠 nix 缓存命中） |
 | `claude-code` 源码 | `downloads.claude.ai` | ✅ 海外正常 | — |
 
@@ -47,12 +48,13 @@
 - `distro.mirror` 已支持 `cn / tuna / sjtu / ustc / official`，安装器有 `--mirror`；
 - 海外用户不知道要改，或 ISO 交互提示里没有「海外」这个语义（只有具体镜像名）。
 
-### 3.3 `codebuddy` 的 npm 依赖锁在 npmmirror
+### 3.3 `codebuddy`：已改用官方原生构建（原 npm 依赖问题已消除）
 
-- `pkgs/codebuddy/default.nix` 的 `src` 指向 `registry.npmmirror.com`；
-- `package-lock.json` 里 31 处 `resolved` 也是 npmmirror（另 2 处 GitHub git 依赖）；
-- `npmDepsHash` 是按这份 lock 算的，换源必须改 lock 并重算 hash，属于构建期改动，
-  不能做成安装选项。
+- 历史：`pkgs/codebuddy` 曾是 npm 包（214 MB 解包 + 31 个依赖），lock 的 31 处 `resolved`
+  指向 npmmirror，海外构建慢；`npmDepsHash` 锁死，无法运行时换源。
+- **2026-11-06 起**：改用上游官方原生构建（`codebuddy install` 使用的同一制品）：
+  单文件 170 MB / tar.gz 70 MB，从腾讯云 COS 拉取，无 npm 依赖，构建只需 `autoPatchelf`。
+- 结论：这一卡点**已解决**，方案 E（npm 双变体）不再需要。
 
 ## 4. 方案对比
 
@@ -62,7 +64,7 @@
 | **B. 安装器 `--region cn\|global`** | 在 `$work/src` 改 flake URL + `nix flake lock`；substituters 跟随 | 海外安装可用 | 换 nixpkgs 版本（与仓库 lock 不一致）；安装要拉 nixexprs；双区域测试 |
 | **C. ISO 预置 nixpkgs（推荐核心）** | 构建 ISO 时把 nixexprs 放进镜像；安装时 work 副本指向 `path:/iso/nixpkgs`，`nix flake lock` 本地完成 | 中海外都受益：安装不依赖 flake 输入网络；版本随 ISO 固定、可复现 | ISO +38.2 MiB（解压 256.6 MiB 需临时空间）；ISO 构建流程要改 |
 | **D. 双 lock 预置** | ISO 里放 `flake.lock.cn` / `flake.lock.global`，`--region` 选一个 | 无需运行时 lock | 两套 nixpkgs 版本，测试面翻倍 |
-| **E. codebuddy npm 双变体** | `codebuddy`（npmmirror）与 `codebuddy-npmjs`（官方 registry），按 `--region` 选 | 海外构建快 | 改构建脚本；重算 `npmDepsHash`；双版本维护 |
+| **E. codebuddy npm 双变体（已撤回）** | ~~npmmirror / npmjs 两个变体~~ | 已被「官方原生构建」取代（2026-11-06） | — |
 
 ## 5. 方案 C 的落地细节
 
@@ -100,14 +102,14 @@
 |---|---|---|
 | 现在 | README 增加「海外安装」小节：`--mirror official`、flake 输入手动替换方法、已知限制 | 文档 |
 | 中期 | 方案 C（ISO 预置 nixpkgs）；之后海外只剩 binary cache 选择 | **代码已实施 + 完整 ISO 构建通过（2026-11-06，3.6G）**；实机安装待验证 |
-| 可选 | 方案 E（codebuddy npm 双变体） | 构建脚本 + 双版本维护 |
+| 可选 | ~~方案 E（codebuddy npm 双变体）~~ | **已撤回**：改用官方原生构建 |
 
 ## 7. 待确认技术点
 
 - ~~`path:` 输入在无 `.git` 的 `$work/src` 里执行 `nix flake lock` 的行为~~（已实测：成功，narHash 一致）。
 - ISO 预置后 `nixos-install` 的求值路径与 `flake.lock` 生成位置。
 - 双区域切换后的回归范围（`nix flake check` / `desktop-check` / 三类 host 求值）。
-- `codebuddy` 换 npm 源后 `npmDepsHash` 重算与构建验证（约 30 个依赖包）。
+- ~~`codebuddy` 换 npm 源后 `npmDepsHash` 重算~~（已不适用：改用原生构建）。
 
 ## 附录：实测数据（2026-11-06）
 
@@ -117,7 +119,7 @@
 | 中科大同一 channel narHash | `sha256-zaqzqkIxpoJA5s6mhAjAVbWba3Ao1u6SH93fixYbN6A=`（不同快照） |
 | nixexprs.tar.xz 体积 | 38.2 MiB 压缩 / 256.6 MiB 解压 |
 | `nixos-install --help` | 无 `--override-input`（只有 `--flake` / `--option` 等） |
-| `codebuddy` package-lock 域名 | 31 处 `registry.npmmirror.com`，2 处 `github.com` |
+| `codebuddy`（历史 npm 版） | lock 31 处 `registry.npmmirror.com`；2 处 `github.com` 为 funding 链接，非依赖 |
 | `codex` src | `https://github.com/openai/codex/archive/refs/tags/rust-v0.146.0.tar.gz` |
 | `opencode` src | `https://github.com/anomalyco/opencode/archive/refs/tags/v1.15.10.tar.gz` |
 | `claude-code` src | `https://downloads.claude.ai/claude-code-releases/2.1.223/linux-x64/claude` |

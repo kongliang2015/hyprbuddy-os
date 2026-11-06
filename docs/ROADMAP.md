@@ -283,7 +283,7 @@ git revert <本次 commit>               # 配置
 | `overseas-mirrors.md` | 文档 | README「海外安装」小节：`--mirror official`、flake 输入手动替换、已知限制 | **已完成** |
 | `overseas-mirrors.md` | 验证 | 完整 ISO 构建（`cp -al` 可行性 / 镜像增重）与实机安装流程 | **构建已完成**（live ISO 3.6G；`cp -al` 在构建沙箱不可行，已改 `cp -r` + `chmod`）；实机安装待验证 |
 | `overseas-mirrors.md` | 验证 | 双区域回归：`nix flake check` / `desktop-check` / 三类 host 求值 | **已完成**（求值层面；五档 `distro.mirror` 与三类 host 求值均通过） |
-| `overseas-mirrors.md` | 实施 | 方案 E：`codebuddy` npm 双变体（改 lock + 重算 `npmDepsHash`） | 待实施 |
+| `overseas-mirrors.md` | 实施 | 方案 E：`codebuddy` npm 双变体 | **已撤回（2026-11-06）**：`pkgs/codebuddy` 改用官方原生构建（单文件 70 MB），不再有 npm 依赖 |
 | `overseas-mirrors.md` | 边界 | 装完后日常 rebuild 仍走清华；根治需另做 flake 输入切换（方案 B） | 未排期 |
 | `file-ops-skill.md` | 决策 | `backup-restore` 语义（与「不改 `~/.config` store 软链」冲突） | **已决策（2026-11-06）**：恢复走 `install.sh` 重新部署，`backup-restore` 只打印恢复步骤、不直接 `mv`；**实施暂缓（2026-11-06）** |
 | `file-ops-skill.md` | 实施 | P1 `backup-list` / `backup-restore`、P2 `storage-status`、P3 薄指南（同步 SKILLS.md / INDEX） | **暂缓**（B2 决策已定，实施暂缓） |

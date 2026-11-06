@@ -1,51 +1,59 @@
-# codebuddy：npm 上的 AI agent CLI（@tencent-ai/codebuddy-code）。
-# nixpkgs 没有这个包，直接从 npm registry 打包，避免每台机器手工 npm install -g。
+# codebuddy：腾讯 CodeBuddy CLI 的**官方原生构建**（单文件可执行）。
 #
-# 维护：升级版本时改 version + src.hash，然后用 lib.fakeHash 跑一次 build，
-# 从报错里取新的 npmDepsHash（node_modules 由 lockfile 决定）。
+# 上游同时提供 npm 包（@tencent-ai/codebuddy-code，214 MB 解包 + 31 个依赖）
+# 和原生构建（`codebuddy install` 使用的同一制品，发布于腾讯云 COS）。
+# 这里改用原生构建：只有 1 个 tar.gz、无 node_modules、构建只需 patchelf。
+#
+# 分发规则（从官方 bundle 的 ReleasesService 反推并实测）：
+#   <baseUrl>/latest                                  -> 版本号
+#   <baseUrl>/download/<version>/codebuddy-code_<Platform>_<arch>.tar.gz
+# 维护：升级时先 `curl <baseUrl>/latest` 取版本，再改 version + hash
+# （`nix store prefetch-file --json <url> | jq -r .hash`）。
 {
   lib,
-  buildNpmPackage,
+  stdenv,
   fetchurl,
-  nodejs,
+  autoPatchelfHook,
+  glibc,
 }:
 
-buildNpmPackage rec {
+let
+  # 官方命名：Linux_x86_64 / Linux_arm64（macOS 为 Darwin_*，本仓库只声明 Linux）
+  platform = if stdenv.hostPlatform.isAarch64 then "Linux_arm64" else "Linux_x86_64";
+in
+stdenv.mkDerivation rec {
   pname = "codebuddy";
-  version = "2.179.2";
+  version = "2.180.0";
 
   src = fetchurl {
-    # npmmirror 国内镜像（npmjs.org 直连 Cloudflare 易卡死）；内容与官方 registry 一致
-    url = "https://registry.npmmirror.com/@tencent-ai/codebuddy-code/-/codebuddy-code-${version}.tgz";
-    hash = "sha256-mEEHFxK+657EUYpnKHKjEK7MSZyAnVFboOPCODyt0u8=";
+    url = "https://acc-1258344699.cos.accelerate.myqcloud.com/@tencent-ai/codebuddy-code/releases/download/${version}/codebuddy-code_${platform}.tar.gz";
+    hash = "sha256-IlIr8bYG871I+25luLrxwa9koGrZfM8/A0Vt5uaS0c8=";
   };
 
-  # registry 的 tarball 解包后根目录是 package/
-  sourceRoot = "package";
+  # 实测该二进制只动态链接 glibc（libc / libpthread / libdl / libm），
+  # interp 是 /lib64 路径，NixOS 上必须 autoPatchelf。
+  nativeBuildInputs = [ autoPatchelfHook ];
+  buildInputs = [ glibc ];
 
-  # registry tarball 不带 lockfile；仓库里存一份供 fetchNpmDeps 使用
-  postPatch = ''
-    cp ${./package-lock.json} package-lock.json
+  # tar 内只有 codebuddy / CHANGELOG.md / LICENSE.txt / README.md（平铺，无顶层目录）
+  sourceRoot = ".";
+  dontConfigure = true;
+  dontBuild = true;
+  dontStrip = true; # 170 MB 单文件，strip 收益小、耗时长
+
+  installPhase = ''
+    runHook preInstall
+    install -Dm755 codebuddy $out/bin/codebuddy
+    install -Dm644 LICENSE.txt $out/share/doc/codebuddy/LICENSE.txt
+    runHook postInstall
   '';
 
-  npmDepsHash = "sha256-et69SHePnK3WrVSp7o4BRKl/vMQIon27oyOpgdBHNvg=";
-
-  # 包内自带 dist/ 构建产物，无需再 npm run build
-  dontNpmBuild = true;
-
-  # bin/codebuddy 是 #!/usr/bin/env node 脚本
-  makeWrapperArgs = [
-    "--prefix"
-    "PATH"
-    ":"
-    (lib.makeBinPath [ nodejs ])
-  ];
-
   meta = {
-    description = "Tencent CodeBuddy CLI (AI coding agent)";
+    description = "Tencent CodeBuddy CLI (official native build)";
     homepage = "https://www.codebuddy.ai/";
     license = lib.licenses.unfree;
     mainProgram = "codebuddy";
-    platforms = lib.platforms.linux ++ lib.platforms.darwin;
+    platforms = [ "x86_64-linux" "aarch64-linux" ];
+    sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
   };
 }

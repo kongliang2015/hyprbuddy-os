@@ -296,7 +296,7 @@ ISO 还内置了 nixpkgs 源码：安装阶段用 `path:` 覆盖 flake 输入（
 
 - **安装阶段**：ISO 内置 nixpkgs，不依赖清华镜像；二进制缓存用 `--mirror official` 走 `cache.nixos.org`。
 - **装完后**：目标系统的 `flake.lock` 仍指向清华 nixexprs，首次 `nixos-rebuild` 会拉它。若不可达，手动改 `flake.nix` 的两个输入 URL 并 `nix flake lock --update-input nixpkgs --update-input nixpkgs-unstable`（**会换 nixpkgs 版本**，见 `next-feature/overseas-mirrors.md`）。
-- **已知限制**：`codebuddy` 的 npm 依赖构建期固定走 npmmirror，海外构建可能慢；`claude-code` 首次运行需 `downloads.claude.ai`；`codex` / `opencode` 源码在 GitHub（缓存未命中时才需要）。
+- **已知限制**：`codebuddy` 已改用**官方原生构建**（单文件 70 MB，腾讯云 COS，无 npm 依赖）；`claude-code` 首次运行需 `downloads.claude.ai`；`codex` / `opencode` 源码在 GitHub（缓存未命中时才需要）。
 
 ### 9.5 常用快捷键
 
