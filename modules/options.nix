@@ -233,6 +233,36 @@ in
         default = "cpu";
         description = "本地模型推理后端：cpu（默认，无 CUDA 依赖）或 gpu（按 GPU 厂商选包变体）";
       };
+      # 端点暴露策略：默认只绑回环。ollama 没有内置鉴权，LAN 暴露仅限可信内网；
+      # token 只是客户端约定（服务端不校验），真正的访问控制要前置反向代理。
+      localEndpoint = {
+        bind = mkOption {
+          type = types.str;
+          default = "127.0.0.1";
+          description = "ollama 监听地址；`lan = false` 时必须为回环地址（127.0.0.1 / ::1）";
+        };
+        lan = mkOption {
+          type = types.bool;
+          default = false;
+          description = "允许非回环地址访问：需同时把 `bind` 设为 0.0.0.0 或具体网卡地址，会开放防火墙 11434";
+        };
+        maxConcurrent = mkOption {
+          type = types.ints.between 1 16;
+          default = 1;
+          description = "并发请求上限（OLLAMA_NUM_PARALLEL）；1 = 串行排队，小内存机器不要调高";
+        };
+        token = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "hyprbuddy-local";
+          description = ''
+            客户端约定令牌，写入 `~/.config/hyprbuddy-os/local-endpoint.env`，让各 agent 客户端共用一份配置。
+
+            **不构成访问控制**：ollama 不校验任何令牌，直连 11434 仍可调用；需要真鉴权请前置反向代理。
+            值会进入 nix store（全局可读），不要填真实密钥。
+          '';
+        };
+      };
     };
   };
 }

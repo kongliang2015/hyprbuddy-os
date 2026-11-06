@@ -79,9 +79,9 @@
 | 跑通 ollama OpenAI 兼容端点 `/v1/chat/completions` 与多客户端并发 | 本机回归脚本 | 2–3 个并发请求不互相挤占、无 OOM | [ ] |
 | 新增 `model-status` / `model-bench` | `scripts/`（`home/default.nix` 自动扫描，无需改 `lib/commands.nix`） | `agent-commands --json` 条目 +2，`@summary` / `@effect` 齐全；输出 tok/s、RAM / 显存；功耗按可读来源采样，读不到留空（CPU 版见步骤 4） | [ ] |
 | `power-status` 补 idle / 单请求 / 并发三档功耗 | `scripts/power-status` | 输出可机器解析（JSON），**并用 `power_source` 标注数据来源** | [ ] |
-| 新增 `distro.agent.localEndpoint`：`bind` / LAN 开关 / token / 并发上限 | `modules/options.nix`、`modules/agent/local-llm.nix` | 默认仍只绑 `127.0.0.1`；LAN 暴露需显式开关 + 断言 | [ ] |
+| 新增 `distro.agent.localEndpoint`：`bind` / LAN 开关 / `maxConcurrent` / token | `modules/options.nix`、`modules/agent/local-llm.nix`、`modules/assertions.nix` | 默认仍只绑 `127.0.0.1`、并发 1；LAN 需 `lan = true` + 非回环 `bind`，三条断言拦下「只改一半」；token 仅客户端约定（ollama 无鉴权） | [x] 代码 |
 
-> 状态列指 **P1 整体运行态验收**：第 3/4 项（`model-status` / `model-bench`、`power-status` 三档）代码已落地（见 §2.1、README §5.1），但端点评测、功耗实测等运行态结论尚未产生，故仍保留 `[ ]`；第 5 项 `distro.agent.localEndpoint` 尚未实现。
+> 状态列指 **P1 整体运行态验收**：第 3/4 项（`model-status` / `model-bench`、`power-status` 三档）代码已落地（见 §2.1、README §5.1），但端点评测、功耗实测等运行态结论尚未产生，故仍保留 `[ ]`；第 5 项 `distro.agent.localEndpoint` 代码已落地（选项 + 三条断言 + 客户端 env），**LAN 实际暴露未在实机验证**，属可选项。
 
 #### P1 实施顺序（leonard runbook）
 
@@ -219,7 +219,21 @@ services.ollama.environmentVariables.HTTPS_PROXY = "http://127.0.0.1:7890";
 
 **步骤 5 · 可选：LAN 端点**（最后做，默认不做）
 
-`distro.agent.localEndpoint` 目前**尚不存在**，需在 `modules/options.nix` 新增选项、`local-llm.nix` 消费：`bind` 默认 `127.0.0.1`、LAN 开关、token、并发上限，并加断言「仅开关为 true 时允许非回环地址」。与 `README.md` §8 的「默认只绑本机、显式开关 + token + 并发上限 + 断言」一致；跳过这一步不影响 P1 其余验收。
+已实现（2026-11-06）：选项在 `modules/options.nix`（`bind` / `lan` / `maxConcurrent` / `token`），消费在 `modules/agent/local-llm.nix`（`host`、`OLLAMA_NUM_PARALLEL`、`openFirewall`），断言在 `modules/assertions.nix`。
+
+```nix
+distro.agent.localEndpoint = {
+  lan = true;                   # 与 bind 必须成对修改
+  bind = "0.0.0.0";
+  maxConcurrent = 2;            # 小内存机器保持 1
+  token = "hyprbuddy-local";    # 仅客户端约定，不是鉴权
+};
+```
+
+- **token 不构成访问控制**：ollama 不校验任何令牌，该值只会写进 `~/.config/hyprbuddy-os/local-endpoint.env`（`OLLAMA_BASE_URL` / `OLLAMA_API_KEY` / `OLLAMA_NUM_PARALLEL` / `OLLAMA_BIND` / `OPENAI_*` 同名项），方便各客户端统一配置。真鉴权需前置反向代理，本仓库不提供。
+- 三条断言：`lan = false` 时 `bind` 必须回环；`lan = true` 时 `bind` 必须非回环；`lan = true` 需 `localModels = true`。
+- 验证（switch 后）：`ss -lntp | grep 11434` 显示 `0.0.0.0:11434`；另一台机 `curl http://<leonard-ip>:11434/api/tags`；`systemctl show ollama -p Environment` 含 `OLLAMA_NUM_PARALLEL`。
+- 与 `README.md` §8 口径一致；跳过不影响 P1 其余验收，默认仍只绑 `127.0.0.1`、并发 1。
 
 **验收清单**
 
@@ -228,6 +242,7 @@ services.ollama.environmentVariables.HTTPS_PROXY = "http://127.0.0.1:7890";
 - [ ] `coredump-report.md` 可生成，且与 `coredumpctl info` 原文可交叉验证
 - [ ] `agent-commands --json` 条目 +2、`available=true`，`@summary` / `@effect` 齐全
 - [ ] `power-status --json` 含三档字段并标注 `power_source`
+- [ ] （可选）LAN 暴露：`lan = true` + 非回环 `bind` 求值通过，`ss -lntp | grep 11434` 与 `systemctl show ollama -p Environment` 符合预期
 - [ ] `nix flake check`（或上述退化路径）通过
 - [ ] **回写文档**：把运行态验收结论（`ollama.service` 活跃、tok/s、功耗）补进本文档 §6 状态口径表与 `README.md` §5.3；代码状态已同步，缺的是运行态结论
 
@@ -316,7 +331,7 @@ git revert <本次 commit>               # 配置
 
 | 项 | 真实状态 |
 |---|---|
-| 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`）；**`leonard` 已在仓库打开 `localModels` + `diagnostics`，但运行态未验收**（未 switch、未 `ollama pull`，服务未激活）；`vmware` / `vm-virtio` 仍为 `false`。无 OpenAI 兼容端点实测、并发控制、功耗观测。属 P1，不是已交付能力 |
+| 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`）；端点策略 `distro.agent.localEndpoint` 已实现（默认回环 / 并发 1 / 三条断言 / 客户端 env），**LAN 暴露未实机验**；**`leonard` 已在仓库打开 `localModels` + `diagnostics`，但运行态未验收**（未 switch、未 `ollama pull`，服务未激活）；`vmware` / `vm-virtio` 仍为 `false`。无 OpenAI 兼容端点实测、功耗观测。属 P1，不是已交付能力 |
 | `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` 已打开（与 `localModels` 同步，运行态待验收），`vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
 | 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 19 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |

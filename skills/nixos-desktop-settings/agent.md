@@ -10,6 +10,14 @@
 | `diagnostics` | true | coredump 诊断单元；`modules/agent/diagnostics.nix` 内的断言要求 `localModels = true`（否则求值失败），且需已 `ollama pull` |
 | `localModels` | false | 启用本地模型（ollama） |
 | `model` | `qwen2.5-coder:1.5b` | 诊断/摘要使用的模型 |
+| `localEndpoint` | 回环 / `lan = false` / 并发 1 / 无 token | 端点暴露策略；见下节 |
+
+## 端点（`distro.agent.localEndpoint`）
+
+- 默认 `bind = "127.0.0.1"`、`maxConcurrent = 1`（即 `OLLAMA_NUM_PARALLEL=1`，串行排队）
+- 对外暴露：`lan = true` + `bind = "0.0.0.0"`（或具体网卡地址）。只改一半会被断言拦下——三条断言分别是「非回环 bind 必须开 lan」「lan 必须配非回环 bind」「lan 必须开 localModels」
+- `token` 写进 `~/.config/hyprbuddy-os/local-endpoint.env`（`OLLAMA_*` / `OPENAI_*` 各一份），让客户端共用配置；**ollama 不校验它**，不是鉴权
+- 验证：`ss -lntp | grep 11434`、`systemctl show ollama -p Environment | grep NUM_PARALLEL`
 
 ## agent-usage
 

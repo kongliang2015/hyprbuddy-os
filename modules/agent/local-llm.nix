@@ -2,6 +2,7 @@
 { config, lib, pkgs, ... }:
 let
   cfg = config.distro.agent;
+  ep = cfg.localEndpoint;
   vendor = config.distro.gpu.vendor;
 
   gpuPackage =
@@ -16,6 +17,9 @@ lib.mkIf (cfg.enable && cfg.localModels) {
   services.ollama = {
     enable = true;
     inherit package;             # 26.05 已移除 acceleration 选项，改用包变体
-    host = "127.0.0.1";
+    host = ep.bind;              # 默认 127.0.0.1；非回环地址由断言配合 lan 开关兜住
+    # 并发上限固定成显式值：ollama 会按硬件自行放大并发，小内存机器上容易挤爆 RAM。
+    environmentVariables.OLLAMA_NUM_PARALLEL = toString ep.maxConcurrent;
+    openFirewall = ep.lan;
   };
 }

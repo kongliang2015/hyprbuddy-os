@@ -34,6 +34,22 @@ let
     temperature_night = ${toString nl.temperatureNight}
   '';
 
+  # 本地模型端点（客户端约定）：ollama 不校验 token，这里只是让各 agent 客户端
+  # 共用同一份 base URL / 并发值，不构成访问控制。
+  ep = distro.agent.localEndpoint;
+  epKey = if ep.token != null then ep.token else "local";
+  localEndpointEnv = ''
+    # 由 flake 生成（distro.agent.localEndpoint），勿手改。
+    # 用法: set -a; . ~/.config/hyprbuddy-os/local-endpoint.env; set +a
+    # ollama 不校验 token：本文件只是客户端约定，不是访问控制。
+    OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
+    OLLAMA_API_KEY=${lib.escapeShellArg epKey}
+    OLLAMA_NUM_PARALLEL=${toString ep.maxConcurrent}
+    OLLAMA_BIND=${ep.bind}
+    OPENAI_BASE_URL=http://127.0.0.1:11434/v1
+    OPENAI_API_KEY=${lib.escapeShellArg epKey}
+  '';
+
   agentEnabled = distro.agent.enable;
   # 仅在 agent.enable 时部署的脚本（供 scriptNames 与 commands.json 的 available 共用，避免漂移）
   agentOnlyScripts = [ "agent-menu" "agent-apply" "agent-theme-sync" ];
@@ -53,6 +69,8 @@ let
     "share/hyprbuddy-os/lib/de.sh" = read ../scripts/lib/de.sh;
   } // lib.optionalAttrs nl.enable {
     "noctalia/nightlight.toml" = nightlightToml;
+  } // lib.optionalAttrs (distro.agent.enable && distro.agent.localModels) {
+    "hyprbuddy-os/local-endpoint.env" = localEndpointEnv;
   };
 
   # P2 主题系统：themes/<slug>/tokens.json（唯一真相）+ exporters

@@ -162,6 +162,8 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 **代码状态 ≠ 运行状态**：`leonard` 的开关已在仓库打开，但本机尚未执行 `sudo nixos-rebuild switch`，也未 `ollama pull`，因此 `ollama.service` 与 coredump 诊断链路**尚未验收**。验收口径见 `docs/ROADMAP.md` P1 的验收清单；勾完之前不要把这行当成「已交付的本地推理」。
 
+**端点（`distro.agent.localEndpoint`）**：默认 `bind = "127.0.0.1"`、`lan = false`、`maxConcurrent = 1`（即 `OLLAMA_NUM_PARALLEL=1`，串行排队）。要对外暴露必须同时把 `lan` 设为 `true` 且 `bind` 改成非回环地址，三条断言会拦下「只改一半」的组合；`token` 只是让客户端共用一份配置（写入 `~/.config/hyprbuddy-os/local-endpoint.env`），**ollama 不校验它**，不要当成鉴权。
+
 ### 5.4 懒加载 agent（shim）
 
 `distro.agent.lazyAgents` 里的 agent 不进入系统包，而是部署成 `~/.local/bin/<命令>` 的 shim：
@@ -207,7 +209,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 - **系统级 AI 功能**：持续截屏索引、Recall 式数字记忆、主动替用户思考的桌面助手。审计方向只记录 agent 执行事件，见 `next-feature/agent-execution-audit.md`（未实施）。
 - **「AI-native OS」「Copilot+ 对标」这类品牌措辞**，以及以 TOPS 为卖点的算力宣传。使用 NPU 不等于宣传 TOPS：验证指标是常驻功耗与并发隔离，不是 TOPS / tok/s 对照。
-- **系统内置推理不引入必须联网的依赖**（不禁止 agent 编排调用外部 LLM API）；本地模型**默认关闭**、启用后**默认只绑 `127.0.0.1`**。LAN 暴露能力（`distro.agent.localEndpoint`，**尚未实现**）若要开放，须显式开关 + token + 并发上限 + 断言。
+- **系统内置推理不引入必须联网的依赖**（不禁止 agent 编排调用外部 LLM API）；本地模型**默认关闭**、启用后**默认只绑 `127.0.0.1`**。LAN 暴露（`distro.agent.localEndpoint`）默认关闭：开放需显式 `lan = true` + 非回环 `bind`，受并发上限（`OLLAMA_NUM_PARALLEL`）与构建期断言约束；`token` 只是客户端约定——ollama 不校验任何令牌，**真鉴权需前置反向代理，本仓库不提供**。
 - **agent 自动执行 sudo、直接改 `/etc`、绕过构建验证的即时生效写操作**。
 - **私有更新通道或绑定单一发行版仓库的配置格式**。
 - **不追平其它发行版的 UI 差距项**（多终端 / 编辑器切换、开发栈、游戏套件）：差异化不在这层，个人日用需要可放个人分支。
