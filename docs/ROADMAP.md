@@ -260,9 +260,34 @@ git revert <本次 commit>               # 配置
 |---|---|---|---|
 | 将 `skills/` + `commands.json` 抽成**可移植规范**：任意 NixOS 可导入，不绑定本仓库 flake | `lib/commands.nix`、`skills/` | 干净 NixOS 上用一份 flake 导入即可获得命令与技能；直接回答「更新通道锁定」的批评 | [ ] |
 | CI：`nix flake check` + `commands.json` schema 校验 + ISO 构建 | `flake.nix`、CI 配置 | PR 自动跑，`desktop-check` 降级路径不报错 | [ ] |
-| append-only **agent 执行审计日志**（方向，未登记为待办） | 评估见 `next-feature/agent-execution-audit.md` | 推进前须先定采集边界与隐私策略；若推进，验收为每次 `agent-apply` 与写操作留痕、可导出 JSONL | [ ] |
+| append-only **agent 执行审计日志**（方向，见下方遗留清单） | 评估见 `next-feature/agent-execution-audit.md` | 推进前须先定采集边界与隐私策略；若推进，验收为每次 `agent-apply` 与写操作留痕、可导出 JSONL | [ ] |
 
-> P3 第三项按 `docs/INDEX.md` 第 5 节约定：决定推进时才从 `next-feature/` 转入本表待办。
+> P3 第三项及 `next-feature/` 的其余遗留任务统一登记在下方「遗留清单」；**登记不等于排期**，决定推进时再转入 P0–P3 正式待办。
+
+### 遗留清单（来自 `next-feature/`，登记但不排期）
+
+> 按 `docs/INDEX.md` §5 约定，`next-feature/` 评估此前不进 P0–P3 待办。本表把四份评估的
+> 遗留任务**统一登记**（来源见第一列），**登记不代表排期或已实施**；代码已落地的部分见 §2.1 / §6。
+> 类型：`验证`（补结论）/ `决策前置`（先定口径）/ `实施`（写代码）/ `文档` / `边界`。
+
+| 来源 | 类型 | 遗留任务 | 状态 |
+|---|---|---|---|
+| `lazy-agents.md` | 验证 | `claude` / `opencode` 首次实际构建（含 `downloads.claude.ai` 可达性结论） | 待验证 |
+| `lazy-agents.md` | 验证 | `agent-usage` 统计 claude 日志 | 待验证 |
+| `lazy-agents.md` | 验证 | `nix flake check` 完整跑一次（此前仅 `--no-build`） | 待验证 |
+| `lazy-agents.md` | 实施 | `install.sh` 清理陈旧软链，使「移除 `lazyAgents` 后 shim 消失」成立（当前不成立） | 待实施 |
+| `overseas-mirrors.md` | 文档 | README「海外安装」小节：`--mirror official`、flake 输入手动替换、已知限制 | 待实施 |
+| `overseas-mirrors.md` | 验证 | 完整 ISO 构建（`cp -al` 可行性 / 镜像增重）与实机安装流程 | 待验证 |
+| `overseas-mirrors.md` | 验证 | 双区域回归：`nix flake check` / `desktop-check` / 三类 host 求值 | 待验证 |
+| `overseas-mirrors.md` | 实施 | 方案 E：`codebuddy` npm 双变体（改 lock + 重算 `npmDepsHash`） | 待实施 |
+| `overseas-mirrors.md` | 边界 | 装完后日常 rebuild 仍走清华；根治需另做 flake 输入切换（方案 B） | 未排期 |
+| `file-ops-skill.md` | 决策前置 | `backup-restore` 语义（与「不改 `~/.config` store 软链」冲突，优先走 `install.sh`） | 待决策 |
+| `file-ops-skill.md` | 实施 | P1 `backup-list` / `backup-restore`、P2 `storage-status`、P3 薄指南（同步 SKILLS.md / INDEX） | 待实施 |
+| `agent-execution-audit.md` | 决策前置 | §5 采集边界与隐私策略（最小方案 vs 全量宿主 hook） | 待决策 |
+| `agent-execution-audit.md` | 前置 | 等 P1 本地模型与端点稳定后再引入 | 未排期 |
+| `agent-execution-audit.md` | 实施 | 事件采集（含失败 / 回滚）、`audit-export` JSONL、技能沙箱校验和、`desktop-check` 增补、无回摆检索 | 待实施 |
+
+**建议顺序**：① 零成本验证（`claude` / `opencode` 首次构建、完整 `nix flake check`、ISO 构建、双区域回归）→ ② 决策前置（采集边界、`backup-restore` 语义、陈旧软链清理）→ ③ 实施（README 海外小节 → 3 条命令 + 指南 → 审计链路 → npm 双变体）。
 
 ## 4. 桌面外壳维护（低优先级 / 暂缓）
 

@@ -317,7 +317,7 @@ ISO 还内置了 nixpkgs 源码：安装阶段用 `path:` 覆盖 flake 输入（
 
 **历史 / 设计稿（勿按现状引用）**：`docs/AGENT-LAYER.md`、`ARCHITECTURE-REVIEW.md`、`IMPLEMENTATION-PLAN.md`、`desktop-abstraction.md`、`niri-noctalia-plan.md`、`desktop-retire-hyprland.md`、`cosmic-*.md`、`theme-tokens.md`、`ux-capabilities.md` 等，文件头均已加统一状态横幅。排障请以 `skills/nixos-desktop-settings/troubleshooting.md` 为准。
 
-**待评估特性**：`next-feature/`（评估存档；部分方案已实施代码，状态以各文件头部为准，均不进 ROADMAP 待办）。
+**待评估特性**：`next-feature/`（评估存档；部分方案已实施代码，状态以各文件头部为准；遗留清单登记在 `docs/ROADMAP.md` §3 末尾，登记不代表排期）。
 
 ---
 
