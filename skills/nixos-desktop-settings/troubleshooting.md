@@ -2,49 +2,30 @@
 
 ## 先跑自检
 
-    scripts/hypr-check
+    desktop-check
 
-四项检查：① 0.55 的 Lua 优先（存在 `hyprland.lua` 时 `.conf` 被忽略）
-② `hyprctl configerrors`（需会话内）③ 规则语法 lint（缺 `match:` 前缀会静默失效）
-④ 命令清单一致性（清单标记可用的命令是否都已部署）
+图形会话全量、非图形会话自动降级；覆盖进程 / portal / 壁纸 / bar / 字体 /
+命令 / 键位引用 / 壁纸目录 / 夜间模式日程 / 配置告警。
 
-## 状态栏不显示
+面板或锁屏问题再看日志：
 
-1. CSS 非法：`:root` / `var()` 会让 waybar 解析失败拒绝启动 → 全部改具体色值
-2. 进程检测：wrapper 的 comm 是 `.waybar-wrapped`，用 `pgrep waybar`，不要 `pgrep -x`
-3. 并发 spawn：exec-once 与配置变更自动重载可能各起一个 → 用 flock 串行化
-
-## 锁屏解锁后工作区数字消失
-
-`lib/waybar.nix` 的 `hyprland/workspaces` 需要 `"persistent-workspaces" = { "*" = 4; }`。
-
-## 锁屏出现两个输入框
-
-hyprlock 的 `source` 是**追加**语义，不是覆盖：主题文件只放变量，默认值在前、`source` 在后。
+    journalctl --user -b | grep -i noctalia
 
 ## 中文变豆腐块 / kitty 字体难看
 
 - 先查 `/etc/fonts` 是否存在：缺失时应用扫不到任何字体目录
-- 已知成因：`installation-cd-minimal.nix` 用 `mkOverride 500` 关闭 `fonts.fontconfig.enable`；
-  修法：`fonts.fontconfig.enable = lib.mkForce true;`
+- ISO 场景已知成因：`installation-cd-minimal.nix` 用 `mkOverride 500` 关闭
+  `fonts.fontconfig.enable`；修法：`fonts.fontconfig.enable = lib.mkForce true;`
 - 字体包（`modules/base.nix`）：`wqy_zenhei`、`noto-fonts-cjk-sans`、`nerd-fonts.jetbrains-mono`
 - 验证：`fc-match "sans-serif:lang=zh-cn"`、`fc-list :lang=zh-cn | wc -l`
 
-## Super+Space 菜单打不开
-
-绑定是绝对路径 `@HOME@/.local/bin/hypr-menu`。若 `~/.local/bin` 被误建为真实目录，
-脚本会落到 `~/.local/bin/bin/` 导致失效。正确形态：`~/.local/bin` 本身是指向 store `.../bin` 的软链。
-
-## VNC 里鼠标指针重叠黑色 X
-
-virtio-gpu 软件渲染无硬件光标平面，宿主 VNC 客户端自绘光标叠加——仅影响观看，截图不含，可忽略。
-
-## 登录后没有面板（noctalia 没起）+ ~/.config 里配置是空的
+## 登录后没有面板 / 配置是 0 字节（store 产物损坏）
 
 典型症状：桌面只有壁纸，没有 bar / 快捷键失效；`~/.config/niri/config.kdl` 大小为 0。
 
 原因：install.sh 部署的是 store 里的产物，而某些 store 文件被**截断成 0 字节**
-（上次异常关机/断电时 nix 正在写），但 nix 仍认为该路径有效，于是不会重建。
+（异常关机 / 断电时 nix 正在写），但 nix 仍认为该路径有效，于是不会重建。
+该事故最初发生在 Noctalia v4 时期，但根因与桌面版本无关，v5 同样适用。
 
 诊断：
 
@@ -67,6 +48,20 @@ cd ~/hyprbuddy-os && ./install.sh --host vmware --yes
 ## fuzzel.ini 变成 0 字节
 
 store 中间软链未就绪时直接写会得空文件；theme-next 已用「写 tmp → 非空才替换」规避。
+
+## `~/.local/bin` 被误建为真实目录（脚本 / 快捷键失效）
+
+`~/.local/bin` 必须是指向 store `.../bin` 的软链。若被误建为真实目录，
+install.sh 会把脚本落到 `~/.local/bin/bin/`，PATH 里找不到 → 快捷键和自定义脚本静默失效。
+
+```bash
+ls -ld ~/.local/bin     # 应显示 -> /nix/store/...-user-config-<host>/bin
+```
+
+## VNC 里鼠标指针重叠黑色 X
+
+virtio-gpu 软件渲染无硬件光标平面，宿主 VNC 客户端自绘光标叠加——仅影响观看，
+截图不含，可忽略。
 
 ## Noctalia v5：bar 突然消失
 
@@ -145,7 +140,7 @@ noctalia msg nightlight-force-toggle                              # 恢复随日
 - 文件路径确认无误：`~/.config/noctalia/palettes/<name>.json`（strace 确认被 open 成功）
 - 失败原因是**内容校验**，不是路径。已试过并全部被判 invalid 的写法：
   1. 扁平 16 个 `m*` 键
-  2. `{"dark":{m*},``light``:{m*}}`
+  2. `{"dark":{m*},`light`:{m*}}`
   3. `{"name","dark":{plain},"light":{plain}}`（社区 catalog 的写法）
   4. 数组 `[{"name","dark","light"}]`
   5. `{"name","colors":{m*}}`
