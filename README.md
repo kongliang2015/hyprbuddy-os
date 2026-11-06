@@ -10,7 +10,7 @@
 | 底座 | NixOS 26.05（flake）· niri 26.04（唯一会话）· Noctalia v5（`pkgs.noctalia` 5.0.1，原生 C++） |
 | Agent 能力 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成 |
 | 分支 | `distro/v1-nn`（当前）；`distro/v1-cosmic`（Hyprland + COSMIC，2026-10-28 退役） |
-| 实测 | `vmware`（x86_64 软渲染）日用中；`leonard` / `vm-virtio` 仅求值；install/live ISO 切换 v5 后未重建 |
+| 实测 | `vmware`（x86_64 软渲染）日用中；**`leonard` 已 switch 并点亮本地模型**（ollama CPU 版 + `qwen2.5-coder:1.5b`）；`vm-virtio` 仅求值；live ISO 已重建，install ISO 未构建 |
 | 镜像依赖 | flake 输入走清华 nixexprs；二进制缓存默认国内三镜像；个别包源码在 GitHub（`codex` / `opencode`），缓存未命中时才需要 |
 | 许可 | Apache-2.0 |
 | 文档 | 2026-11-05 按「对外可复现的 agent 底座」定位重排；文档总入口 `docs/INDEX.md` |
@@ -148,19 +148,19 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 
 技能的 `SKILL.md` frontmatter 必须写清「什么时候用」；技能里提到的命令必须存在于 `agent-commands list`；组件退役后要过死引用检查。
 
-### 5.3 本地模型：代码就绪，仅 leonard 打开开关（运行态待验收）
+### 5.3 本地模型：leonard 已点亮（ollama CPU 版）
 
 `modules/agent/local-llm.nix` 默认使用 `pkgs.ollama-cpu`（不引入 CUDA/ROCm 工具链），并固定 `host = "127.0.0.1"`；只有把 `distro.agent.ollamaAcceleration` 显式设为 `"gpu"` 时，才按 `distro.gpu.vendor` 选 `ollama-cuda` / `ollama-rocm` / `ollama-vulkan`。启用条件是 `cfg.enable && cfg.localModels`。
 
 | host | `agent.enable` | `diagnostics` | `localModels` | 说明 |
 |---|:---:|:---:|:---:|---|
 | `vmware` | `false` | — | `false` | 整个 agent 模块不生效 |
-| `leonard` | `true` | `true` | `true` | 代码已打开；**运行态未验收**（未 switch、未 `ollama pull`） |
+| `leonard` | `true` | `true` | `true` | 2026-11-06 已 switch 并验证：ollama active、端点/并发、coredump 诊断、`nix flake check` |
 | `vm-virtio` | `true` | `false` | `false` | 未启用 |
 
 `diagnostics` 在 `modules/options.nix` 中默认为 `true`；`vmware` 的 `agent.enable = false` 让整个 agent 模块不生效，`vm-virtio` 显式设为 `false`。
 
-**代码状态 ≠ 运行状态**：`leonard` 的开关已在仓库打开，但本机尚未执行 `sudo nixos-rebuild switch`，也未 `ollama pull`，因此 `ollama.service` 与 coredump 诊断链路**尚未验收**。验收口径见 `docs/ROADMAP.md` P1 的验收清单；勾完之前不要把这行当成「已交付的本地推理」。
+**已验证（2026-11-06）**：`leonard` 已 switch，`ollama.service` 与 `coredump-watch.path` 活跃；模型 `qwen2.5-coder:1.5b`（Q4_K_M，1.1 GB）经 ModelScope GGUF + `ollama create` 导入；`/v1/chat/completions` 单次 200、3 路并发无 OOM；`model-bench` 单请求约 79 tok/s（短 prompt，仅作上限参考）；coredump 诊断 9s 完成且栈与 `coredumpctl info` 一致；`nix flake check` all passed。CPU 版下 `power-status` 三档功耗读不到，留空并标 `power_source: "unavailable"`。
 
 **端点（`distro.agent.localEndpoint`）**：默认 `bind = "127.0.0.1"`、`lan = false`、`maxConcurrent = 1`（即 `OLLAMA_NUM_PARALLEL=1`，串行排队）。要对外暴露必须同时把 `lan` 设为 `true` 且 `bind` 改成非回环地址，三条断言会拦下「只改一半」的组合；`token` 只是让客户端共用一份配置（写入 `~/.config/hyprbuddy-os/local-endpoint.env`），**ollama 不校验它**，不要当成鉴权。
 
@@ -194,7 +194,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 | 优先级 | 方向 | 主要落点 |
 |---|---|---|
 | **P0（基本完成）** | 对外可发现性：README 重构 + 英文入口 + ROADMAP 按新定位重写 + 时间轴方案改名重写为 agent 执行审计日志；**剩余**：仓库 description / homepage、GitHub 镜像（等 P1 跑通再公开） | `README.md`、`README.en.md`、`docs/ROADMAP.md`、`next-feature/` |
-| **P1** | **点亮已有模块**：`model-status` / `model-bench`、`power-status` 三档功耗、CPU 变体 ollama、`leonard` 开关均已落地（见 §5.1 / §2.1）；**剩余**：真机 switch + `ollama pull`、端点与并发实测、功耗实测、`distro.agent.localEndpoint`（尚未实现） | `modules/options.nix`、`modules/agent/local-llm.nix`、`scripts/` |
+| **P1** | **点亮已有模块（2026-11-06 完成）**：`leonard` 已 switch，ollama CPU 版 + `qwen2.5-coder:1.5b` 跑通；`model-status` / `model-bench`、`power-status` 三档、coredump 诊断、`distro.agent.localEndpoint` 均已落地；剩余仅 LAN 暴露实机验证（可选） | `modules/options.nix`、`modules/agent/local-llm.nix`、`scripts/` |
 | **P2（暂缓）** | 承接 NPU 主机：新增 `hosts/maco470`（`amdxdna`、`render` 组、systemd `LimitMEMLOCK=infinity`、内核 ≥ 7.0）；`local-llm.nix` 增 AMD iGPU Vulkan 与 NPU 低功耗分支；模型盘独立挂载点写入 `paths.artifacts`。**2026-11-06 决定暂缓**：依赖 NPU 实机与三条 M.2 硬件，P1 运行态验收完成前不排期，详见 `docs/ROADMAP.md` P2 | `hosts/`、`modules/agent/`、`lib/` |
 | **P3** | 把优势变成可移植规范：`skills/` + `commands.json` 抽成任意 NixOS 可导入的规范；append-only **agent 执行审计日志**（可导出 / 可回放）；CI 加 `nix flake check` + schema 校验 + ISO 构建 | `lib/commands.nix`、`skills/`、CI |
 

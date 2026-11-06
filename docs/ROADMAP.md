@@ -1,6 +1,6 @@
 # HyprBuddy OS 路线图
 
-> 更新：2026-11-05 · 分支 `distro/v1-nn` · 夜间补充：P1 实施顺序（leonard runbook）
+> 更新：2026-11-06 · 分支 `distro/v1-nn` · P1 已在 `leonard` 点亮（本地模型 + coredump 诊断，运行态结论见 §6）
 > 本版按项目定位 **「对外可复现的 agent 桌面底座」** 重写。2026-11-04 及以前的版本以桌面外壳功能清单为主体，其已完成项已并入第 2 节，被替换的优先级见文末变更表。
 > 状态口径：**已实现 / 已实现未启用 / 计划 / 暂缓** 分开写，不把计划写成能力；现状永远以代码为准，索引见 `docs/INDEX.md`。
 
@@ -16,7 +16,7 @@
 | 键位 | `home/niri/config.kdl` 61 条，速查见 `docs/KEYBINDS.md` |
 | 自检 | `desktop-check` 19 项（图形会话全量、非图形降级） |
 | agent 层 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成；索引见 `docs/SKILLS.md`；安装器交互选择预装 agent 与源，未选项走 shim 懒加载 |
-| 实测 | `vmware`（x86_64 软渲染）日用中；`leonard` / `vm-virtio` 仅求值；ISO 切换 v5 后未重建 |
+| 实测 | `vmware`（x86_64 软渲染）日用中；**`leonard` 已 switch 并点亮本地模型**（ollama CPU 版 + `qwen2.5-coder:1.5b`）；`vm-virtio` 仅求值；live ISO 已重建，install ISO 未构建 |
 
 ## 1. 优先级原则
 
@@ -36,6 +36,7 @@
 - **agent 层命令**：`sys-*` 6 条、`svc-status` / `net-status` / `power-status`、技能 `nixos-system-ops`、过时技能重写（`theme-create` / `scifi-ui`）、`diagnose-crash`。
 - **安装器与懒加载（2026-11-06）**：`installer/install.sh` 交互多选预装 agent + 软件源（`--mirror`），未选项写入 `lazyAgents`（自动差集，断言拦截重叠）；`agent-shim` 首次运行按 `flake.lock` 构建并缓存（`claude-code` 为 unfree，按包名白名单放行）；`distro.mirror` 五档（cn / tuna / sjtu / ustc / official）。`--dry-run` 四组场景已验证，实机安装待跑。
 - **ISO 离线安装（2026-11-06）**：installer / live ISO 内置 nixpkgs 源码（复制 `pkgs.path` + `chmod -R u+w`；首次用 `cp -al` 在构建沙箱里因只读权限失败，已修），安装时用 `path:` 覆盖 flake 输入并本地 lock，安装后恢复原 lock；narHash 与 `flake.lock` 一致，不换版本。`--dry-run` 已验证 override 与恢复；**完整 ISO 构建已通过**（live ISO 3.6G；首次 `cp -al` 权限失败已修）。
+- **本地模型 P1 已点亮（2026-11-06）**：`leonard` 打开 `localModels` + `diagnostics`，`services.ollama` 用 `ollama-cpu` 只绑 `127.0.0.1`；模型 `qwen2.5-coder:1.5b`（Q4_K_M，1.1 GB）经 ModelScope GGUF + `ollama create` 导入。`/v1/chat/completions` 单次 200、3 路并发无 OOM；`model-bench` 单请求约 79 tok/s（短 prompt，仅作上限参考）；coredump → 本地模型诊断 9s 完成且与 `coredumpctl info` 栈一致；`nix flake check` all passed。
 
 ### 2.2 桌面外壳（载体）
 
@@ -75,13 +76,13 @@
 
 | 动作 | 落点 | 验收标准 | 状态 |
 |---|---|---|---|
-| 在 `leonard` 打开 `localModels` + `diagnostics` | `hosts/leonard/default.nix` | `ollama.service` 与 `coredump-watch.path` 活跃；coredump 报告落 `~/.local/state/agent/` 且与 `coredumpctl info` 原文可交叉验证 | [ ] |
-| 跑通 ollama OpenAI 兼容端点 `/v1/chat/completions` 与多客户端并发 | 本机回归脚本 | 2–3 个并发请求不互相挤占、无 OOM | [ ] |
-| 新增 `model-status` / `model-bench` | `scripts/`（`home/default.nix` 自动扫描，无需改 `lib/commands.nix`） | `agent-commands --json` 条目 +2，`@summary` / `@effect` 齐全；输出 tok/s、RAM / 显存；功耗按可读来源采样，读不到留空（CPU 版见步骤 4） | [ ] |
-| `power-status` 补 idle / 单请求 / 并发三档功耗 | `scripts/power-status` | 输出可机器解析（JSON），**并用 `power_source` 标注数据来源** | [ ] |
+| 在 `leonard` 打开 `localModels` + `diagnostics` | `hosts/leonard/default.nix` | `ollama.service` 与 `coredump-watch.path` 活跃；coredump 报告落 `~/.local/state/agent/` 且与 `coredumpctl info` 原文可交叉验证 | [x] 2026-11-06 |
+| 跑通 ollama OpenAI 兼容端点 `/v1/chat/completions` 与多客户端并发 | 本机回归脚本 | 2–3 个并发请求不互相挤占、无 OOM | [x] 单次 200 / 3 路并发无 OOM（`NUM_PARALLEL=1` 排队） |
+| 新增 `model-status` / `model-bench` | `scripts/`（`home/default.nix` 自动扫描，无需改 `lib/commands.nix`） | `agent-commands --json` 条目 +2，`@summary` / `@effect` 齐全；输出 tok/s、RAM / 显存；功耗按可读来源采样，读不到留空（CPU 版见步骤 4） | [x] 28 条、`available=true` |
+| `power-status` 补 idle / 单请求 / 并发三档功耗 | `scripts/power-status` | 输出可机器解析（JSON），**并用 `power_source` 标注数据来源** | [x] 字段就位；CPU 版读数留空、标 `unavailable` |
 | 新增 `distro.agent.localEndpoint`：`bind` / LAN 开关 / `maxConcurrent` / token | `modules/options.nix`、`modules/agent/local-llm.nix`、`modules/assertions.nix` | 默认仍只绑 `127.0.0.1`、并发 1；LAN 需 `lan = true` + 非回环 `bind`，三条断言拦下「只改一半」；token 仅客户端约定（ollama 无鉴权） | [x] 代码 |
 
-> 状态列指 **P1 整体运行态验收**：第 3/4 项（`model-status` / `model-bench`、`power-status` 三档）代码已落地（见 §2.1、README §5.1），但端点评测、功耗实测等运行态结论尚未产生，故仍保留 `[ ]`；第 5 项 `distro.agent.localEndpoint` 代码已落地（选项 + 三条断言 + 客户端 env），**LAN 实际暴露未在实机验证**，属可选项。
+> **P1 运行态验收已完成（2026-11-06）**：`ollama.service` 与 `coredump-watch.path` 活跃；端点单次与 3 路并发通过；`model-status` / `model-bench` 条目 +2；`power-status` 三档字段就位（CPU 版下读数留空、`power_source=unavailable`，符合预期）。第 5 项 `localEndpoint` 代码已落地（选项 + 三条断言 + 客户端 env），**LAN 实际暴露仍未在实机验证**，属可选项。
 
 #### P1 实施顺序（leonard runbook）
 
@@ -237,14 +238,14 @@ distro.agent.localEndpoint = {
 
 **验收清单**
 
-- [ ] `ollama.service` active，`/api/tags` 能列出 `qwen2.5-coder:1.5b`
-- [ ] `/v1/chat/completions` 单次返回 200；3 路并发互不挤占、无 OOM
-- [ ] `coredump-report.md` 可生成，且与 `coredumpctl info` 原文可交叉验证
-- [ ] `agent-commands --json` 条目 +2、`available=true`，`@summary` / `@effect` 齐全
-- [ ] `power-status --json` 含三档字段并标注 `power_source`
+- [x] `ollama.service` active，`/api/tags` 能列出 `qwen2.5-coder:1.5b`
+- [x] `/v1/chat/completions` 单次返回 200；3 路并发互不挤占、无 OOM
+- [x] `coredump-report.md` 可生成，且与 `coredumpctl info` 原文可交叉验证
+- [x] `agent-commands --json` 条目 +2、`available=true`，`@summary` / `@effect` 齐全
+- [x] `power-status --json` 含三档字段并标注 `power_source`
 - [ ] （可选）LAN 暴露：`lan = true` + 非回环 `bind` 求值通过，`ss -lntp | grep 11434` 与 `systemctl show ollama -p Environment` 符合预期
-- [ ] `nix flake check`（或上述退化路径）通过
-- [ ] **回写文档**：把运行态验收结论（`ollama.service` 活跃、tok/s、功耗）补进本文档 §6 状态口径表与 `README.md` §5.3；代码状态已同步，缺的是运行态结论
+- [x] `nix flake check`（或上述退化路径）通过
+- [x] **回写文档**：运行态结论已补进 §6 与 `README.md` §5.3（2026-11-06）
 
 **回滚**
 
@@ -331,14 +332,14 @@ git revert <本次 commit>               # 配置
 
 | 项 | 真实状态 |
 |---|---|
-| 本地模型 | `modules/agent/local-llm.nix` 代码就绪（默认 CPU 变体、GPU 加速需显式开启、`127.0.0.1`）；端点策略 `distro.agent.localEndpoint` 已实现（默认回环 / 并发 1 / 三条断言 / 客户端 env），**LAN 暴露未实机验**；**`leonard` 已在仓库打开 `localModels` + `diagnostics`，但运行态未验收**（未 switch、未 `ollama pull`，服务未激活）；`vmware` / `vm-virtio` 仍为 `false`。无 OpenAI 兼容端点实测、功耗观测。属 P1，不是已交付能力 |
-| `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` 已打开（与 `localModels` 同步，运行态待验收），`vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
-| 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
+| 本地模型 | **`leonard` 已点亮（2026-11-06）**：`ollama-cpu` + `qwen2.5-coder:1.5b`（Q4_K_M，1.1 GB），只绑 `127.0.0.1`；端点单次 200 / 3 路并发无 OOM，`model-bench` 单请求约 79 tok/s（短 prompt 上限参考），coredump 诊断 9s 完成。端点策略 `distro.agent.localEndpoint` 已实现（默认回环 / 并发 1 / 三条断言 / 客户端 env），**LAN 暴露未实机验**。`vmware` / `vm-virtio` 仍 `localModels = false`。CPU 版下 GPU 功耗读不到（`power_source=unavailable`） |
+| `diagnostics` | `leonard` 已启用并验证（coredump → 本地模型报告，9s、与 `coredumpctl info` 栈一致）；`vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
+| 实测覆盖 | `vmware` 日用；**`leonard` 已 switch 并验证本地模型与 coredump 诊断**；`vm-virtio` 仅求值；live ISO 已重建、install ISO 未构建 |
 | 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 19 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
 | 懒加载 agent | shim 已实现并在 `vmware` 验证 `codex` 全链路（构建 → 0.146.0 → 缓存）；`claude` / `opencode` 仅 `drvPath` 求值；安装器 `--dry-run` 四组通过，**实机安装未执行** |
 | ISO 离线安装 | 代码已实现（ISO 内置 nixpkgs + 安装时 `path:` override/恢复）；`--dry-run` 验证 override 与 lock 恢复；**完整 ISO 构建已通过**（live ISO 3.5G，首次 `cp -al` 权限失败已修）；live 启动软链已修（原先目录列表是 Hyprland 时代，漏掉 `niri` / `fastfetch` / `hyprbuddy-os` / `skills`）；**实机安装未执行** |
 
-> 本表记录的是**仓库代码状态**；`leonard` 的 P1 开关已打开，但**运行态验收（switch / `ollama pull` / 端点与并发）尚未完成**，所以「本地模型」一行仍标为未交付。P1 验收清单勾完后，把运行态结论（服务活跃、tok/s、功耗）补进本表与 `README.md` §5.3。
+> 本表记录**代码与运行态**；`leonard` 的 P1 已于 2026-11-06 完成运行态验收（switch、模型导入、端点/并发、coredump 诊断、`nix flake check`）。模型通过 ModelScope GGUF + `ollama create` 导入，不是 `ollama pull`。
 
 ## 附：本版相对 2026-11-04 版的变更
 
