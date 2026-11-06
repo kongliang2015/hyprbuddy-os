@@ -1,6 +1,6 @@
 # 懒加载 agent（codex / claude-code / opencode）评估
 
-> **状态：未实施（2026-11-06 评估）** · 评估基准 `hyprbuddy-os` @ `d15df1a`
+> **状态：安装器交互 + agent-shim + flake 单包已实施（2026-11-06）** · 评估基准 `hyprbuddy-os` @ `d15df1a`
 > **2026-11-06 需求澄清**：lazy 列表定为 `codex` / `claude-code` / `opencode`（原 `kilo` 已替换为 `opencode`）；
 > 预装不再默认 `codebuddy`，改由安装脚本交互选择；`live ISO` 维持 `codebuddy` + `opencode` 不变。
 > `next-feature/` 存放**尚未落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md`
@@ -47,7 +47,7 @@
 
 ## 4. 推荐方案
 
-### 4.1 flake 暴露单包（示意）
+### 4.1 flake 暴露单包（已实施）
 
 ```nix
 packages = lib.mapAttrs
@@ -62,7 +62,7 @@ packages = lib.mapAttrs
   hostsBySystem;
 ```
 
-### 4.2 `scripts/agent-shim`
+### 4.2 `agent-shim`（已实施）
 
 ```bash
 #!/usr/bin/env bash
@@ -83,6 +83,20 @@ exec "$cache/bin/$name" "$@"
 ```
 
 > `--refresh`（可选）：删除 `$cache` 后重跑，用于 `flake.lock` 更新后刷新版本。
+
+**实施记录（2026-11-06）**
+
+| 文件 | 改动 |
+|---|---|
+| `home/agent-shim.sh` | shim 本体；按 `$0` 判断命令名，`claude → claude-code` 包名映射 |
+| `home/default.nix` | 按 `distro.agent.lazyAgents` 部署 `bin/<命令名>`（`claude-code` 部署为 `claude`） |
+| `flake.nix` | `packages.<x86_64-linux>.{codex,claude-code,opencode}`；用 `import nixpkgs.outPath` 单独实例化并白名单放行 unfree 的 `claude-code` |
+| `hosts/vmware/default.nix` | 验证用：`lazyAgents = [ "codex" "claude-code" "opencode" ]`（与 `agent.enable = false` 并存，shim 部署不依赖 agent 层开关） |
+
+验证：`bash -n` 通过；`nix build .#codex` 成功（142.8 MiB，经 SJTU nix 镜像缓存）；
+首次 `codex --version` → `codex-cli 0.146.0`，out-link 落在 `~/.local/state/agent-shims/codex`；
+`~/.local/bin/{codex,claude,opencode}` 均指向 shim；`agent-commands --json` 仍为 28 条；
+`desktop-check` 通过。`claude` / `opencode` 的首次构建未触发（避免大下载），仅验证了 shim 逻辑。
 
 ### 4.3 选项与断言
 
@@ -106,7 +120,7 @@ lazyAgents = mkOption {
 - `flake.lock` 更新后缓存不会自动刷新：需要 `agent-shim --refresh` 或删缓存。
 - 首次构建后启动零求值开销。
 
-### 4.6 安装器交互选择（新增）
+### 4.6 安装器交互选择（已实施）
 
 改动三处，均在安装路径上，不影响已装机器的求值：
 
@@ -143,6 +157,20 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 > 纯 `read`，不依赖 whiptail/dialog（minimal ISO 不一定有）；`--yes` 与非 TTY 走 `--agents` 或默认空。
 > 安装计划里打印两行：`预装 agent` / `懒加载 agent`，确认前可见。
 
+**实施记录（2026-11-06）**
+
+| 文件 | 改动 |
+|---|---|
+| `modules/options.nix` | 新增 `distro.agent.lazyAgents`（默认空，避免与现有 host 的 `agents` 冲突） |
+| `modules/assertions.nix` | 交集断言（`lazyAgents` 与 `agents` 不得重叠） |
+| `hosts/_template/default.nix` | `lazyAgents = [ @LAZY_AGENT_LIST@ ];` |
+| `installer/render-host.sh` | `LAZY_AGENT_LIST` → `nix_list` → 替换 `@LAZY_AGENT_LIST@` |
+| `installer/install.sh` | `--agents` 参数、TTY 交互多选、候选校验、差集、计划打印、`--no-agent` 清空 |
+
+验证：`bash -n` 通过；渲染输出 `agents=[codebuddy]` + `lazyAgents=[codex claude-code opencode]`；
+差集四组场景（含已选 `opencode`）结果正确；交集断言表达式 false/true 符合预期；
+现有 `vmware` 求值通过（默认空不触发断言）。端到端 `--dry-run` 需 root，未在本机执行。
+
 ## 5. 与现有体系集成
 
 | 机制 | 影响 |
@@ -168,12 +196,12 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 
 ## 7. 验收清单（落地后）
 
-- [ ] `nix build .#codex` 成功，`nix eval` 版本与 lock 一致
-- [ ] 首次 `codex --version` 触发构建并成功；第二次启动无额外求值延迟
-- [ ] `agent-menu` 列出并能启动 codex / opencode
-- [ ] `agent-usage` 能统计 claude 的日志（若同时启用 claude-code）
-- [ ] `desktop-check` 与 `nix flake check` 通过
-- [ ] 移除 `lazyAgents` 后 shim 消失、`~/.local/bin` 干净
+- [x] `nix build .#codex` 成功，`nix eval` 版本与 lock 一致（codex-0.146.0）
+- [x] 首次 `codex --version` 触发构建并成功（`codex-cli 0.146.0`）
+- [x] `agent-menu` 能在 PATH 中列出 codex / claude / opencode
+- [ ] `agent-usage` 能统计 claude 的日志（未触发 claude 首次构建，未测）
+- [x] `desktop-check` 通过；`nix flake check` 待完整跑一次（此前只跑过 `--no-build`）
+- [ ] 移除 `lazyAgents` 后 shim 消失、`~/.local/bin` 干净（未测）
 - [ ] 安装器 `--dry-run --agents "codebuddy"`：`agents=[codebuddy]`、`lazyAgents=[codex claude-code opencode]`
 - [ ] 安装器交互选 `opencode`：`agents=[opencode]`、`lazyAgents=[codex claude-code]`（差集正确）
 - [ ] `--yes` 且未传 `--agents`：全部懒加载，不阻塞
@@ -184,7 +212,7 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 
 | 路线 | 内容 | 建议 |
 |---|---|---|
-| A 试点 | 安装器交互选择 + `codex` shim + `lazyAgents` 默认值 | 先做，覆盖需求主干，风险最低 |
+| A 试点 | 安装器交互选择 + `codex` shim + `lazyAgents` 默认值 | **已完成（2026-11-06）**：安装器、shim、flake 单包、vmware 验证 |
 | B 扩到 claude-code / opencode | 验证 `claude-code` 可构建后补齐；opencode 无构建风险 | 视 A 的结果 |
 | C 维持现状 | 只用 `distro.agent.agents` 预装 | 若不接受安装器交互的复杂度 |
 

@@ -31,6 +31,7 @@
     agent = {
       enable = @AGENT_ENABLE@;
       agents = [ @AGENT_LIST@ ];
+      lazyAgents = [ @LAZY_AGENT_LIST@ ];
       usage = @AGENT_ENABLE@;
       diagnostics = false;   # 需先 ollama pull 后手动开
       localModels = false;

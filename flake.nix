@@ -105,8 +105,21 @@
 
       packages = lib.mapAttrs
         (system: names:
+          let
+            # 懒加载 agent 单包：claude-code 是 unfree，按包名白名单放行
+            agentPkgs = import nixpkgs.outPath {
+              inherit system;
+              config.allowUnfreePredicate =
+                pkg: builtins.elem (lib.getName pkg) [ "claude-code" ];
+            };
+          in
           lib.genAttrs names homePkg
-          // { iso = mkIso system; liveIso = mkLiveIso system; })
+          // { iso = mkIso system; liveIso = mkLiveIso system; }
+          // lib.optionalAttrs (system == "x86_64-linux") {
+               codex = agentPkgs.codex;
+               claude-code = agentPkgs.claude-code;
+               opencode = agentPkgs.opencode;
+             })
         hostsBySystem;
 
       # nixosConfigurations 不会被 `nix flake check` 自动检查，显式放进 checks

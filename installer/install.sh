@@ -13,7 +13,10 @@ USER_NAME=""
 STATE_VERSION=25.11
 SESSIONS=""
 AGENT_ENABLE=true
-AGENT_LIST=opencode
+AGENT_LIST=""
+LAZY_AGENT_LIST=""
+AGENT_CANDIDATES="codebuddy opencode codex claude-code aider-chat"
+LAZY_DEFAULT="codex claude-code opencode"
 ASSUME_YES=0
 DRY_RUN=0
 
@@ -29,6 +32,7 @@ usage() {
   --user <名字>          主用户（默认 logname，其次 nixos）
   --state-version <版本> system.stateVersion（默认 25.11）
   --sessions "xfce windowmaker"   额外保留的 X11 会话
+  --agents "codebuddy opencode"   预装哪些 agent（空格分隔；不给则交互选择，空=全部懒加载）
   --no-agent             不安装 agent 层
   --yes                  跳过确认
   --dry-run              只渲染 + 求值，不写目标盘
@@ -44,6 +48,7 @@ while [ $# -gt 0 ]; do
     --user) USER_NAME="${2:?}"; shift 2 ;;
     --state-version) STATE_VERSION="${2:?}"; shift 2 ;;
     --sessions) SESSIONS="${2:-}"; shift 2 ;;
+    --agents) AGENT_LIST="${2:-}"; shift 2 ;;
     --no-agent) AGENT_ENABLE=false; shift ;;
     --yes) ASSUME_YES=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
@@ -64,6 +69,32 @@ rm -f "$detect_env"
 : "${HOST_NAME:=${HOSTNAME:-nixos}}"
 : "${USER_NAME:=${SUDO_USER:-nixos}}"
 
+# 交互选择预装 agent（--yes 或非 TTY 时跳过，走 --agents / 全懒加载）
+if [ "$ASSUME_YES" -ne 1 ] && [ -t 0 ]; then
+  printf "\n可选 agent：%s\n" "$AGENT_CANDIDATES"
+  printf "要预装哪些？（空格分隔，回车=全部懒加载）: "
+  read -r AGENT_LIST
+fi
+
+for a in $AGENT_LIST; do
+  case " $AGENT_CANDIDATES " in
+    *" $a "*) ;;
+    *) die "未知 agent: $a（可选: $AGENT_CANDIDATES）" ;;
+  esac
+done
+
+# 差集：懒加载默认里去掉已预装的
+for a in $LAZY_DEFAULT; do
+  case " $AGENT_LIST " in
+    *" $a "*) ;;
+    *) LAZY_AGENT_LIST="$LAZY_AGENT_LIST $a" ;;
+  esac
+done
+LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
+
+# --no-agent 时清空两个列表，避免渲染出 enable=false 却列着 agent 的配置
+if [ "$AGENT_ENABLE" = false ]; then AGENT_LIST=""; LAZY_AGENT_LIST=""; fi
+
 say "安装计划"
 cat <<EOF
   目标挂载点 : $TARGET
@@ -75,7 +106,9 @@ cat <<EOF
   电池/背光  : $BATTERY / $BACKLIGHT
   Windows 项 : $WINDOWS_ENTRY
   额外会话   : ${SESSIONS:-（无）}
-  agent      : $AGENT_ENABLE ($AGENT_LIST)
+  预装 agent : ${AGENT_LIST:-（无，全部懒加载）}
+  懒加载     : ${LAZY_AGENT_LIST:-（无）}
+  agent 层   : $AGENT_ENABLE
 EOF
 
 if [ "$DRY_RUN" -eq 0 ]; then
@@ -110,7 +143,7 @@ fi
 say "渲染 host 配置"
 export HOSTNAME="$HOST_NAME" USERNAME="$USER_NAME" GPU_VENDOR BOOTLOADER WINDOWS_ENTRY \
        NVIDIA_PCI_IDS EXTRA_SESSIONS="$SESSIONS" BATTERY BACKLIGHT \
-       AGENT_ENABLE AGENT_LIST STATE_VERSION
+       AGENT_ENABLE AGENT_LIST LAZY_AGENT_LIST STATE_VERSION
 "$work/src/installer/render-host.sh" "$work/src/hosts/$HOST_NAME/default.nix"
 
 say "求值（先确认配置可构建，再动系统）"

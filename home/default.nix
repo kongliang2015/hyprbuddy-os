@@ -93,6 +93,18 @@ let
     if agentEnabled then all
     else builtins.filter (n: !(builtins.elem n agentOnly)) all;
 
+  # 懒加载 agent：把同一份 shim 部署成 bin/<命令名>（claude-code 包的命令名是 claude）
+  shimScript = read ./agent-shim.sh;
+  shimBinName = name: if name == "claude-code" then "claude" else name;
+  shimEntries = map (name: {
+    name = "bin/${shimBinName name}";
+    path = pkgs.writeTextFile {
+      name = "agent-shim-${name}";
+      text = shimScript;
+      executable = true;
+    };
+  }) distro.agent.lazyAgents;
+
   entries =
     lib.mapAttrsToList (name: text: {
       inherit name;
@@ -115,7 +127,8 @@ let
     ++ themeEntries
     ++ exporterEntries
     ++ lib.singleton { name = "bin/jq"; path = "${pkgs.jq}/bin/jq"; }
-    ++ lib.singleton { name = "bin/python3"; path = "${pkgs.python3}/bin/python3"; };
+    ++ lib.singleton { name = "bin/python3"; path = "${pkgs.python3}/bin/python3"; }
+    ++ shimEntries;
   # agent skills（skills/<name>/…）：install.sh 链接到 ~/.codebuddy/skills/
   skillsDir = ../skills;
   skillEntries = lib.concatLists (

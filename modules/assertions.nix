@@ -17,5 +17,9 @@ in
       assertion = cfg.agent.enable || !cfg.agent.localModels;
       message = "distro.agent.localModels 需要 distro.agent.enable = true。";
     }
+    {
+      assertion = builtins.all (a: !(builtins.elem a cfg.agent.agents)) cfg.agent.lazyAgents;
+      message = "distro.agent.lazyAgents 与 distro.agent.agents 不能有交集（同一 agent 只能预装或懒加载其一）。";
+    }
   ];
 }

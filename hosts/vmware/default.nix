@@ -70,6 +70,10 @@
 
     agent = {
       enable = false;
+      # 不预装任何 agent（avoid 与 lazyAgents 重叠；冲突由 assertions 拦截）
+      agents = [ ];
+      # 懒加载 agent：不装进系统包，首次运行时按 flake.lock 构建
+      lazyAgents = [ "codex" "claude-code" "opencode" ];
     };
   };
 }

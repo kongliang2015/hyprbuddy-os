@@ -203,6 +203,12 @@ in
         type = types.listOf (types.enum [ "claude-code" "codebuddy" "opencode" "codex" "aider-chat" ]);
         default = [ "claude-code" ];
       };
+      # 懒加载 agent：不进系统包，首次运行时由 agent-shim 按 flake.lock 构建。
+      # 默认空，避免与现有 host 的 agents 重叠；安装器会写入「懒加载默认 - 已预装」的差集。
+      lazyAgents = mkOption {
+        type = types.listOf (types.enum [ "claude-code" "codebuddy" "opencode" "codex" "aider-chat" ]);
+        default = [ ];
+      };
       diagnostics = mkOption { type = types.bool; default = true; };
       usage = mkOption { type = types.bool; default = true; };
       localModels = mkOption { type = types.bool; default = false; };
