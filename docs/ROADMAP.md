@@ -65,7 +65,7 @@
 | 停用「AI-native / Recall / Copilot+ 对标」措辞 | `README*`、`docs/ROADMAP.md`、`next-feature/` | 全仓库检索仅出现在否定 / 历史 / 非目标语境 | [x] 本轮 |
 | 砍掉 P3 的 Omarchy UI 差距项 | `docs/ROADMAP.md` | 待办中不含「多终端 / 编辑器 / 开发栈 / 游戏套件」 | [x] 本版 |
 | 时间轴方案改名重写为「agent 执行审计日志」 | `next-feature/agent-execution-audit.md` | 状态横幅为未实施、探针附录保留、不进待办 | [x] 本轮 |
-| 仓库 `description` / `homepage` 补齐，并同步 `flake.nix` 的 `description` | Gitee 仓库设置、`flake.nix` | 一句话定位与英文关键词可被检索；`flake.nix` 现行描述「AI-agent 原生的 NixOS 发行版」仍带 AI-native 措辞，须改为 agent 底座口径 | [ ] |
+| 仓库 `description` / `homepage` 补齐，并同步 `flake.nix` 的 `description` | Gitee 仓库设置、`flake.nix` | `flake.nix` 已改为「可复现、可审计、可回滚的 NixOS agent 桌面底座」；**剩余：Gitee 的 description / homepage / topics 待网页设置**（文案见 `docs/ROADMAP.md` 同项讨论） | [ ] |
 | GitHub 镜像 | 新仓库 | 与 Gitee 同步；**等 P1 跑通再公开**，避免过早放大未验证项 | [ ] |
 
 ### P1 点亮已有模块（对应外部最强需求：本地模型 7×24 常驻）
