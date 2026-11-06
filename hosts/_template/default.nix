@@ -9,6 +9,7 @@
 
   distro = {
     user.name = "@USERNAME@";
+    mirror = "@MIRROR@";
 
     boot.loader = "@BOOTLOADER@";
     boot.windowsEntry = @WINDOWS_ENTRY@;

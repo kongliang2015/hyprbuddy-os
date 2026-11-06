@@ -11,6 +11,14 @@ in
       description = "发行版版本号，用于 boot 标签与 os-release 变体名";
     };
 
+    # 二进制缓存源（不影响 nixpkgs 版本，只影响下载速度）。
+    # 镜像 store 的包由官方签名，默认 trusted-public-keys 可验证。
+    mirror = mkOption {
+      type = types.enum [ "cn" "tuna" "sjtu" "ustc" "official" ];
+      default = "cn";
+      description = "软件源：cn（清华+上交+中科大，默认）/ tuna / sjtu / ustc / official（cache.nixos.org）";
+    };
+
     boot = {
       loader = mkOption {
         type = types.enum [ "systemd-boot" "grub" ];

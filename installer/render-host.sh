@@ -2,7 +2,7 @@
 # 用 hosts/_template/default.nix 渲染一份 host 配置，并做语法校验。
 # 用法: render-host.sh <输出文件>
 # 需要: HOSTNAME USERNAME GPU_VENDOR [BOOTLOADER WINDOWS_ENTRY NVIDIA_PCI_IDS
-#        EXTRA_SESSIONS BATTERY BACKLIGHT AGENT_ENABLE AGENT_LIST LAZY_AGENT_LIST STATE_VERSION]
+#        EXTRA_SESSIONS BATTERY BACKLIGHT AGENT_ENABLE AGENT_LIST LAZY_AGENT_LIST MIRROR STATE_VERSION]
 set -euo pipefail
 
 out="${1:?用法: render-host.sh <输出文件>}"
@@ -19,6 +19,7 @@ WINDOWS_ENTRY="${WINDOWS_ENTRY:-false}"
 BATTERY="${BATTERY:-false}"
 BACKLIGHT="${BACKLIGHT:-false}"
 AGENT_ENABLE="${AGENT_ENABLE:-true}"
+MIRROR="${MIRROR:-cn}"
 
 # 空格分隔的裸值 -> Nix 列表元素：a b  =>  "a" "b"
 nix_list() {
@@ -46,6 +47,7 @@ sed \
   -e "s|@AGENT_ENABLE@|$AGENT_ENABLE|g" \
   -e "s|@AGENT_LIST@|$AGENT_LIST|g" \
   -e "s|@LAZY_AGENT_LIST@|$LAZY_AGENT_LIST|g" \
+  -e "s|@MIRROR@|$MIRROR|g" \
   "$tpl" > "$out"
 
 if grep -qE '@[A-Z_]+@' "$out"; then

@@ -17,6 +17,8 @@ AGENT_LIST=""
 LAZY_AGENT_LIST=""
 AGENT_CANDIDATES="codebuddy opencode codex claude-code aider-chat"
 LAZY_DEFAULT="codex claude-code opencode"
+MIRROR=cn
+MIRROR_CANDIDATES="cn tuna sjtu ustc official"
 ASSUME_YES=0
 DRY_RUN=0
 
@@ -33,6 +35,7 @@ usage() {
   --state-version <版本> system.stateVersion（默认 25.11）
   --sessions "xfce windowmaker"   额外保留的 X11 会话
   --agents "codebuddy opencode"   预装哪些 agent（空格分隔；不给则交互选择，空=全部懒加载）
+  --mirror <name>        二进制缓存源：cn（默认）/ tuna / sjtu / ustc / official
   --no-agent             不安装 agent 层
   --yes                  跳过确认
   --dry-run              只渲染 + 求值，不写目标盘
@@ -49,6 +52,7 @@ while [ $# -gt 0 ]; do
     --state-version) STATE_VERSION="${2:?}"; shift 2 ;;
     --sessions) SESSIONS="${2:-}"; shift 2 ;;
     --agents) AGENT_LIST="${2:-}"; shift 2 ;;
+    --mirror) MIRROR="${2:?}"; shift 2 ;;
     --no-agent) AGENT_ENABLE=false; shift ;;
     --yes) ASSUME_YES=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
@@ -75,6 +79,19 @@ if [ "$ASSUME_YES" -ne 1 ] && [ -t 0 ]; then
   printf "要预装哪些？（空格分隔，回车=全部懒加载）: "
   read -r AGENT_LIST
 fi
+
+# 交互选择二进制缓存源（同样仅 TTY 且非 --yes）
+if [ "$ASSUME_YES" -ne 1 ] && [ -t 0 ]; then
+  printf "\n可选软件源：%s（默认 cn）\n" "$MIRROR_CANDIDATES"
+  printf "选择源 [cn]: "
+  read -r m
+  [ -n "$m" ] && MIRROR="$m"
+fi
+
+case " $MIRROR_CANDIDATES " in
+  *" $MIRROR "*) ;;
+  *) die "未知软件源: $MIRROR（可选: $MIRROR_CANDIDATES）" ;;
+esac
 
 for a in $AGENT_LIST; do
   case " $AGENT_CANDIDATES " in
@@ -108,6 +125,7 @@ cat <<EOF
   额外会话   : ${SESSIONS:-（无）}
   预装 agent : ${AGENT_LIST:-（无，全部懒加载）}
   懒加载     : ${LAZY_AGENT_LIST:-（无）}
+  软件源     : $MIRROR
   agent 层   : $AGENT_ENABLE
 EOF
 
@@ -143,7 +161,7 @@ fi
 say "渲染 host 配置"
 export HOSTNAME="$HOST_NAME" USERNAME="$USER_NAME" GPU_VENDOR BOOTLOADER WINDOWS_ENTRY \
        NVIDIA_PCI_IDS EXTRA_SESSIONS="$SESSIONS" BATTERY BACKLIGHT \
-       AGENT_ENABLE AGENT_LIST LAZY_AGENT_LIST STATE_VERSION
+       AGENT_ENABLE AGENT_LIST LAZY_AGENT_LIST MIRROR STATE_VERSION
 "$work/src/installer/render-host.sh" "$work/src/hosts/$HOST_NAME/default.nix"
 
 say "求值（先确认配置可构建，再动系统）"

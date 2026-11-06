@@ -72,13 +72,21 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  # 镜像：清华 / 上交 / 中科大 频道二进制缓存（均含 qtwebengine、linux-dev 等大包）
-  # 官方 cache.nixos.org（Fastly）在本机大文件下载时易卡死，用 mkForce 强制移除
-  nix.settings.substituters = lib.mkForce [
-    "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
-    "https://mirror.sjtu.edu.cn/nix-channels/store"
-    "https://mirrors.ustc.edu.cn/nix-channels/store"
-  ];
+  # 二进制缓存源由 distro.mirror 决定（默认 cn = 清华 + 上交 + 中科大）。
+  # 用 mkForce 覆盖默认列表（含官方 cache.nixos.org）；official 时只保留官方。
+  nix.settings.substituters = lib.mkForce (
+    let
+      m = config.distro.mirror;
+      tuna = "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store";
+      sjtu = "https://mirror.sjtu.edu.cn/nix-channels/store";
+      ustc = "https://mirrors.ustc.edu.cn/nix-channels/store";
+    in
+    if m == "official" then [ "https://cache.nixos.org/" ]
+    else if m == "tuna" then [ tuna ]
+    else if m == "sjtu" then [ sjtu ]
+    else if m == "ustc" then [ ustc ]
+    else [ tuna sjtu ustc ]
+  );
 
   # ~/.local/bin 进 PATH：agent-commands / theme-next / hypr-check 等技能入口可裸命令调用
   environment.localBinInPath = true;

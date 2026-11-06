@@ -237,7 +237,8 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 | `distro.gpu.vendor` | nvidia / amd / intel / virtio / none | 选择 GPU 模块 |
 | `distro.gpu.nvidia.branch` | auto / legacy_580 / production / beta | auto 按 pciIds 判断 |
 | `distro.hardware.battery` / `backlight` | bool | 影响 bar 组件与键位 |
-| `distro.agent.*` | `enable` / `agents` / `usage` / `diagnostics` / `localModels` / `ollamaAcceleration` / `model` | agent 层；默认值见 `modules/options.nix`（`enable` / `localModels` 默认 `false`，`ollamaAcceleration` 默认 `cpu`） |
+| `distro.mirror` | cn / tuna / sjtu / ustc / official | 二进制缓存源（默认 `cn` = 清华+上交+中科大；安装器 `--mirror` 可覆盖） |
+| `distro.agent.*` | `enable` / `agents` / `lazyAgents` / `usage` / `diagnostics` / `localModels` / `ollamaAcceleration` / `model` | agent 层；默认值见 `modules/options.nix`（`enable` / `localModels` 默认 `false`，`ollamaAcceleration` 默认 `cpu`；`lazyAgents` 默认空，安装器按选择写入） |
 
 > NVIDIA 必须留在 580 LTSB：26.05 的 `nvidiaPackages.stable` 已指向 595.x，该分支不支持 Pascal，误用会黑屏。
 > `distro.agent.model` 默认 `qwen2.5-coder:1.5b`，启用 `localModels` 前需先 `ollama pull`。
