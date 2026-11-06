@@ -1,5 +1,7 @@
 # HyprBuddy OS
 
+[中文](README.md) | **English**
+
 **A reproducible, auditable, rollback-safe agent desktop.**
 
 HyprBuddy OS is a NixOS flake that turns "what an agent is allowed to do on this machine" into a **buildable, queryable, revertible artifact**. The desktop shell is the carrier, not the point: niri 26.04 + Noctalia v5 run on top, but the project is defined by declarative configuration, a machine-readable capability manifest, and explicit permission boundaries.

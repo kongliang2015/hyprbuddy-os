@@ -1,5 +1,7 @@
 # HyprBuddy OS
 
+**中文** | [English](README.en.md)
+
 > **可复现、可审计、可回滚的 agent 桌面底座。**
 > 基于 NixOS 26.05 + flake + niri 26.04 + Noctalia v5，把「agent 能对这台机器做什么」变成一份**可构建、可检索、可撤销**的制品。
 
