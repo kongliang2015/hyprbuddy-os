@@ -96,6 +96,7 @@
 |---|---|
 | `next-feature/agent-execution-audit.md` | **Agent 执行审计日志**（可导出 / 可回放）：记录 `agent-apply` 与写操作事件；由 2026-11-04 的 Recall 式屏幕时间轴方案于 2026-11-05 改名重写，**不采集屏幕内容**，状态未实施 |
 | `next-feature/file-ops-skill.md` | 文件操作能力：落点统一 + 备份查恢 + 介质只读视图（2026-11-04 评估，P0 已拆出实施于 `499435e`） |
+| `next-feature/lazy-agents.md` | **懒加载 agent**：codex / claude-code / aider-chat 首次运行时按 flake.lock 构建（2026-11-06 评估，Nix 式而非 mise shim） |
 
 > 2026-11-05 变更：原 `next-feature/local-memory-timeline.md` 已改名重写为 `agent-execution-audit.md`。
 > 原方案的一次性探针数据、FTS5 中文按字切分、systemd user timer、`paths.artifacts`、`desktop-check` 集成点
