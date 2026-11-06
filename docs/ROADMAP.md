@@ -57,6 +57,8 @@
 
 ## 3. 待做（按优先级）
 
+> **P1 已于 2026-11-06 完成**（见 §2.1「本地模型 P1 已点亮」与 §6）；本节保留其完整 runbook 作为实施记录。当前活跃待办是 P0 的 GitHub 镜像与 P3 三项，P2 整体暂缓。
+
 ### P0 对外可发现性（收尾）
 
 | 动作 | 落点 | 验收标准 | 状态 |
@@ -67,9 +69,9 @@
 | 砍掉 P3 的 Omarchy UI 差距项 | `docs/ROADMAP.md` | 待办中不含「多终端 / 编辑器 / 开发栈 / 游戏套件」 | [x] 本版 |
 | 时间轴方案改名重写为「agent 执行审计日志」 | `next-feature/agent-execution-audit.md` | 状态横幅为未实施、探针附录保留、不进待办 | [x] 本轮 |
 | 仓库 `description` / `homepage` 补齐，并同步 `flake.nix` 的 `description` | Gitee 仓库设置、`flake.nix` | 已完成（2026-11-06）：`flake.nix` 改为 agent 底座口径；Gitee description / homepage / topics 已由用户手动设置 | [x] |
-| GitHub 镜像 | 新仓库 | 与 Gitee 同步；**等 P1 跑通再公开**，避免过早放大未验证项 | [ ] |
+| GitHub 镜像 | 新仓库 | 与 Gitee 同步；**P1 已于 2026-11-06 跑通，可以公开** | [ ] 待建仓 |
 
-### P1 点亮已有模块（对应外部最强需求：本地模型 7×24 常驻）
+### P1 点亮已有模块（已完成 2026-11-06，对应外部最强需求：本地模型 7×24 常驻）
 
 > 前提认知：本地模型当前是「core dump 诊断的隐私兜底」，外部需求把它当「常驻基础设施」。**先改定位，再改代码**；`modules/agent/local-llm.nix` 默认走 CPU 变体（无 CUDA 依赖），GPU 加速为显式 opt-in，改造面很小。
 > **实施地点：`leonard`，由本机用户执行。** 步骤 1 的开关改动已在仓库落地（`hosts/leonard/default.nix`），但**验收清单全部勾完之前不视为已启用**——避免「代码已开、运行态未验」被误读；下面的顺序即验收口径。
@@ -350,3 +352,4 @@ git revert <本次 commit>               # 配置
 | 原「已完成 / 待做」的桌面功能清单并入第 2.2 与第 4 节 | 保留历史事实，但不再占据主线 |
 | 时间轴方案改名重写为 agent 执行审计日志 | 技术栈复用、叙事从「监控用户」翻转为「审计 agent」；状态仍为未实施 |
 | 措辞停用「AI-native / Recall / Copilot+ 对标」（除否定与历史语境） | 见第 1 节原则 3 |
+| P1 点亮本地模型完成（2026-11-06） | `leonard` 已 switch：ollama CPU 版 + `qwen2.5-coder:1.5b`、端点/并发、coredump 诊断、`nix flake check` 均通过 |
