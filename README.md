@@ -95,6 +95,8 @@ desktop-check                 # 19 项自检，非图形会话自动降级
 agent-commands --json         # 本机实际可用的命令清单（含 available 字段）
 ```
 
+用 ISO 安装时，`installer/install.sh` 会交互选择**预装 agent**（codebuddy / opencode / codex / claude-code / aider-chat）与**软件源**（cn / tuna / sjtu / ustc / official）；未预装的 agent 自动进入懒加载（首次运行时拉取）。非交互场景用 `--agents "codebuddy"` / `--mirror tuna`，`--yes` 不会卡在提示上。
+
 两条必须记住的约束：
 
 - **flake 只认 git 跟踪的文件**：先 `git commit` 再 install / build，未提交的改动不会进 store。
@@ -159,6 +161,18 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 `diagnostics` 在 `modules/options.nix` 中默认为 `true`；`vmware` 的 `agent.enable = false` 让整个 agent 模块不生效，`vm-virtio` 显式设为 `false`。
 
 **代码状态 ≠ 运行状态**：`leonard` 的开关已在仓库打开，但本机尚未执行 `sudo nixos-rebuild switch`，也未 `ollama pull`，因此 `ollama.service` 与 coredump 诊断链路**尚未验收**。验收口径见 `docs/ROADMAP.md` P1 的验收清单；勾完之前不要把这行当成「已交付的本地推理」。
+
+### 5.4 懒加载 agent（shim）
+
+`distro.agent.lazyAgents` 里的 agent 不进入系统包，而是部署成 `~/.local/bin/<命令>` 的 shim：
+
+- 首次运行按本仓库 `flake.lock` 构建（`nix build --out-link ~/.local/state/agent-shims/<包名>`），之后直接 exec 缓存，零求值开销；
+- 版本由 lock 固定，可回退（删缓存或回退 `flake.lock` 后重新触发）；
+- `claude-code` 是 unfree，`flake.nix` 用包名白名单单独放行，不开全局 `allowUnfree`；
+- 不依赖 `agent.enable`：`agent.enable = false` 的机器也能用（shim 是用户级脚本）；
+- 预装与懒加载不能重叠，由 `modules/assertions.nix` 与安装器差集双重拦截。
+
+当前 `vmware` 设了 `lazyAgents = [ "codex" "claude-code" "opencode" ]`；`codex` 的首次构建与运行已实测，另两个仅验证了 `drvPath` 求值。
 
 ---
 
@@ -274,18 +288,21 @@ sudo dd if=result/iso/hyprbuddy-live.iso of=/dev/sdX bs=4M status=progress oflag
 
 installer 启动后以 root 登录，分区并挂载到 `/mnt`，再执行 `installer/install.sh`（安装器不分区、不格式化）；live 镜像直接进入桌面并保留 `install-hyprbuddy` 命令。**v5 切换后 ISO 尚未重建验证。**
 
+安装器支持交互选择：预装 agent（多选，未选项进懒加载）、软件源（cn / tuna / sjtu / ustc / official）。非交互用 `--agents "codebuddy"`、`--mirror tuna`；`--dry-run` 只渲染 + 求值、不写盘。
+
 ### 9.5 常用快捷键
 
 完整列表见 `docs/KEYBINDS.md`（源文件 `home/niri/config.kdl`）：`Mod+Return`（kitty）、`Mod+D`（启动器）、`Mod+Tab`（窗口切换器）、`Mod+Shift+C/P/S`（控制中心 / 会话 / 设置）、`Mod+Shift+T`（主题选择器）、`Mod+L`（锁屏）、`Mod+V`（剪贴板历史）、`Mod+Alt+R`（录屏）、`Print`（区域截图）。
 
 ### 9.6 实测状态与注意事项
 
-| 项 | 状态（2026-11-04） |
+| 项 | 状态（2026-11-06） |
 |---|---|
 | `vmware`（x86_64，软渲染） | niri + Noctalia v5 日用中；桌面自检通过、夜间模式色温已下发；`agent.enable = false` |
 | `leonard`（GTX 1050 Ti / legacy_580） | 仅求值，未实机登录验证 v5；agent 层开启（opencode + codebuddy） |
 | `vm-virtio`（aarch64 / virtio-gpu） | 仅求值，未实机登录验证 v5；agent 层开启 |
 | install / live ISO | v5 切换后未重建 |
+| 懒加载 agent（`vmware`） | `codex` 首次构建与运行已验证（0.146.0）；`claude` / `opencode` 仅 `drvPath` 求值；安装器 `--dry-run` 四组通过，实机安装未跑 |
 
 - `flake.lock` 的 nixpkgs narHash 对应清华镜像内容；频道刷新后校验失败时执行 `nix flake update nixpkgs`。
 - SDDM 0.21 (Qt6) 的 `sddm-greeter` 符号链接处理在 `modules/desktop/hyprbuddy.nix`。

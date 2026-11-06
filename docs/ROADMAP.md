@@ -8,14 +8,14 @@
 
 | 层 | 现状 |
 |---|---|
-| 底座 | NixOS 26.05 + flake（nixpkgs 走清华 nixexprs 镜像，不依赖 GitHub） |
+| 底座 | NixOS 26.05 + flake（nixpkgs 走清华 nixexprs 镜像，不依赖 GitHub）；二进制缓存源可选 cn / tuna / sjtu / ustc / official（`distro.mirror`） |
 | 合成器 | niri 26.04（唯一提供方，滚动平铺） |
 | 外壳 | Noctalia v5（`pkgs.noctalia` 5.0.1，原生 C++，无 quickshell） |
 | 会话 | SDDM → niri；fcitx5；polkit KDE 代理；xwayland-satellite；Noctalia 自有 PAM 锁屏 |
 | 主题 | `themes/<slug>/tokens.json` 单一真相 → kitty/fuzzel 精确 16 色 + 外壳壁纸取色；10 套 |
 | 键位 | `home/niri/config.kdl` 61 条，速查见 `docs/KEYBINDS.md` |
 | 自检 | `desktop-check` 19 项（图形会话全量、非图形降级） |
-| agent 层 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成；索引见 `docs/SKILLS.md` |
+| agent 层 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成；索引见 `docs/SKILLS.md`；安装器交互选择预装 agent 与源，未选项走 shim 懒加载 |
 | 实测 | `vmware`（x86_64 软渲染）日用中；`leonard` / `vm-virtio` 仅求值；ISO 切换 v5 后未重建 |
 
 ## 1. 优先级原则
@@ -34,6 +34,7 @@
 - **权限边界**：`scripts/agent-apply` 固定四步（`git diff --stat` → `nix eval` → `nixos-rebuild build` → 打印 sudo 命令）；`sys-*` 只读或只打印；错误配置在 build 阶段暴露。
 - **技能体系**：5 个技能 / 13 篇指南的路由表与技能×命令矩阵；技能提到的命令必须在 `agent-commands list` 中存在。
 - **agent 层命令**：`sys-*` 6 条、`svc-status` / `net-status` / `power-status`、技能 `nixos-system-ops`、过时技能重写（`theme-create` / `scifi-ui`）、`diagnose-crash`。
+- **安装器与懒加载（2026-11-06）**：`installer/install.sh` 交互多选预装 agent + 软件源（`--mirror`），未选项写入 `lazyAgents`（自动差集，断言拦截重叠）；`agent-shim` 首次运行按 `flake.lock` 构建并缓存（`claude-code` 为 unfree，按包名白名单放行）；`distro.mirror` 五档（cn / tuna / sjtu / ustc / official）。`--dry-run` 四组场景已验证，实机安装待跑。
 
 ### 2.2 桌面外壳（载体）
 
@@ -285,6 +286,7 @@ git revert <本次 commit>               # 配置
 | `diagnostics` | `modules/options.nix` 默认 `true`；`leonard` 已打开（与 `localModels` 同步，运行态待验收），`vm-virtio` 显式 `false`，`vmware` 因 `agent.enable = false` 整个模块不生效 |
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
 | 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 19 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
+| 懒加载 agent | shim 已实现并在 `vmware` 验证 `codex` 全链路（构建 → 0.146.0 → 缓存）；`claude` / `opencode` 仅 `drvPath` 求值；安装器 `--dry-run` 四组通过，**实机安装未执行** |
 
 > 本表记录的是**仓库代码状态**；`leonard` 的 P1 开关已打开，但**运行态验收（switch / `ollama pull` / 端点与并发）尚未完成**，所以「本地模型」一行仍标为未交付。P1 验收清单勾完后，把运行态结论（服务活跃、tok/s、功耗）补进本表与 `README.md` §5.3。
 
