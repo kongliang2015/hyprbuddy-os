@@ -19,6 +19,20 @@
 
 ---
 
+## 截图
+
+**HyprBuddy 主题桌面**（niri 26.04 + Noctalia v5，分支 `distro/v1-nn`）
+
+<img src="assets/theme-previews/preview-7.png" alt="HyprBuddy 主题桌面：赛博坦壁纸 + Noctalia 顶栏">
+
+**Plymouth 启动画面**
+
+<img src="assets/plymouth/splash.png" alt="Plymouth 启动画面：HyprBuddy 面具 logo" width="320">
+
+> 全部 8 套主题预览见 [`assets/theme-previews/`](assets/theme-previews/)（1280×800 PNG）。
+
+---
+
 ## 1. 为什么做这个项目
 
 把 agent 放进桌面系统，常见的三种失败方式，以及本项目给出的答案：

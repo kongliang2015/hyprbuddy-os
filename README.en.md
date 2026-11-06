@@ -21,6 +21,20 @@ This is **not** an "AI-native desktop". There is no screenshot timeline, no Reca
 
 ---
 
+## Screenshots
+
+**HyprBuddy theme desktop** (niri 26.04 + Noctalia v5, branch `distro/v1-nn`)
+
+<img src="assets/theme-previews/preview-7.png" alt="HyprBuddy theme desktop: cybertron wallpaper with the Noctalia bar">
+
+**Plymouth boot splash**
+
+<img src="assets/plymouth/splash.png" alt="Plymouth boot splash: HyprBuddy mask logo" width="320">
+
+> All eight theme previews live in [`assets/theme-previews/`](assets/theme-previews/) (1280×800 PNG).
+
+---
+
 ## Why
 
 Three common failure modes when agents become part of a desktop, and the answers implemented here:
