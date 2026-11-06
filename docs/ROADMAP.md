@@ -90,7 +90,7 @@ df -h ~/.ollama /nix/store                                            # 模型 +
 systemctl status ollama --no-pager || true                             # 现在应未安装/未启用
 ```
 
-> 本机已有「`downloads.claude.ai` 不可达、构建期拉 claude-code 失败」的记录（`hosts/leonard/default.nix` 注释）。**`ollama pull` 同样要外网**：若失败，可在有网机器 `ollama pull` 后拷贝 `/var/lib/ollama/models`（NixOS `services.ollama` 用 systemd StateDirectory，非 `~/.ollama/models`），或用本地 GGUF `ollama create` 导入；不要为此改动 `agents` 列表。
+> 本机已有「`downloads.claude.ai` 不可达、构建期拉 claude-code 失败」的记录（`hosts/leonard/default.nix` 注释）。**`ollama pull` 同样要外网**：若失败，可在有网机器 `ollama pull` 后拷贝 `/var/lib/ollama/models`（NixOS `services.ollama` 用 systemd StateDirectory，非 `~/.ollama/models`），或用本地 GGUF `ollama create` 导入（两种离线方式见下文「步骤 3 备选」）；不要为此改动 `agents` 列表。
 
 **步骤 1 · 打开开关**（只改 `hosts/leonard/default.nix` 的 `distro.agent` 段）
 
@@ -139,6 +139,72 @@ systemctl status coredump-watch.path --no-pager
 ```
 
 > 诊断走 `/api/generate`（不是 OpenAI 兼容端点），报告落在 `~/.local/state/agent/coredump-report.md`；`coredump-analyze.service` 是 oneshot，触发后才运行，验收要与 `coredumpctl info` 原文交叉验证。CPU 版下显存不参与推理：先确认 1.5B 稳定，**不要直接上 7B**（RAM 占用与单次延迟都会明显上升）。
+
+**步骤 3 备选 · 离线 / 慢网导入**（`ollama pull` 慢或 registry 不可达时）
+
+模型目录固定为 `/var/lib/ollama/models`（`services.ollama.home` 默认 `/var/lib/ollama`，
+`models` 默认 `${home}/models`）。两种方式，优先 A：
+
+**A. 整目录拷贝（保留 manifest / template / 参数，最稳）**
+
+```bash
+# 源机器（已 pull 成功）
+ollama list | grep qwen2.5-coder
+sudo tar -C /var/lib/ollama -czf /tmp/ollama-models.tgz models
+ls -lh /tmp/ollama-models.tgz        # 1.5B Q4 约 1 GB
+
+# leonard
+sudo systemctl stop ollama
+sudo mkdir -p /var/lib/ollama/models
+sudo tar -C /var/lib/ollama -xzf /tmp/ollama-models.tgz
+# 服务是 DynamicUser，属主是动态 UID；按 StateDirectory 当前属主对齐
+sudo chown -R "$(stat -c %u:%g /var/lib/ollama)" /var/lib/ollama/models
+sudo systemctl start ollama
+ollama list
+```
+
+> 目录不存在时先 `sudo systemctl start ollama` 让 systemd 创建 StateDirectory，再停服务拷贝。
+> 不要写死 `chown ollama:ollama` —— `services.ollama` 默认 `DynamicUser = true`。
+
+**B. GGUF + `ollama create`（只有单个文件时用）**
+
+文件取自 `Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF` 的 `q4_k_m`（约 1 GB；
+国内可用 `HF_ENDPOINT=https://hf-mirror.com` 或 ModelScope 镜像）。
+
+```bash
+cat > /tmp/Modelfile <<EOF
+FROM /tmp/qwen2.5-coder-1.5b-instruct-q4_k_m.gguf
+TEMPLATE """{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant
+"""
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER temperature 0.7
+PARAMETER top_p 0.8
+PARAMETER repeat_penalty 1.05
+EOF
+sudo systemctl start ollama
+ollama create qwen2.5-coder:1.5b -f /tmp/Modelfile
+```
+
+> 名称必须正好 `qwen2.5-coder:1.5b`，与 `distro.agent.model` 一致。
+> `ollama create` 会把 GGUF 复制进 blobs，磁盘留约 2 GB；完成后原文件可删。
+> 手写模板不一定与官方 manifest 完全一致（影响多轮对话 / 工具调用），能用 A 就不用 B。
+
+**C. 代理（能连但慢）**
+
+```nix
+services.ollama.environmentVariables.HTTPS_PROXY = "http://127.0.0.1:7890";
+```
+
+改 `hosts/leonard/default.nix` 后 rebuild；比手动搬模型更可复现。
+
+> **不要**设 `services.ollama.loadModels`（服务启动即 `ollama pull`，又走慢网络），
+> **不要**开 `services.ollama.syncModels`（会删除未在 `loadModels` 声明的模型）。
+> 导入后用步骤 3 的 curl / `model-status --json` / `model-bench --json` 验证。
 
 **步骤 4 · 补命令与功耗观测**
 
