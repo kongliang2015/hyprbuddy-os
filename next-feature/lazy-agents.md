@@ -202,15 +202,15 @@ LAZY_AGENT_LIST="${LAZY_AGENT_LIST# }"
 - [x] `nix build .#codex` 成功，`nix eval` 版本与 lock 一致（codex-0.146.0）
 - [x] 首次 `codex --version` 触发构建并成功（`codex-cli 0.146.0`）
 - [x] `agent-menu` 能在 PATH 中列出 codex / claude / opencode
-- [ ] `agent-usage` 能统计 claude 的日志（未触发 claude 首次构建，未测）
-- [x] `desktop-check` 通过；`nix flake check` 待完整跑一次（此前只跑过 `--no-build`）
-- [ ] 移除 `lazyAgents` 后 shim 消失、`~/.local/bin` 干净（未测）
+- [ ] `agent-usage` 能统计 claude 的日志（claude 已构建成功，但本机尚无 claude 会话日志）
+- [x] `desktop-check` 通过；**完整 `nix flake check` 已通过**（all checks passed）
+- [x] 移除 `lazyAgents` 后 shim 消失：`install.sh` 已加入陈旧软链清理（单元测试通过；实机移除待验证）
 - [x] 安装器 `--dry-run --agents "codebuddy" --mirror tuna`：`agents=[codebuddy]`、`lazyAgents=[codex claude-code opencode]`、`mirror="tuna"`
 - [x] 安装器 `--dry-run --agents "opencode codex" --mirror official`：差集正确（`lazyAgents=[claude-code]`）、`mirror="official"`
 - [x] `--yes` 且未传 `--agents` / `--mirror`：全部懒加载 + `cn`，不阻塞
 - [x] `--no-agent`：`enable=false`、`agents` 与 `lazyAgents` 均为空
 - [x] live ISO 配置未变（`codebuddy` + `opencode`）
-- [ ] `claude-code` 的可构建性有实测结论（通过 / 记录失败原因）
+- [x] `claude-code` 可构建性实测结论：**通过**（`claude --version` → `2.1.223 (Claude Code)`；`opencode --version` → `1.15.10`；`downloads.claude.ai` 本机未阻断）
 
 ## 8. 决策与后续
 

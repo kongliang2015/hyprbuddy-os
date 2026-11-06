@@ -1,6 +1,6 @@
 # 海外用户镜像源适配评估（live ISO 安装）
 
-> **状态：方案 C 已实施（2026-11-06，代码；ISO 构建待验证）** · 评估基准 `hyprbuddy-os` @ `10f5df3`
+> **状态：方案 C 已实施（2026-11-06；完整 ISO 构建已通过，实机安装待验证）** · 评估基准 `hyprbuddy-os` @ `10f5df3`
 > `next-feature/` 存放**尚未落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md`
 > 的技能数、不随 `install.sh` 部署。现状说明以 `docs/ROADMAP.md` 与 `docs/INDEX.md` 为准。
 >
@@ -78,7 +78,7 @@
 
 | 文件 | 改动 |
 |---|---|
-| `installer/iso-config.nix` / `live-iso-config.nix` | 新增 `nixpkgsPkg`：把 `pkgs.path` 硬链接到 `share/hyprbuddy-nixpkgs`（不额外占 store）；加入 `environment.systemPackages` |
+| `installer/iso-config.nix` / `live-iso-config.nix` | 新增 `nixpkgsPkg`：复制 `pkgs.path` 到 `share/hyprbuddy-nixpkgs` 并 `chmod -R u+w`；加入 `environment.systemPackages`。**首次用 `cp -al` 硬链接在构建沙箱里失败**（回退 `cp -r` 无法覆盖只读文件，Permission denied），已改为直接复制 |
 | `installer/install.sh` | 自动检测 `/run/current-system/sw/share/hyprbuddy-nixpkgs`（或 `$here/nixpkgs`）；备份 `flake.lock` → `nix flake lock --override-input nixpkgs path:…` → 安装后用备份恢复 |
 
 验证：
@@ -86,14 +86,20 @@
 - `nix flake lock --override-input nixpkgs path:<nixpkgs source>` 后 `narHash` 与 `flake.lock` **完全一致**（`sha256-OtQ9…`），不换版本；
 - `unshare -r` + `NIXPKGS_LOCAL=<source>` 跑 dry-run：计划显示「使用 ISO 内置 nixpkgs」，override 成功，`nix eval` 求值通过；
 - 恢复后 `flake.lock` 与仓库版本 `diff` 一致；
-- 两个 ISO 的 `drvPath` 求值通过，`nix flake check --no-build` 通过。
+- 两个 ISO 的 `drvPath` 求值通过，`nix flake check --no-build` 通过；
+- **完整 `nix flake check` 通过**（含内核模块构建，31 分钟）；
+- **完整 live ISO 构建通过**：`nix build .#packages.x86_64-linux.liveIso` → `EXIT=0`，产物 `hyprbuddy-live.iso` **3.6 GiB**。
+  首次构建失败，根因是 `nixpkgsPkg` 用 `cp -al` 硬链接到只读 store 文件：部分成功后回退 `cp -r`
+  无法覆盖只读文件（Permission denied）；已改为直接 `cp -r` + `chmod -R u+w`。
+  **代价**：内置的是 nixpkgs 完整源码（约 485 MiB），ISO 达 3.6 GiB，比预期 +100 MiB 大得多；
+  后续可优化为只放 nixexprs tarball（38 MiB）或软链到 store，见 §7 待确认。
 
 ## 6. 建议分阶段
 
 | 阶段 | 内容 | 成本 |
 |---|---|---|
 | 现在 | README 增加「海外安装」小节：`--mirror official`、flake 输入手动替换方法、已知限制 | 文档 |
-| 中期 | 方案 C（ISO 预置 nixpkgs）；之后海外只剩 binary cache 选择 | **代码已实施（2026-11-06）**；ISO 构建待验证 |
+| 中期 | 方案 C（ISO 预置 nixpkgs）；之后海外只剩 binary cache 选择 | **代码已实施 + 完整 ISO 构建通过（2026-11-06，3.6G）**；实机安装待验证 |
 | 可选 | 方案 E（codebuddy npm 双变体） | 构建脚本 + 双版本维护 |
 
 ## 7. 待确认技术点

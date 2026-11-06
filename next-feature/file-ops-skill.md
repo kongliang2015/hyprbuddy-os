@@ -63,9 +63,12 @@ agent 应查 `agent-commands paths`，不要按中英文目录名做假设。
 
 **P1 备份可查可恢复**
 
+> **已决策（2026-11-06）**：恢复走 `install.sh` 重新部署，**不直接 `mv` 覆盖 `~/.config` 下的 store 软链**（避免与「不改 store 软链」铁律冲突）。
+> `backup-restore` 降级为只读：只打印恢复步骤 / 所需命令，`@effect` 标只读。
+
 - `backup-list`（拟）：列 `~/.config.bak-*` 的时间戳、文件数、与当前软链的对应关系；只读。
-- `backup-restore <stamp> [--dry-run]`（拟）：显式恢复，默认 dry-run 只打印将执行的 `mv`。
-- 两条按 `@command` 头部进 `commands.json`，`@effect` 标明写 `~/.config`；**不提供删除备份**。
+- `backup-restore <stamp> [--dry-run]`（拟）：打印 `./install.sh --host <host> --yes` 等恢复步骤；默认 dry-run，不执行写操作。
+- 两条按 `@command` 头部进 `commands.json`；**不提供删除备份**。
 
 **P2 存储介质只读视图**
 

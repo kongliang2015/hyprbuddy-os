@@ -17,10 +17,11 @@ let
   '';
 
   # ISO 内置 nixpkgs 源码：安装时用 path: 覆盖 flake 输入，避免安装阶段依赖网络。
+  # 不用 cp -al：构建沙箱里硬链接部分成功后回退 cp -r 无法覆盖只读文件（Permission denied）。
   nixpkgsPkg = pkgs.runCommand "hyprbuddy-nixpkgs-src" { } ''
     mkdir -p $out/share/hyprbuddy-nixpkgs
-    cp -al ${pkgs.path}/. $out/share/hyprbuddy-nixpkgs/ 2>/dev/null \
-      || cp -r ${pkgs.path}/. $out/share/hyprbuddy-nixpkgs/
+    cp -r ${pkgs.path}/. $out/share/hyprbuddy-nixpkgs/
+    chmod -R u+w $out/share/hyprbuddy-nixpkgs
   '';
 
   # 复用发行版的用户级 dotfiles（linkFarm，结构对齐 ~/.config + ~/.local/bin）

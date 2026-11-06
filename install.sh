@@ -50,6 +50,24 @@ fi
 stamp="$(date +%Y%m%d-%H%M%S)"
 backup="$HOME/.config.bak-$stamp"
 
+# 清理上一代 linkFarm 遗留的软链：仅 ~/.local/bin 里指向「其它 user-config / agent-shim
+# store」的链接。本次 $out 的路径保留（下面会重新 ln -sfn）；用户自己放的真实文件、
+# 指向其它 store 的链接都不动。这样移除 lazyAgents / 命令后 shim 会真正消失。
+echo "==> 清理陈旧部署软链"
+cleaned=0
+for l in "$HOME/.local/bin/"*; do
+  [ -L "$l" ] || continue
+  target="$(readlink "$l")"
+  case "$target" in
+    "$out"/*) continue ;;
+    /nix/store/*-user-config-*|/nix/store/*-agent-shim-*)
+      rm -f "$l"
+      cleaned=$((cleaned + 1))
+      echo "  清理 ${l#$HOME/} -> $target" ;;
+  esac
+done
+[ "$cleaned" -gt 0 ] && echo "  共清理 $cleaned 个" || echo "  无陈旧软链"
+
 echo "==> 链接配置"
 while IFS= read -r rel; do
   case "$rel" in

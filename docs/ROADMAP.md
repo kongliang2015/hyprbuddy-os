@@ -35,7 +35,7 @@
 - **技能体系**：5 个技能 / 13 篇指南的路由表与技能×命令矩阵；技能提到的命令必须在 `agent-commands list` 中存在。
 - **agent 层命令**：`sys-*` 6 条、`svc-status` / `net-status` / `power-status`、技能 `nixos-system-ops`、过时技能重写（`theme-create` / `scifi-ui`）、`diagnose-crash`。
 - **安装器与懒加载（2026-11-06）**：`installer/install.sh` 交互多选预装 agent + 软件源（`--mirror`），未选项写入 `lazyAgents`（自动差集，断言拦截重叠）；`agent-shim` 首次运行按 `flake.lock` 构建并缓存（`claude-code` 为 unfree，按包名白名单放行）；`distro.mirror` 五档（cn / tuna / sjtu / ustc / official）。`--dry-run` 四组场景已验证，实机安装待跑。
-- **ISO 离线安装（2026-11-06）**：installer / live ISO 内置 nixpkgs 源码（硬链接，不额外占 store），安装时用 `path:` 覆盖 flake 输入并本地 lock，安装后恢复原 lock；narHash 与 `flake.lock` 一致，不换版本。`--dry-run` 已验证 override 与恢复，**ISO 未重建验证**。
+- **ISO 离线安装（2026-11-06）**：installer / live ISO 内置 nixpkgs 源码（复制 `pkgs.path` + `chmod -R u+w`；首次用 `cp -al` 在构建沙箱里因只读权限失败，已修），安装时用 `path:` 覆盖 flake 输入并本地 lock，安装后恢复原 lock；narHash 与 `flake.lock` 一致，不换版本。`--dry-run` 已验证 override 与恢复；**完整 ISO 构建已通过**（live ISO 3.6G；首次 `cp -al` 权限失败已修）。
 
 ### 2.2 桌面外壳（载体）
 
@@ -260,7 +260,7 @@ git revert <本次 commit>               # 配置
 |---|---|---|---|
 | 将 `skills/` + `commands.json` 抽成**可移植规范**：任意 NixOS 可导入，不绑定本仓库 flake | `lib/commands.nix`、`skills/` | 干净 NixOS 上用一份 flake 导入即可获得命令与技能；直接回答「更新通道锁定」的批评 | [ ] |
 | CI：`nix flake check` + `commands.json` schema 校验 + ISO 构建 | `flake.nix`、CI 配置 | PR 自动跑，`desktop-check` 降级路径不报错 | [ ] |
-| append-only **agent 执行审计日志**（方向，见下方遗留清单） | 评估见 `next-feature/agent-execution-audit.md` | 推进前须先定采集边界与隐私策略；若推进，验收为每次 `agent-apply` 与写操作留痕、可导出 JSONL | [ ] |
+| append-only **agent 执行审计日志**（方向，见下方遗留清单） | 评估见 `next-feature/agent-execution-audit.md` | 采集边界已定（最小方案）；若推进，验收为每次 `agent-apply` 与写操作留痕、可导出 JSONL | [ ] |
 
 > P3 第三项及 `next-feature/` 的其余遗留任务统一登记在下方「遗留清单」；**登记不等于排期**，决定推进时再转入 P0–P3 正式待办。
 
@@ -272,22 +272,22 @@ git revert <本次 commit>               # 配置
 
 | 来源 | 类型 | 遗留任务 | 状态 |
 |---|---|---|---|
-| `lazy-agents.md` | 验证 | `claude` / `opencode` 首次实际构建（含 `downloads.claude.ai` 可达性结论） | 待验证 |
-| `lazy-agents.md` | 验证 | `agent-usage` 统计 claude 日志 | 待验证 |
-| `lazy-agents.md` | 验证 | `nix flake check` 完整跑一次（此前仅 `--no-build`） | 待验证 |
-| `lazy-agents.md` | 实施 | `install.sh` 清理陈旧软链，使「移除 `lazyAgents` 后 shim 消失」成立（当前不成立） | 待实施 |
-| `overseas-mirrors.md` | 文档 | README「海外安装」小节：`--mirror official`、flake 输入手动替换、已知限制 | 待实施 |
-| `overseas-mirrors.md` | 验证 | 完整 ISO 构建（`cp -al` 可行性 / 镜像增重）与实机安装流程 | 待验证 |
-| `overseas-mirrors.md` | 验证 | 双区域回归：`nix flake check` / `desktop-check` / 三类 host 求值 | 待验证 |
+| `lazy-agents.md` | 验证 | `claude` / `opencode` 首次实际构建（含 `downloads.claude.ai` 可达性结论） | **已完成**（`claude-code 2.1.223`、`opencode 1.15.10`；本机未阻断） |
+| `lazy-agents.md` | 验证 | `agent-usage` 统计 claude 日志 | 待验证（尚无 claude 会话日志） |
+| `lazy-agents.md` | 验证 | `nix flake check` 完整跑一次（此前仅 `--no-build`） | **已完成**（all checks passed，含内核模块构建） |
+| `lazy-agents.md` | 实施 | `install.sh` 清理陈旧软链，使「移除 `lazyAgents` 后 shim 消失」成立 | **已实施**（单元测试通过；实机移除待验证） |
+| `overseas-mirrors.md` | 文档 | README「海外安装」小节：`--mirror official`、flake 输入手动替换、已知限制 | **已完成** |
+| `overseas-mirrors.md` | 验证 | 完整 ISO 构建（`cp -al` 可行性 / 镜像增重）与实机安装流程 | **构建已完成**（live ISO 3.6G；`cp -al` 在构建沙箱不可行，已改 `cp -r` + `chmod`）；实机安装待验证 |
+| `overseas-mirrors.md` | 验证 | 双区域回归：`nix flake check` / `desktop-check` / 三类 host 求值 | **已完成**（求值层面；五档 `distro.mirror` 与三类 host 求值均通过） |
 | `overseas-mirrors.md` | 实施 | 方案 E：`codebuddy` npm 双变体（改 lock + 重算 `npmDepsHash`） | 待实施 |
 | `overseas-mirrors.md` | 边界 | 装完后日常 rebuild 仍走清华；根治需另做 flake 输入切换（方案 B） | 未排期 |
-| `file-ops-skill.md` | 决策前置 | `backup-restore` 语义（与「不改 `~/.config` store 软链」冲突，优先走 `install.sh`） | 待决策 |
+| `file-ops-skill.md` | 决策 | `backup-restore` 语义（与「不改 `~/.config` store 软链」冲突） | **已决策（2026-11-06）**：恢复走 `install.sh` 重新部署，`backup-restore` 只打印恢复步骤、不直接 `mv`；实施待排期 |
 | `file-ops-skill.md` | 实施 | P1 `backup-list` / `backup-restore`、P2 `storage-status`、P3 薄指南（同步 SKILLS.md / INDEX） | 待实施 |
-| `agent-execution-audit.md` | 决策前置 | §5 采集边界与隐私策略（最小方案 vs 全量宿主 hook） | 待决策 |
+| `agent-execution-audit.md` | 决策 | §5 采集边界与隐私策略 | **已决策（2026-11-06）**：最小方案（只 `agent-apply` + `@effect` 非空命令 + `install.sh`）；实施待排期 |
 | `agent-execution-audit.md` | 前置 | 等 P1 本地模型与端点稳定后再引入 | 未排期 |
 | `agent-execution-audit.md` | 实施 | 事件采集（含失败 / 回滚）、`audit-export` JSONL、技能沙箱校验和、`desktop-check` 增补、无回摆检索 | 待实施 |
 
-**建议顺序**：① 零成本验证（`claude` / `opencode` 首次构建、完整 `nix flake check`、ISO 构建、双区域回归）→ ② 决策前置（采集边界、`backup-restore` 语义、陈旧软链清理）→ ③ 实施（README 海外小节 → 3 条命令 + 指南 → 审计链路 → npm 双变体）。
+**建议顺序（2026-11-06 进度）**：① 验证基本完成（剩 `agent-usage` 日志、实机安装）→ ② 决策已完成（采集边界最小方案、`backup-restore` 走 `install.sh`；陈旧软链清理已实施）→ ③ 实施（README 海外小节已完成；剩 3 条命令 + 指南 → 审计链路 → npm 双变体）。
 
 ## 4. 桌面外壳维护（低优先级 / 暂缓）
 
@@ -315,7 +315,7 @@ git revert <本次 commit>               # 配置
 | 实测覆盖 | 只有 `vmware` 日用；`leonard` / `vm-virtio` 仅求值；ISO 未重建 |
 | 数字 | 28 命令 / 5 技能 / 61 键位 / 10 主题 / 19 项 `desktop-check`，按 `docs/INDEX.md` 第 4 节约定实测核对 |
 | 懒加载 agent | shim 已实现并在 `vmware` 验证 `codex` 全链路（构建 → 0.146.0 → 缓存）；`claude` / `opencode` 仅 `drvPath` 求值；安装器 `--dry-run` 四组通过，**实机安装未执行** |
-| ISO 离线安装 | 代码已实现（ISO 内置 nixpkgs + 安装时 `path:` override/恢复）；`--dry-run` 验证 override 与 lock 恢复；**ISO 未重建验证** |
+| ISO 离线安装 | 代码已实现（ISO 内置 nixpkgs + 安装时 `path:` override/恢复）；`--dry-run` 验证 override 与 lock 恢复；**完整 ISO 构建已通过**（live ISO 3.6G，首次 `cp -al` 权限失败已修）；**实机安装未执行** |
 
 > 本表记录的是**仓库代码状态**；`leonard` 的 P1 开关已打开，但**运行态验收（switch / `ollama pull` / 端点与并发）尚未完成**，所以「本地模型」一行仍标为未交付。P1 验收清单勾完后，把运行态结论（服务活跃、tok/s、功耗）补进本表与 `README.md` §5.3。
 

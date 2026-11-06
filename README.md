@@ -292,6 +292,12 @@ installer 启动后以 root 登录，分区并挂载到 `/mnt`，再执行 `inst
 
 ISO 还内置了 nixpkgs 源码：安装阶段用 `path:` 覆盖 flake 输入（narHash 与 `flake.lock` 一致，不换版本），因此**安装不依赖 flake 输入网络**；装完后仍按 lock 的默认源重建。
 
+#### 海外安装
+
+- **安装阶段**：ISO 内置 nixpkgs，不依赖清华镜像；二进制缓存用 `--mirror official` 走 `cache.nixos.org`。
+- **装完后**：目标系统的 `flake.lock` 仍指向清华 nixexprs，首次 `nixos-rebuild` 会拉它。若不可达，手动改 `flake.nix` 的两个输入 URL 并 `nix flake lock --update-input nixpkgs --update-input nixpkgs-unstable`（**会换 nixpkgs 版本**，见 `next-feature/overseas-mirrors.md`）。
+- **已知限制**：`codebuddy` 的 npm 依赖构建期固定走 npmmirror，海外构建可能慢；`claude-code` 首次运行需 `downloads.claude.ai`；`codex` / `opencode` 源码在 GitHub（缓存未命中时才需要）。
+
 ### 9.5 常用快捷键
 
 完整列表见 `docs/KEYBINDS.md`（源文件 `home/niri/config.kdl`）：`Mod+Return`（kitty）、`Mod+D`（启动器）、`Mod+Tab`（窗口切换器）、`Mod+Shift+C/P/S`（控制中心 / 会话 / 设置）、`Mod+Shift+T`（主题选择器）、`Mod+L`（锁屏）、`Mod+V`（剪贴板历史）、`Mod+Alt+R`（录屏）、`Print`（区域截图）。
