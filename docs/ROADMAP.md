@@ -291,7 +291,9 @@ git revert <本次 commit>               # 配置
 | `agent-execution-audit.md` | 前置 | 等 P1 本地模型与端点稳定后再引入 | 暂缓 |
 | `agent-execution-audit.md` | 实施 | 事件采集（含失败 / 回滚）、`audit-export` JSONL、技能沙箱校验和、`desktop-check` 增补、无回摆检索 | **暂缓**（A1 决策已定，实施暂缓） |
 
-**建议顺序（2026-11-06 进度）**：① 验证基本完成（剩 `agent-usage` 日志、实机安装）→ ② 决策已完成（采集边界最小方案、`backup-restore` 走 `install.sh`；陈旧软链清理已实施；**两个决策的实施暂缓**）→ ③ 实施（README 海外小节已完成；npm 双变体仍待实施；3 条命令 + 指南、审计链路暂缓）。
+- **实现遗留（非 next-feature 评估）**：`vm-virtio`（aarch64）原生 `codebuddy` 包实机构建验证 —— **暂缓**（本机无 binfmt；`Linux_arm64` 制品 URL 已验证存在，需 aarch64 实机）。
+
+**建议顺序（2026-11-06 进度）**：① 验证基本完成（剩 `agent-usage` 日志、实机安装）→ ② 决策已完成（采集边界最小方案、`backup-restore` 走 `install.sh`；陈旧软链清理已实施；**两个决策的实施暂缓**）→ ③ 实施（README 海外小节已完成；npm 双变体已撤回、`codebuddy` 改用原生构建；3 条命令 + 指南、审计链路暂缓）。
 
 ## 4. 桌面外壳维护（低优先级 / 暂缓）
 
