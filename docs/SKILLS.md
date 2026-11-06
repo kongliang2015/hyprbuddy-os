@@ -17,9 +17,9 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 | `scifi-ui` | 科幻风视觉规范 | "做成 HUD 风格"、改 SDDM/kitty/fuzzel 观感 | — |
 | `diagnose-crash` | 崩溃 / core dump 分析 | 进程段错误、系统崩了 | — |
 
-> 注：`~/.codebuddy/skills/` 下还可能看到宿主 / CodeBuddy 内置的 `cosmic-ux` 技能
-> （COSMIC 时代残留，COSMIC 已退役）。它**不在本仓库**、不随 `install.sh` 部署，
-> 不属于上表 5 个技能，不要按本表路由使用。
+> 注：`~/.codebuddy/skills/` 应恰好是上表 5 个技能。COSMIC 时代残留的 `cosmic-ux`
+> （不在本仓库、不随 `install.sh` 部署）已于 2026-11-06 移到 `~/.codebuddy/skills-retired/`；
+> 若再看到未列出的技能目录，按「维护约定」核实来源后移除。
 
 ## 2. 怎么选
 
@@ -112,6 +112,7 @@ agent 层分两半：**命令**回答"能做什么"（`agent-commands --json` �
 | 死引用检查 | 组件退役后，`grep -rn "已删组件名" skills/` 必须为 0（或在"已退役"清单里） |
 | 命令一致性 | 技能里提到的命令必须存在于 `agent-commands list` |
 | 新增技能 | 同步更新本文第 1、2、3 节与 `nixos-desktop-settings` 的分工表 |
+| 技能退役 | 从 `skills/` 删除 → `./install.sh` → 把 `~/.codebuddy/skills/<name>` 移到 `~/.codebuddy/skills-retired/`（`install.sh` 只清理 `~/.local/bin` 的陈旧软链，不管技能目录） |
 
 ## 6. 命令全景（28 条）
 
