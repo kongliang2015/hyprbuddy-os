@@ -16,6 +16,13 @@ let
     cp -r ${src}/. $out/share/hyprbuddy-os
   '';
 
+  # ISO 内置 nixpkgs 源码：安装时用 path: 覆盖 flake 输入，避免安装阶段依赖网络。
+  nixpkgsPkg = pkgs.runCommand "hyprbuddy-nixpkgs-src" { } ''
+    mkdir -p $out/share/hyprbuddy-nixpkgs
+    cp -al ${pkgs.path}/. $out/share/hyprbuddy-nixpkgs/ 2>/dev/null \
+      || cp -r ${pkgs.path}/. $out/share/hyprbuddy-nixpkgs/
+  '';
+
   # 复用发行版的用户级 dotfiles（linkFarm，结构对齐 ~/.config + ~/.local/bin）
   userConfig = import ../home/default.nix {
     inherit (pkgs) lib;
@@ -53,6 +60,7 @@ in
     pciutils
     vim
     srcPkg
+    nixpkgsPkg
     (writeShellScriptBin "install-hyprbuddy" ''
       echo "repo: ${srcPkg}/share/hyprbuddy-os" >&2
       exec ${srcPkg}/share/hyprbuddy-os/installer/install.sh "$@"

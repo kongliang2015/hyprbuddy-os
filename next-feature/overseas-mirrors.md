@@ -1,6 +1,6 @@
 # 海外用户镜像源适配评估（live ISO 安装）
 
-> **状态：未实施（2026-11-06 评估）** · 评估基准 `hyprbuddy-os` @ `10f5df3`
+> **状态：方案 C 已实施（2026-11-06，代码；ISO 构建待验证）** · 评估基准 `hyprbuddy-os` @ `10f5df3`
 > `next-feature/` 存放**尚未落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md`
 > 的技能数、不随 `install.sh` 部署。现状说明以 `docs/ROADMAP.md` 与 `docs/INDEX.md` 为准。
 >
@@ -17,6 +17,9 @@
 `nixos-install --flake` 必须拉 `flake.lock` 里写死的清华 nixexprs，海外网络下可能直接失败。
 推荐两步走：先补文档与 `--mirror official` 指引（止血）；中期做「ISO 预置 nixpkgs」
 （方案 C），把安装对 flake 输入的依赖去掉，之后「中国 / 海外」只剩一个二进制缓存开关。
+
+**2026-11-06 进展**：方案 C 的代码已落地（ISO 预置 + 安装时 override + 安装后恢复），
+`--dry-run` 端到端验证通过；完整 ISO 构建与实机安装仍待验证。
 
 ## 2. 现状盘点
 
@@ -71,17 +74,31 @@
    需要在安装计划里显示 ISO 内的 nixpkgs 版本，避免「装完和仓库对不上」的困惑。
 4. **体积**：ISO 约 +38 MiB；安装阶段临时解压需要约 257 MiB 空间（目标盘已挂载，通常够）。
 
+**实施记录（2026-11-06）**
+
+| 文件 | 改动 |
+|---|---|
+| `installer/iso-config.nix` / `live-iso-config.nix` | 新增 `nixpkgsPkg`：把 `pkgs.path` 硬链接到 `share/hyprbuddy-nixpkgs`（不额外占 store）；加入 `environment.systemPackages` |
+| `installer/install.sh` | 自动检测 `/run/current-system/sw/share/hyprbuddy-nixpkgs`（或 `$here/nixpkgs`）；备份 `flake.lock` → `nix flake lock --override-input nixpkgs path:…` → 安装后用备份恢复 |
+
+验证：
+
+- `nix flake lock --override-input nixpkgs path:<nixpkgs source>` 后 `narHash` 与 `flake.lock` **完全一致**（`sha256-OtQ9…`），不换版本；
+- `unshare -r` + `NIXPKGS_LOCAL=<source>` 跑 dry-run：计划显示「使用 ISO 内置 nixpkgs」，override 成功，`nix eval` 求值通过；
+- 恢复后 `flake.lock` 与仓库版本 `diff` 一致；
+- 两个 ISO 的 `drvPath` 求值通过，`nix flake check --no-build` 通过。
+
 ## 6. 建议分阶段
 
 | 阶段 | 内容 | 成本 |
 |---|---|---|
 | 现在 | README 增加「海外安装」小节：`--mirror official`、flake 输入手动替换方法、已知限制 | 文档 |
-| 中期 | 方案 C（ISO 预置 nixpkgs）；之后海外只剩 binary cache 选择 | 改 ISO 构建 + 安装器 |
+| 中期 | 方案 C（ISO 预置 nixpkgs）；之后海外只剩 binary cache 选择 | **代码已实施（2026-11-06）**；ISO 构建待验证 |
 | 可选 | 方案 E（codebuddy npm 双变体） | 构建脚本 + 双版本维护 |
 
 ## 7. 待确认技术点
 
-- `path:` 输入在无 `.git` 的 `$work/src` 里执行 `nix flake lock` 的行为（需实测）。
+- ~~`path:` 输入在无 `.git` 的 `$work/src` 里执行 `nix flake lock` 的行为~~（已实测：成功，narHash 一致）。
 - ISO 预置后 `nixos-install` 的求值路径与 `flake.lock` 生成位置。
 - 双区域切换后的回归范围（`nix flake check` / `desktop-check` / 三类 host 求值）。
 - `codebuddy` 换 npm 源后 `npmDepsHash` 重算与构建验证（约 30 个依赖包）。

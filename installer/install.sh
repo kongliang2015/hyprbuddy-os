@@ -73,6 +73,15 @@ rm -f "$detect_env"
 : "${HOST_NAME:=${HOSTNAME:-nixos}}"
 : "${USER_NAME:=${SUDO_USER:-nixos}}"
 
+# ISO 内置 nixpkgs：安装阶段用 path: 覆盖 flake 输入，避免依赖 flake 输入网络。
+# ISO 内的 nixpkgs 就是 flake.lock 锁定的那一份（narHash 一致），不会换版本。
+NIXPKGS_LOCAL="${NIXPKGS_LOCAL:-}"
+if [ -z "$NIXPKGS_LOCAL" ]; then
+  for p in /run/current-system/sw/share/hyprbuddy-nixpkgs "$here/nixpkgs"; do
+    if [ -f "$p/flake.nix" ]; then NIXPKGS_LOCAL="$p"; break; fi
+  done
+fi
+
 # 交互选择预装 agent（--yes 或非 TTY 时跳过，走 --agents / 全懒加载）
 if [ "$ASSUME_YES" -ne 1 ] && [ -t 0 ]; then
   printf "\n可选 agent：%s\n" "$AGENT_CANDIDATES"
@@ -126,6 +135,7 @@ cat <<EOF
   预装 agent : ${AGENT_LIST:-（无，全部懒加载）}
   懒加载     : ${LAZY_AGENT_LIST:-（无）}
   软件源     : $MIRROR
+  nixpkgs    : ${NIXPKGS_LOCAL:-网络（flake.lock）}
   agent 层   : $AGENT_ENABLE
 EOF
 
@@ -158,6 +168,12 @@ else
     > "$work/src/hosts/$HOST_NAME/hardware-configuration.nix"
 fi
 
+if [ -n "$NIXPKGS_LOCAL" ]; then
+  say "使用 ISO 内置 nixpkgs（离线解析 flake 输入）"
+  cp "$work/src/flake.lock" "$work/flake.lock.orig"
+  ( cd "$work/src" && nix flake lock --override-input nixpkgs "path:$NIXPKGS_LOCAL" >/dev/null 2>&1 )
+fi
+
 say "渲染 host 配置"
 export HOSTNAME="$HOST_NAME" USERNAME="$USER_NAME" GPU_VENDOR BOOTLOADER WINDOWS_ENTRY \
        NVIDIA_PCI_IDS EXTRA_SESSIONS="$SESSIONS" BATTERY BACKLIGHT \
@@ -176,6 +192,11 @@ fi
 
 say "安装 NixOS（nixos-install --flake）"
 nixos-install --flake "path:$work/src#$HOST_NAME" --root "$TARGET" --no-root-passwd
+
+if [ -f "$work/flake.lock.orig" ]; then
+  cp "$work/flake.lock.orig" "$work/src/flake.lock"
+  say "已恢复 flake.lock（目标系统仍用默认源，版本与 ISO 内一致）"
+fi
 
 say "把仓库放进新系统，便于日后重建"
 mkdir -p "$TARGET/home/$USER_NAME"

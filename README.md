@@ -290,6 +290,8 @@ installer 启动后以 root 登录，分区并挂载到 `/mnt`，再执行 `inst
 
 安装器支持交互选择：预装 agent（多选，未选项进懒加载）、软件源（cn / tuna / sjtu / ustc / official）。非交互用 `--agents "codebuddy"`、`--mirror tuna`；`--dry-run` 只渲染 + 求值、不写盘。
 
+ISO 还内置了 nixpkgs 源码：安装阶段用 `path:` 覆盖 flake 输入（narHash 与 `flake.lock` 一致，不换版本），因此**安装不依赖 flake 输入网络**；装完后仍按 lock 的默认源重建。
+
 ### 9.5 常用快捷键
 
 完整列表见 `docs/KEYBINDS.md`（源文件 `home/niri/config.kdl`）：`Mod+Return`（kitty）、`Mod+D`（启动器）、`Mod+Tab`（窗口切换器）、`Mod+Shift+C/P/S`（控制中心 / 会话 / 设置）、`Mod+Shift+T`（主题选择器）、`Mod+L`（锁屏）、`Mod+V`（剪贴板历史）、`Mod+Alt+R`（录屏）、`Print`（区域截图）。
