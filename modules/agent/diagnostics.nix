@@ -17,8 +17,13 @@ let
 
     payload=$(${pkgs.jq}/bin/jq -n \
       --arg m ${lib.escapeShellArg cfg.model} \
-      --arg p "请分析下面这条 Linux core dump，给出崩溃原因与可执行的修复建议，控制在 300 字内：
-$info" \
+      --arg p "你是一名 Linux 崩溃诊断助手。下面是一条 core dump 的元数据与栈。
+请只输出两部分：「崩溃原因」与「修复建议」，总计不超过 300 字。
+不要复述本段说明，不要输出「控制在 300 字内」这类指令原文。
+
+--- core dump 开始 ---
+$info
+--- core dump 结束 ---" \
       '{model: $m, prompt: $p, stream: false}')
 
     resp=$(${pkgs.curl}/bin/curl -sS --max-time 180 \
