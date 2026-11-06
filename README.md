@@ -11,7 +11,7 @@
 | Agent 能力 | **28 条命令 + 5 个技能**，`commands.json`（schema 1）构建期生成 |
 | 分支 | `distro/v1-nn`（当前）；`distro/v1-cosmic`（Hyprland + COSMIC，2026-10-28 退役） |
 | 实测 | `vmware`（x86_64 软渲染）日用中；`leonard` / `vm-virtio` 仅求值；install/live ISO 切换 v5 后未重建 |
-| 镜像依赖 | nixpkgs 走清华 nixexprs 镜像，**不依赖 GitHub** |
+| 镜像依赖 | flake 输入走清华 nixexprs；二进制缓存默认国内三镜像；个别包源码在 GitHub（`codex` / `opencode`），缓存未命中时才需要 |
 | 许可 | Apache-2.0 |
 | 文档 | 2026-11-05 按「对外可复现的 agent 底座」定位重排；文档总入口 `docs/INDEX.md` |
 
@@ -74,7 +74,7 @@
 
 ## 3. 快速开始（复现路径）
 
-前置：一台 NixOS 26.05 机器（或由本仓库 ISO 安装）、启用 `nix-command` 与 `flakes`、`git`；可访问 `mirrors.tuna.tsinghua.edu.cn`。
+前置：一台 NixOS 26.05 机器（或由本仓库 ISO 安装）、启用 `nix-command` 与 `flakes`、`git`；国内网络默认可访问 `mirrors.tuna.tsinghua.edu.cn`。用 ISO 安装时 nixpkgs 已内置（不依赖该镜像）；海外或其它网络可用 `--mirror official` 切二进制缓存。
 
 ```bash
 git clone https://gitee.com/lele2015/hyprbuddy-os.git
