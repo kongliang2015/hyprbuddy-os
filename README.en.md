@@ -11,7 +11,7 @@ This is **not** an "AI-native desktop". There is no screenshot timeline, no Reca
 | Base | NixOS 26.05 (flake) · niri 26.04 (only session) · Noctalia v5 (`pkgs.noctalia` 5.0.1, native C++) |
 | Agent layer | **28 commands + 5 skills**, `commands.json` (schema 1) generated at build time |
 | Branch | `distro/v1-nn` (current); `distro/v1-cosmic` (Hyprland/COSMIC, retired 2026-10-28) |
-| Verified | `vmware` (x86_64, software rendering) in daily use; `leonard` / `vm-virtio` evaluated only; ISO not rebuilt since v5 |
+| Verified | `vmware` (x86_64, software rendering) in daily use; `leonard` / `vm-virtio` evaluated only; live ISO rebuilt (3.6 GiB build passed); installer ISO and real-machine install still unverified |
 | Mirror | flake inputs via Tsinghua nixexprs; binary caches default to three CN mirrors; some package sources are on GitHub (`codex` / `opencode`) and are only needed on a cache miss |
 | License | Apache-2.0 |
 
@@ -103,7 +103,7 @@ Desktop shell details (60 niri keybinds, 10 token-based themes, `desktop-check`,
 |---|---|
 | P0 (mostly done) | README rewrite, English entry point, roadmap re-scoped to the agent-base positioning, timeline proposal rewritten as an agent execution audit; remaining: repo description/homepage and a GitHub mirror (publish after P1) |
 | P1 | Enable `localModels` + `diagnostics` on real hardware; verify an OpenAI-compatible endpoint under concurrent clients; add `model-status` / `model-bench` and idle / single-request / concurrent power figures |
-| P2 | New NPU host (`amdxdna`, `render` group, systemd `LimitMEMLOCK=infinity`, kernel ≥ 7.0); AMD iGPU Vulkan and low-power NPU paths; dedicated model volume in `paths.artifacts` |
+| P2 (deferred 2026-11-06: needs NPU hardware and three M.2 drives; no schedule until P1 runtime verification is done, see `docs/ROADMAP.md` P2) | New NPU host (`amdxdna`, `render` group, systemd `LimitMEMLOCK=infinity`, kernel ≥ 7.0); AMD iGPU Vulkan and low-power NPU paths; dedicated model volume in `paths.artifacts` |
 | P3 | Extract `skills/` + `commands.json` into a portable spec any NixOS can import; append-only **agent execution audit log** (exportable / replayable); CI with `nix flake check` + schema validation + ISO build |
 
 The P3 audit log records **agent** events (`@effect`, before/after diffs), not the user's screen.

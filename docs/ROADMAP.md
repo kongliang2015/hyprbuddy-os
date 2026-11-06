@@ -241,16 +241,20 @@ git revert <本次 commit>               # 配置
 
 或直接把 `diagnostics` / `localModels` 一起改回 `false` 后重新 build；注意两个开关必须同时回退，否则断言会拦下。
 
-### P2 新增 NPU host（承接 MACO470 选型）
+### P2 新增 NPU host（承接 MACO470 选型，**暂缓**）
+
+> **2026-11-06 决定暂缓**：这 6 项依赖 NPU 实机（`maco470`）与三条 M.2 硬件；
+> 在硬件到位、且 P1 本地模型的运行态验收完成之前不排期。保留表格作为选型记录，
+> 状态列统一标「暂缓」，不计入当前活跃待办。
 
 | 动作 | 落点 | 验收标准 | 状态 |
 |---|---|---|---|
-| 新增 `hosts/maco470/`：`amdxdna` 内核模块、`render` / `video` 组、内核 ≥ 7.0 | `hosts/maco470/`、`modules/hardware/` | `lsmod \| grep amdxdna` 有输出；`/dev/accel/accel0` 属组 `render`；`flm validate` exit 0 | [ ] |
-| systemd `LimitMEMLOCK = "infinity"` | service 单元 | 不出现 `mmap(MAP_LOCKED) failed err=-11`；**不能用 `limits.conf`，NixOS 的 systemd 会话不生效** | [ ] |
-| XRT / FastFlowLM 先用 `buildFHSEnv` 或容器打通，再固化为 derivation | `pkgs/` | `flm bench llama3.2:1b` 接近公开基线（约 61 tok/s @1K） | [ ] |
-| `local-llm.nix` 增 `amd-igpu-vulkan` 分支（Radeon 890M 上 ROCm 未必可用）与 NPU 低功耗路径 | `modules/agent/local-llm.nix` | 新 host 求值通过，不回退到 `ollama-cpu` | [ ] |
-| 三条 M.2 物理隔离：系统盘 / 模型盘 / 数据盘 | `lib/commands.nix`、`agent-commands paths` | `paths.artifacts.models` 可查；skill 沙箱重建后模型文件校验和不变 | [ ] |
-| 验证目标改为**常驻功耗 + 并发隔离 + 沙箱重建不扰动模型盘** | 回归清单 | 三条 M.2 逐条测速确认 PCIe 4.0 ×4 | [ ] |
+| 新增 `hosts/maco470/`：`amdxdna` 内核模块、`render` / `video` 组、内核 ≥ 7.0 | `hosts/maco470/`、`modules/hardware/` | `lsmod \| grep amdxdna` 有输出；`/dev/accel/accel0` 属组 `render`；`flm validate` exit 0 | 暂缓 |
+| systemd `LimitMEMLOCK = "infinity"` | service 单元 | 不出现 `mmap(MAP_LOCKED) failed err=-11`；**不能用 `limits.conf`，NixOS 的 systemd 会话不生效** | 暂缓 |
+| XRT / FastFlowLM 先用 `buildFHSEnv` 或容器打通，再固化为 derivation | `pkgs/` | `flm bench llama3.2:1b` 接近公开基线（约 61 tok/s @1K） | 暂缓 |
+| `local-llm.nix` 增 `amd-igpu-vulkan` 分支（Radeon 890M 上 ROCm 未必可用）与 NPU 低功耗路径 | `modules/agent/local-llm.nix` | 新 host 求值通过，不回退到 `ollama-cpu` | 暂缓 |
+| 三条 M.2 物理隔离：系统盘 / 模型盘 / 数据盘 | `lib/commands.nix`、`agent-commands paths` | `paths.artifacts.models` 可查；skill 沙箱重建后模型文件校验和不变 | 暂缓 |
+| 验证目标改为**常驻功耗 + 并发隔离 + 沙箱重建不扰动模型盘** | 回归清单 | 三条 M.2 逐条测速确认 PCIe 4.0 ×4 | 暂缓 |
 
 > 连锁效应：现有文档中「无 NPU、软件渲染 VM，所以不做语义检索」这条约束，在 NPU 主机到位后失效。语义层可用 NPU 低功耗跑，但仍应按**「省电、不抢 GPU」**叙事，而非「更快」——TOPS 不预测 tok/s，瓶颈是内存带宽。
 
@@ -293,7 +297,7 @@ git revert <本次 commit>               # 配置
 
 | 项 | 状态 |
 |---|---|
-| 重建 live / install ISO（niri 提供方换 v5 后未验证） | [ ] 质量项，P2 的历史遗留 |
+| 重建 live / install ISO | **live ISO 已重建**（本轮完整构建通过，3.6 GiB）；install ISO 待构建。质量项，旧 P2 的历史遗留 |
 | `sys-doctor`：聚合 `sys-health` + `net/power-status` + `desktop-check` | [ ] 低优先级 |
 | 自定义调色板：5.0.1 的 `source="custom"` 试 6 种写法均 invalid，外壳暂只能壁纸取色 | [ ] 暂缓，等上游文档 / 新版本 |
 | 多 host 实机验证 v5（`leonard` NVIDIA、`vm-virtio` aarch64 仅求值） | [ ] 暂缓，需要那两台机器 |

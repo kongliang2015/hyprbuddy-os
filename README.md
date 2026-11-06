@@ -193,7 +193,7 @@ agent-commands --json         # 本机实际可用的命令清单（含 availabl
 |---|---|---|
 | **P0（基本完成）** | 对外可发现性：README 重构 + 英文入口 + ROADMAP 按新定位重写 + 时间轴方案改名重写为 agent 执行审计日志；**剩余**：仓库 description / homepage、GitHub 镜像（等 P1 跑通再公开） | `README.md`、`README.en.md`、`docs/ROADMAP.md`、`next-feature/` |
 | **P1** | **点亮已有模块**：`model-status` / `model-bench`、`power-status` 三档功耗、CPU 变体 ollama、`leonard` 开关均已落地（见 §5.1 / §2.1）；**剩余**：真机 switch + `ollama pull`、端点与并发实测、功耗实测、`distro.agent.localEndpoint`（尚未实现） | `modules/options.nix`、`modules/agent/local-llm.nix`、`scripts/` |
-| **P2** | 承接 NPU 主机：新增 `hosts/maco470`（`amdxdna`、`render` 组、systemd `LimitMEMLOCK=infinity`、内核 ≥ 7.0）；`local-llm.nix` 增 AMD iGPU Vulkan 与 NPU 低功耗分支；模型盘独立挂载点写入 `paths.artifacts` | `hosts/`、`modules/agent/`、`lib/` |
+| **P2（暂缓）** | 承接 NPU 主机：新增 `hosts/maco470`（`amdxdna`、`render` 组、systemd `LimitMEMLOCK=infinity`、内核 ≥ 7.0）；`local-llm.nix` 增 AMD iGPU Vulkan 与 NPU 低功耗分支；模型盘独立挂载点写入 `paths.artifacts`。**2026-11-06 决定暂缓**：依赖 NPU 实机与三条 M.2 硬件，P1 运行态验收完成前不排期，详见 `docs/ROADMAP.md` P2 | `hosts/`、`modules/agent/`、`lib/` |
 | **P3** | 把优势变成可移植规范：`skills/` + `commands.json` 抽成任意 NixOS 可导入的规范；append-only **agent 执行审计日志**（可导出 / 可回放）；CI 加 `nix flake check` + schema 校验 + ISO 构建 | `lib/commands.nix`、`skills/`、CI |
 
 > 逐项进度与验收标准以 `docs/ROADMAP.md` 为准（2026-11-05 已按本定位重写）。P3 的审计日志数据源是「agent 执行事件 + `@effect` + 变更前后 diff」，**不是**持续截屏或屏幕时间轴；评估见 `next-feature/agent-execution-audit.md`（未实施、未登记待办）。
@@ -286,7 +286,7 @@ nix build .#packages.<system>.liveIso   # live + install 一体盘
 sudo dd if=result/iso/hyprbuddy-live.iso of=/dev/sdX bs=4M status=progress oflag=sync
 ```
 
-installer 启动后以 root 登录，分区并挂载到 `/mnt`，再执行 `installer/install.sh`（安装器不分区、不格式化）；live 镜像直接进入桌面并保留 `install-hyprbuddy` 命令。**v5 切换后 ISO 尚未重建验证。**
+installer 启动后以 root 登录，分区并挂载到 `/mnt`，再执行 `installer/install.sh`（安装器不分区、不格式化）；live 镜像直接进入桌面并保留 `install-hyprbuddy` 命令。**live ISO 已重建验证**（完整构建通过，3.6 GiB）；install ISO 与实机安装流程仍待验证。
 
 安装器支持交互选择：预装 agent（多选，未选项进懒加载）、软件源（cn / tuna / sjtu / ustc / official）。非交互用 `--agents "codebuddy"`、`--mirror tuna`；`--dry-run` 只渲染 + 求值、不写盘。
 
