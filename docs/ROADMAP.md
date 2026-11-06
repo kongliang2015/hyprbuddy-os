@@ -285,13 +285,13 @@ git revert <本次 commit>               # 配置
 | `overseas-mirrors.md` | 验证 | 双区域回归：`nix flake check` / `desktop-check` / 三类 host 求值 | **已完成**（求值层面；五档 `distro.mirror` 与三类 host 求值均通过） |
 | `overseas-mirrors.md` | 实施 | 方案 E：`codebuddy` npm 双变体（改 lock + 重算 `npmDepsHash`） | 待实施 |
 | `overseas-mirrors.md` | 边界 | 装完后日常 rebuild 仍走清华；根治需另做 flake 输入切换（方案 B） | 未排期 |
-| `file-ops-skill.md` | 决策 | `backup-restore` 语义（与「不改 `~/.config` store 软链」冲突） | **已决策（2026-11-06）**：恢复走 `install.sh` 重新部署，`backup-restore` 只打印恢复步骤、不直接 `mv`；实施待排期 |
-| `file-ops-skill.md` | 实施 | P1 `backup-list` / `backup-restore`、P2 `storage-status`、P3 薄指南（同步 SKILLS.md / INDEX） | 待实施 |
-| `agent-execution-audit.md` | 决策 | §5 采集边界与隐私策略 | **已决策（2026-11-06）**：最小方案（只 `agent-apply` + `@effect` 非空命令 + `install.sh`）；实施待排期 |
-| `agent-execution-audit.md` | 前置 | 等 P1 本地模型与端点稳定后再引入 | 未排期 |
-| `agent-execution-audit.md` | 实施 | 事件采集（含失败 / 回滚）、`audit-export` JSONL、技能沙箱校验和、`desktop-check` 增补、无回摆检索 | 待实施 |
+| `file-ops-skill.md` | 决策 | `backup-restore` 语义（与「不改 `~/.config` store 软链」冲突） | **已决策（2026-11-06）**：恢复走 `install.sh` 重新部署，`backup-restore` 只打印恢复步骤、不直接 `mv`；**实施暂缓（2026-11-06）** |
+| `file-ops-skill.md` | 实施 | P1 `backup-list` / `backup-restore`、P2 `storage-status`、P3 薄指南（同步 SKILLS.md / INDEX） | **暂缓**（B2 决策已定，实施暂缓） |
+| `agent-execution-audit.md` | 决策 | §5 采集边界与隐私策略 | **已决策（2026-11-06）**：最小方案（只 `agent-apply` + `@effect` 非空命令 + `install.sh`）；**实施暂缓（2026-11-06）** |
+| `agent-execution-audit.md` | 前置 | 等 P1 本地模型与端点稳定后再引入 | 暂缓 |
+| `agent-execution-audit.md` | 实施 | 事件采集（含失败 / 回滚）、`audit-export` JSONL、技能沙箱校验和、`desktop-check` 增补、无回摆检索 | **暂缓**（A1 决策已定，实施暂缓） |
 
-**建议顺序（2026-11-06 进度）**：① 验证基本完成（剩 `agent-usage` 日志、实机安装）→ ② 决策已完成（采集边界最小方案、`backup-restore` 走 `install.sh`；陈旧软链清理已实施）→ ③ 实施（README 海外小节已完成；剩 3 条命令 + 指南 → 审计链路 → npm 双变体）。
+**建议顺序（2026-11-06 进度）**：① 验证基本完成（剩 `agent-usage` 日志、实机安装）→ ② 决策已完成（采集边界最小方案、`backup-restore` 走 `install.sh`；陈旧软链清理已实施；**两个决策的实施暂缓**）→ ③ 实施（README 海外小节已完成；npm 双变体仍待实施；3 条命令 + 指南、审计链路暂缓）。
 
 ## 4. 桌面外壳维护（低优先级 / 暂缓）
 

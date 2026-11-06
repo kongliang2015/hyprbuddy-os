@@ -1,6 +1,7 @@
 # Agent 执行审计日志（可导出 / 可回放）评估
 
 > **状态：未实施 · 未进 `docs/ROADMAP.md` 待办（2026-11-05 重写）**
+> **2026-11-06：A1 采集边界已决策为「最小方案」，但实施暂缓** —— 决策保留、代码不动。
 > 前身：`next-feature/local-memory-timeline.md`（2026-11-04「Linux / niri 版 Recall」评估，本轮改名重写）。
 > 评估基准：`hyprbuddy-os` @ `4835b56`；2026-11-05 一次性探针实测见附录 A（探针时 HEAD `09ec667`）。
 > `next-feature/` 存放**尚未落地**的新特性评估：不属于现行规范、不计入 `docs/SKILLS.md` 的技能数、
@@ -119,7 +120,7 @@
 
 ## 7. 当前决定
 
-**未实施，仅存档评估。** 不写入 `docs/ROADMAP.md` 的待办清单；本文由 `next-feature/local-memory-timeline.md` 改名重写而来，附录 A 的探针数据保留作技术栈可行性依据，但**不再作为「截图方案可落地」的证据**。
+**未实施，仅存档评估（实施暂缓，2026-11-06）。** 不写入 `docs/ROADMAP.md` 的待办清单；本文由 `next-feature/local-memory-timeline.md` 改名重写而来，附录 A 的探针数据保留作技术栈可行性依据，但**不再作为「截图方案可落地」的证据**。
 
 ---
 
